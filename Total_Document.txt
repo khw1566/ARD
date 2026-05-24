@@ -1,0 +1,143 @@
+# AI Automated Sorting System - Unified Project Documentation
+
+This document summarizes the hardware/software configuration of the AI-powered automated sorting system. It is designed to provide clear context for LLMs to understand the project structure and support future development.
+
+---
+
+## 1. Project Overview
+- **Objective**: An automated system that captures images of objects, identifies them and their coordinates using AI (Gemini), and sorts them using a stepper motor-driven mechanism.
+- **Current Status**:
+  - **ImageSenderMCU (ESP32-S3)**: Image capture and transmission logic implemented and debugged.
+  - **PC Center (Python)**: Image reception, AI analysis (Gemini), audio processing (Whisper/gTTS), and web dashboard implemented.
+  - **HMI_MCU & DriveMCU**: Hardware configuration and communication protocol complete.
+  - **SoundMCU (ESP32-C3)**: Voice interaction board implemented with real-time I2S streaming.
+
+---
+
+## 2. System Architecture & Data Flow
+1. **[ImageSenderMCU]**: ESP32-S3 captures high-resolution JPEG images using an OV5660 (or OV5640) camera.
+2. **[Network]**: High-speed transmission is achieved via UDP (primary) and HTTP POST (fallback).
+3. **[PC Center]**: 
+   - Flask server receives the image.
+   - Google Gemini 2.0 Flash (or Lite) model identifies the object and extracts normalized coordinates [x, y] (range: 0.0 to 1.0).
+   - Analysis results (JSON) are forwarded to the Receiver.
+4. **[Receiver]**: Displays analysis results on a 2.8" LCD and sends movement commands to the DriveMCU.
+5. **[DriveMCU]**: Precisely controls a NEMA 17 stepper motor based on the received coordinates to perform sorting.
+
+---
+
+## 3. Hardware Specifications & Pinmaps
+
+### 3.1 ImageSenderMCU (Transmitter)
+- **MCU**: ESP32-S3-N16R8 (16MB Flash, 8MB PSRAM)
+- **Camera**: OV5660 (or OV5640)
+- **Pinmap**:
+  - **Camera (DATA)**: GPIO 12, 11, 10, 9, 8, 18, 17, 16
+  - **Camera (Control)**: SIOD: 4, SIOC: 5, VSYNC: 6, HREF: 7, XCLK: 15, PCLK: 13
+  - **SD Card**: GPIO 38, 39, 40
+  - **PSRAM (Internal)**: GPIO 35, 36, 37 (Octal SPI dedicated)
+- **Notes**: High-performance `FRAMESIZE_QSXGA` (5MP) capture supported via 8MB Octal PSRAM.
+
+### 3.2 PC Center (Central Processor)
+- **OS**: Windows OS
+- **Role**: AI computation server and system monitoring hub (Web UI).
+- **AI Model**: Google Gemini API (Recommended: `gemini-2.0-flash-lite`).
+
+### 3.3 HMI_MCU (Receiver / Controller Interface)
+- **MCU**: ESP32-2432S028 (2.8" LCD, "Cheap Yellow Display")
+- **Display**: ILI9341 (240x320, Rotation 3 for Landscape mode)
+- **Pinmap**:
+  - **LCD (SPI)**: MOSI: 13, MISO: 12, SCLK: 14, CS: 15, DC: 2, BL: 21 (Backlight)
+  - **Touch (XPT2046)**: T_CS: 33
+- **Configuration Notes**: 
+  - Use `ILI9341_2_DRIVER`.
+  - Color inversion fix: `tft.invertDisplay(true)`.
+
+### 3.4 DriveMCU (Motor Controller / GPS)
+- **MCU**: ESP32-WROOM32D
+- **Hardware**: A4988 x2 (X, Y Axes), NEO-6M GPS Module.
+- **Logic**: Controls dual-axis stepper motors and parses GPS data.
+- **Features**: 
+  - **3D Digital Twin**: Integrated with a Three.js simulation that mimics physical bevel gear differential movement.
+  - **A-GPS (AssistNow)**: Syncs time from PC Center (`/api/time`) and injects `UBX-AID-INI` to reduce TTFF (Time To First Fix).
+  - **Commands**: `rotate:<steps>`, `mxr / myr` (manual), `df / db / dr / dl` (differential/bevel).
+- **Pinmap**:
+  - `GPS`: RX: 32, TX: 33 (Hardware UART2 at 9600baud)
+
+### 3.5 SoundMCU (Voice AI Assistant)
+- **MCU**: ESP32-C3 SuperMini
+- **Audio Hardware**: MS3625 (I2S Mic), MAX98357A (I2S Amp + 3W Speaker)
+- **Display**: 0.42" OLED (SSD1306, 72x40)
+- **Pinmap**:
+  - **I2S**: BCLK: 0, WS: 1, DOUT: 2 (Speaker), DIN: 3 (Mic)
+  - **I2C (OLED)**: SDA: 5, SCL: 6
+- **Features**: Real-time 16kHz PCM streaming (UDP), OLED status icons, VAD/PTT control.
+
+---
+
+## 4. Communication & Interaction Protocols
+
+### 4.1 ImageSenderMCU-PC Interaction (UDP & HTTP)
+#### 4.1.1 Image Streaming (UDP)
+- **Protocol**: UDP (Port 5001)
+- **Packet Structure**: 1-byte Header + Binary JPG data (1024-byte chunks).
+- **Rate Limiting**: 5ms inter-packet delay.
+
+#### 4.1.2 Device Monitoring (Heartbeat & Logs)
+- **Heartbeat (HTTP POST /api/heartbeat)**: Every 30s; reports RSSI, Temperature (internal), and IP.
+- **Logs (HTTP POST /api/log)**: Real-time event logging to the dashboard.
+
+#### 4.1.3 Remote Configuration (Polling)
+- **Frequency**: Every 3s via `/api/imagesendermcu/config`.
+- **Dynamic Controls**: Remote "capture" command and resolution changes apply instantly.
+
+### 4.2 PC Center -> DriveMCU (TCP)
+- **Protocol**: TCP (Port 5002)
+- **Command Set**:
+  - `mxr <steps>`, `myr <steps>`: Individual axis test.
+  - `df <steps>`, `db <steps>`: Differential Forward/Backward (Bevel gear coordination).
+  - `dr <steps>`, `dl <steps>`: Differential Rotate CW/CCW.
+
+### 4.3 SoundMCU-PC Interaction (UDP)
+#### 4.3.1 Audio Streaming
+- **Protocol**: UDP (Port 5005) - Bidirectional raw PCM.
+- **Format**: 16,000Hz, 16-bit, Mono.
+- **VAD (Voice Activity Detection)**: PC Center handles auto-detection of speech to trigger Whisper/Gemini.
+
+---
+
+## 5. Software & Libraries
+
+### ImageSenderMCU
+- `esp_camera`, `WiFi`, `HTTPClient`, `ArduinoJson`.
+
+### PC Center
+- `Python 3.10+`, `Flask`, `Flask-Cors`, `google-generativeai`, `Pillow`.
+
+### HMI_MCU
+- `TFT_eSPI` (ILI9341_2), `WiFi`, `HTTPClient`.
+
+### SoundMCU
+- `U8g2`, `WiFi`, `WiFiUDP`, `driver/i2s`, `ArduinoJson`, `Preferences`.
+- **Backend Dependencies**: `openai-whisper`, `gTTS`, `numpy`, `soundfile`, `scipy`.
+
+---
+
+## 6. UI Architecture (PC Center)
+- **Header**: Status indicator cards for ImageSenderMCU, HMI_MCU, and DriveMCU (real-time telemetry).
+- **Tabs**:
+  1. `ImageSenderMCU`: Analysis logs, Gemini costs, and metadata.
+  2. `DriveMCU`: Manual motor controls (Step inputs, Speed slider, Emergency Stop).
+  3. `HMI_MCU`: IP synchronization and display settings.
+  4. `Sound Control`: Voice mode select (VAD/PTT), sensitivity, and Real-time chat history.
+- **Logs**: Unified system log console at the bottom.
+
+---
+
+## 7. Current Project Status
+- [x] **ImageSenderMCU**: High-resolution UDP streaming & Remote Config complete.
+- [x] **PC Center**: Gemini AI integration & Dashboard UI overhaul (Tab-based) complete.
+- [x] **DriveMCU**: TCP Command Protocol & Static IP support complete.
+- [x] **SoundMCU**: I2S streaming and Voice AI integration complete.
+- [ ] **HMI_MCU**: Display visualization of PC results (Under Development).
+- [ ] **Sorting Logic**: Final coordinate-to-angle mapping optimization.

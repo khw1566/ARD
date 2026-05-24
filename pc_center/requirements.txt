@@ -1,0 +1,15 @@
+flask
+flask-cors
+google-generativeai
+python-dotenv
+pillow
+requests
+openai-whisper
+gTTS
+numpy
+soundfile
+scipy
+edge-tts
+pyttsx3
+openai
+sherpa-onnx

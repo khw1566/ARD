@@ -1,0 +1,57 @@
+# ESP32-S3-N16R8 Configuration Guide for PlatformIO
+
+## 1. Board Specifications
+- Core: ESP32-S3
+- Flash: 16MB (Quad SPI)
+- PSRAM: 8MB (Octal SPI)
+- Interface: Dual USB (UART/USB)
+
+## 2. PlatformIO Configuration (platformio.ini)
+This configuration is critical for N16R8 models to prevent boot loops and ensure PSRAM detection.
+
+```ini
+[env:esp32-s3-n16r8]
+platform = espressif32
+board = esp32-s3-devkitc-1
+framework = arduino
+monitor_speed = 115200
+
+build_flags = 
+    -DBOARD_HAS_PSRAM
+    -DCORE_DEBUG_LEVEL=3
+    -DARDUINO_USB_MODE=1
+    -DARDUINO_USB_CDC_ON_BOOT=0 ; Set to 0 to use Hardware UART port for Serial logs
+
+board_build.arduino.memory_type = qio_opi ; Critical for N16R8 (Quad Flash, Octal PSRAM)
+board_build.flash_mode = qio
+board_build.psram_type = opi
+board_build.f_flash = 80000000L
+board_build.f_cpu = 240000000L
+board_upload.flash_size = 16MB
+```
+
+## 3. Important Stability Fixes (Code Level)
+
+### Brownout Prevention
+OV5640 and WiFi usage can cause voltage drops. Disable brownout detector at the start of setup():
+```cpp
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
+void setup() {
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
+    // ... rest of setup
+}
+```
+
+### Serial Monitoring
+- If rst:0x1 (POWERON) log is visible but setup() logs are missing, it's a Serial routing issue.
+- Use `ARDUINO_USB_CDC_ON_BOOT=0` to force output to the Hardware UART.
+- Use `ARDUINO_USB_CDC_ON_BOOT=1` to use the Native USB port (requires switching cables/ports).
+
+## 4. Camera Pin Mapping (Standard S3-CAM)
+Verified pinout for most S3 camera modules:
+- XCLK: 10, PCLK: 13, VSYNC: 6, HREF: 7
+- SDA: 4, SCL: 5
+- Data: D0:11, D1:9, D2:8, D3:10, D4:12, D5:18, D6:17, D7:16 (Check specific board if this fails)
+- **Note**: The camera initialization fails if `xclk_freq_hz` is too high during power-unstable states. Start with 10MHz or 20MHz.

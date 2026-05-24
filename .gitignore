@@ -1,0 +1,62 @@
+# === PlatformIO & Firmware Compiler Artifacts ===
+.pio/
+.pioenvs/
+.piolibdeps/
+.clangd/
+.gcc-flags.json
+*.elf
+*.bin
+*.hex
+
+# === PyInstaller & Executable Builds ===
+dist/
+build/
+*.exe
+*.pkg
+*.spec
+
+# === Python Environments & Cache ===
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+pip-log.txt
+
+# === Media Downloads & Heavy Audio ===
+pc_center/static/audio/
+*.wav
+*.mp3
+*.mp4
+*.flac
+
+# === OS & IDE Customizations ===
+.vscode/
+.idea/
+.project
+.cproject
+.settings/
+Thumbs.db
+db.db
+*.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Temp Files & Backups ===
+*.tmp
+*.bak
+*~
+*.log
+**/logs/
+legacy_logic_backup.txt
+
+# === Local Configuration & Secrets ===
+*.local
+.env
+.flaskenv
