@@ -86,7 +86,7 @@
                 </button>
             </div>
             <button id="lang-toggle" class="tab-btn" style="padding: 4px 10px; font-size: 0.75rem;">KO / EN</button>
-            <div class="status-box status-box-offline tab-btn" id="imagesendermcu-box" data-tab="imagesendermcu-tab" style="cursor: pointer;" onclick="switchTab('imagesendermcu-tab')">
+            <div class="status-box status-box-offline" id="imagesendermcu-box" style="cursor: pointer;" onclick="switchTab('imagesendermcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -105,7 +105,7 @@
                     <span id="imagesendermcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
                 </div>
             </div>
-            <div class="status-box status-box-offline tab-btn" id="hmi_mcu-box" data-tab="hmi_mcu-tab" style="cursor: pointer;" onclick="switchTab('hmi_mcu-tab')">
+            <div class="status-box status-box-offline" id="hmi_mcu-box" style="cursor: pointer;" onclick="switchTab('hmi_mcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
@@ -125,7 +125,7 @@
                     <span id="hmi_mcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
                 </div>
             </div>
-            <div class="status-box status-box-offline tab-btn" id="drivemcu-box" data-tab="drivemcu-tab" style="cursor: pointer;" onclick="switchTab('drivemcu-tab')">
+            <div class="status-box status-box-offline" id="drivemcu-box" style="cursor: pointer;" onclick="switchTab('drivemcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
@@ -144,7 +144,7 @@
                     <span id="drivemcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
                 </div>
             </div>
-            <div class="status-box status-box-offline tab-btn" id="controlmcu-box" data-tab="controlmcu-tab" style="cursor: pointer;" onclick="switchTab('controlmcu-tab')">
+            <div class="status-box status-box-offline" id="controlmcu-box" style="cursor: pointer;" onclick="switchTab('controlmcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -162,7 +162,7 @@
                     <span id="controlmcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
                 </div>
             </div>
-            <div class="status-box status-box-offline tab-btn" id="robot3axismcu-box" data-tab="robot3axismcu-tab" style="cursor: pointer;" onclick="switchTab('robot3axismcu-tab')">
+            <div class="status-box status-box-offline" id="robot3axismcu-box" style="cursor: pointer;" onclick="switchTab('robot3axismcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -180,31 +180,33 @@
                     <span id="robot3axismcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
                 </div>
             </div>
-            <div class="status-box" id="pc-status-card" style="height: 68px; box-sizing: border-box; background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.35); flex: 1 1 200px; min-width: 180px;">
-                <div class="status-header">
-                    <div class="status-label" style="color: var(--primary); font-weight: bold; font-size: 0.72rem;">PC CONTROL CENTER</div>
+            <div class="status-box" style="background: rgba(56, 189, 248, 0.1); border: 1px solid var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px 15px;">
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--primary); font-weight: bold;">PC IP:</span>
+                    <span id="server-ip-display" style="font-family: monospace; font-size: 0.9rem; margin-left: 5px;">{{ server_ip }}</span>
                 </div>
-                <div class="status-value" style="font-size: 0.78rem; font-family: monospace; color: #fff; font-weight: bold; margin-top: 1px; line-height: 1.1;">
-                    IP: <span id="server-ip-display">{{ server_ip }}</span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <span style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="gps-coords-display">Waiting for GPS...</span>
+                    </span>
+                    <a id="gps-map-btn" href="#" target="_blank" class="btn-primary" style="padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; display: none; text-decoration: none; background: #27ae60;">MAP</a>
                 </div>
-                <div class="status-meta" style="margin-top: 1px; display: flex; align-items: center; justify-content: space-between; gap: 6px; line-height: 1;">
-                    <span id="gps-coords-display" style="font-size: 0.65rem; color: #94a3b8; max-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">GPS...</span>
-                    <!-- Slim Toggle Mode Switch -->
-                    <div class="mode-switch-container" style="margin: 0; display: flex; align-items: center; gap: 4px; scale: 0.8; transform-origin: right center;">
-                        <span class="mode-label mode-label-test" style="font-size: 0.6rem; color: #64748b; font-weight: bold;">TEST</span>
-                        <label class="switch" style="width: 28px; height: 14px; margin: 0 1px;">
-                            <input type="checkbox" id="mode-toggle">
-                            <span class="toggle-slider" style="border-radius: 14px;"></span>
-                        </label>
-                        <span class="mode-label mode-label-auto" style="font-size: 0.6rem; color: #64748b; font-weight: bold;">AUTO</span>
-                    </div>
+                <!-- Mode Switch -->
+                <div class="mode-switch-container">
+                    <span class="mode-label mode-label-test">TEST</span>
+                    <label class="switch">
+                        <input type="checkbox" id="mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="mode-label mode-label-auto">AUTO</span>
                 </div>
             </div>
         </header>
 
         <main>
             <section class="left-col">
-                <div id="image-container" class="card" style="position: relative; width: 100%; background: #020617; border-radius: 12px; overflow: hidden; margin-bottom: 15px;">
+                <div id="image-container" class="card" style="position: relative; width: 100%; min-height: 500px; flex: 1; background: #020617; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
                     <!-- Target Overlays -->
                     <div id="coordinate-overlay"></div>
                     <div id="target-line-x" class="guide-line x-line"></div>
@@ -219,7 +221,7 @@
                 </div>
                 
                 <!-- Unified Voice & Media Center Card -->
-                <div id="voice-media-container" class="card" style="display: none; height: 530px; min-height: 400px; flex-direction: column; background: var(--bg-card, #1e293b); border-radius: 12px; overflow: hidden; margin-bottom: 15px; border-top: 3px solid var(--primary);">
+                <div id="voice-media-container" class="card" style="display: none; min-height: 620px; flex: 1; flex-direction: column; background: var(--bg-card, #1e293b); border-radius: 12px; overflow: hidden; margin-bottom: 20px; border-top: 3px solid var(--primary);">
                     <!-- Header with Tabs and Global Controls -->
                     <div style="background: rgba(0,0,0,0.2); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap: 10px;">
                         <!-- Sub-tab Navigation Buttons -->
@@ -1668,10 +1670,6 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tab-camera.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tab-drive.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tab-control.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tab-robot3axis.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}?v=5"></script>
 </body>
 </html>
