@@ -16,6 +16,9 @@
 // --- Custom Font ---
 #include "font8x8.h"
 
+// --- Forward Declarations ---
+void redraw(bool full = false);
+
 // --- Pin ---
 #define BL_PIN    21
 #define SCR_W  240
@@ -75,6 +78,28 @@ PR pdata[TMAX][15];
 int pcnt[TMAX]={0,0,0,0};
 struct DS { bool on; int rssi; String ip; float t; String last_hb="--:--:--"; };
 DS ds[TMAX];
+
+String control_mode = "---"; // ControlMCU 토글 스위치 상태
+
+// --- Approval Popup States ---
+bool showApprovalPopup = false;
+String pending_action_id = "";
+String pending_action_desc = "";
+
+void sendApproval(String id, bool approve) {
+    if(WiFi.status()==WL_CONNECTED) {
+        HTTPClient h;
+        h.begin("http://"+server_ip+":5000/api/hmi/approve");
+        h.addHeader("Content-Type", "application/json");
+        JsonDocument d;
+        d["id"] = id;
+        d["approve"] = approve;
+        String pl; serializeJson(d, pl);
+        h.setTimeout(1000);
+        h.POST(pl);
+        h.end();
+    }
+}
 
 // --- Persistent States ---
 int hb_interval_idx = 2; 
@@ -314,6 +339,27 @@ void TaskNetwork(void *pvParameters) {
                             pdata[3][pcnt[3]++] = {"Mode", String(d["soundmcu"]["mode"]|"---")};
                             pdata[3][pcnt[3]++] = {"Status", String(d["soundmcu"]["status"]|"---")};
                             
+                            // ControlMCU 상태 파싱
+                            if (d["controlmcu"].is<JsonObject>()) {
+                                control_mode = String(d["controlmcu"]["mode"] | "---");
+                            }
+                            
+                            if (d["hmi_mcu"]["pending_action"].is<JsonObject>()) {
+                                String id = d["hmi_mcu"]["pending_action"]["id"].as<String>();
+                                String desc = d["hmi_mcu"]["pending_action"]["desc"].as<String>();
+                                if (id != pending_action_id || !showApprovalPopup) {
+                                    pending_action_id = id;
+                                    pending_action_desc = desc;
+                                    showApprovalPopup = true;
+                                    redraw(true);
+                                }
+                            } else {
+                                if (showApprovalPopup) {
+                                    showApprovalPopup = false;
+                                    redraw(true);
+                                }
+                            }
+                            
                             // PID 설정 동기화
                             if (d["drive_settings"].is<JsonObject>()) {
                                 is_pid_mode = d["drive_settings"]["pid_mode"] | is_pid_mode;
@@ -552,6 +598,14 @@ void drBot(){
     char pb[16]; snprintf(pb,16,"PAGE %d/%d", subPage[curTab]+1, maxPage[curTab]);
     drText(8, y+25, pb, CWT, CPNL, 1, 0);
     drText(8, y+45, TNAMES[curTab], CACC, CPNL, 1, 0);
+    
+    // 제어 보드 모드 표시
+    String modeStr = "Offline";
+    if (control_mode == "A") modeStr = "A(Robot X-Z)";
+    else if (control_mode == "N") modeStr = "N(Robot Y)";
+    else if (control_mode == "B") modeStr = "B(Drive)";
+    drText(8, y+65, "CTRL: " + modeStr, 0xFFE0, CPNL, 1, 0); // Yellowish color for visibility
+
     int btnX = SCR_W - bw*2 - 4;
     uint16_t bColL = (subPage[curTab] > 0) ? CACC : CBTN;
     tft.fillRoundRect(btnX, y+16, bw-4, 44, 4, bColL);
@@ -562,9 +616,29 @@ void drBot(){
     tft.drawRoundRect(btnX+bw, y+16, bw-4, 44, 4, CSEP);
     drText(btnX+bw+(bw-4)/2, y+38, ">", CWT, bColR, 2, 3);
 }
+void drApprovalPopup() {
+    tft.fillRect(10, 60, 220, 200, CHD);
+    tft.drawRect(10, 60, 220, 200, CACC);
+    drText(120, 80, "AI Command", CWT, CHD, 2, 3);
+    drText(120, 120, pending_action_desc.substring(0, 20), CACC, CHD, 1, 3);
+    drText(120, 140, "Approve?", CWT, CHD, 2, 3);
+    
+    // Accept button
+    tft.fillRoundRect(20, 180, 80, 60, 5, CON);
+    drText(60, 210, "OK", CWT, CON, 2, 3);
+    
+    // Reject button
+    tft.fillRoundRect(140, 180, 80, 60, 5, COFF);
+    drText(180, 210, "NO", CWT, COFF, 2, 3);
+}
+
 void redraw(bool full){
     if(full)tft.fillScreen(CB);
-    drHdr();drTabs();drSub();drInfo();drRBtns();drBot();
+    if(showApprovalPopup) {
+        drApprovalPopup();
+    } else {
+        drHdr();drTabs();drSub();drInfo();drRBtns();drBot();
+    }
 }
 
 void onTab(int sx){
@@ -688,6 +762,22 @@ void procTouch(){
         int sx=p.x; int sy=p.y;
         tft.fillCircle(sx, sy, 8, CACC); 
         delay(30);
+        
+        if (showApprovalPopup) {
+            if (sy >= 180 && sy <= 240) {
+                if (sx >= 20 && sx <= 100) {
+                    sendApproval(pending_action_id, true);
+                    showApprovalPopup = false;
+                    redraw(true);
+                } else if (sx >= 140 && sx <= 220) {
+                    sendApproval(pending_action_id, false);
+                    showApprovalPopup = false;
+                    redraw(true);
+                }
+            }
+            return;
+        }
+        
         if(sy<HDR_H)return;
         if(sy<HDR_H+TAB_H){onTab(sx);return;}
         if(sy<CONT_Y){redraw(true);return;}
@@ -794,13 +884,13 @@ void setup(){
 void loop(){
     procTouch();
     unsigned long now=millis();
-    if(now-lclk>=1000){lclk=now;updClk();if(st==ST_MAIN)drHdr();}
+    if(now-lclk>=1000){lclk=now;updClk();if(st==ST_MAIN && !showApprovalPopup)drHdr();}
     static unsigned long ldraw=0;
     if(now-ldraw>=3000){
         ldraw=now;
         if(st==ST_MAIN){
             if(xSemaphoreTake(xMutex, 0)) {
-                drInfo(); drBot(); drHdr();
+                if(!showApprovalPopup) { drInfo(); drBot(); drHdr(); }
                 xSemaphoreGive(xMutex);
             }
         }

@@ -164,7 +164,7 @@ CORS(app)
 clients = []
 UDP_IP = "0.0.0.0"
 UDP_PORT = 5001
-EXCHANGE_RATE = 1503.77 # 2026-03-14 기준 환율
+EXCHANGE_RATE = 1500
 STATUS_THRESHOLD = 30    # 30초 동안 소식 없으면 Offline (네트워크 지연 고려)
 
 def broadcast_event(data):
@@ -307,10 +307,15 @@ def update_motor_state(cmd):
             motor_state["mz_steps"] += steps
             motor_state["mz_deg"] += deg
         
-        # ToF Target (Handled via heartbeat feedback, no manual update here)
+        # ToF Target & PID Mode
         elif cmd.startswith('mzt'):
-            pass
+            val = int(cmd[3:])
+            drive_settings['pid_target_tof'] = val
+        elif cmd.startswith('mzm'):
+            val = cmd[3:]
+            drive_settings['pid_mode'] = (val == '1')
             
+        broadcast_event({"type": "drive_update", "state": motor_state, "settings": drive_settings})
     except Exception as e:
         print(f"Update Motor State Error: {e}")
 
@@ -586,6 +591,7 @@ class VoiceQueueManager:
                 
                 music_was_playing = False
                 radio_was_playing = False
+                mirror_was_playing = False
                 last_radio_station = ""
                 last_radio_url = ""
                 
@@ -602,6 +608,12 @@ class VoiceQueueManager:
                     last_radio_url = radio_streamer.stream_url
                     radio_streamer.stop()
                     broadcast_system_log("이벤트 알림 출력으로 인해 라디오 스트리밍이 일시 중단되었습니다.", "Sound")
+                    
+                # Stop PC Audio Mirror when voice announcement plays
+                if 'audio_mirror_streamer' in globals() and audio_mirror_streamer.is_playing:
+                    mirror_was_playing = True
+                    audio_mirror_streamer.stop()
+                    broadcast_system_log("이벤트 알림 출력으로 인해 PC 사운드 스트리밍이 일시 중단되었습니다.", "Sound")
                 
                 with self.lock:
                     self.interrupt_flag = False
@@ -621,6 +633,12 @@ class VoiceQueueManager:
                     if 'radio_streamer' in globals():
                         radio_streamer.start(last_radio_station, last_radio_url)
                         broadcast_system_log(f"이벤트 알림이 종료되어 라디오 스트리밍을 자동으로 재개합니다: {last_radio_station}", "Sound")
+                        
+                if mirror_was_playing:
+                    time.sleep(0.2)
+                    if 'audio_mirror_streamer' in globals():
+                        audio_mirror_streamer.start()
+                        broadcast_system_log("이벤트 알림이 종료되어 PC 사운드 스트리밍을 자동으로 재개합니다.", "Sound")
                 
                 self.queue.task_done()
             except Exception as e:
@@ -1214,7 +1232,7 @@ def get_safe_api_key(env_name, default_val):
         return default_val
     return key
 
-DEFAULT_GEMINI_KEY = "AIzaSyBS2hQUR_Vtgwd7loS85IcsBoJefETE32Y"
+DEFAULT_GEMINI_KEY = "AIzaSyB4-wUqVUQrS3IYRSegLnNWsCqwI5YWIHg"
 
 CONFIG = {
     "api_key": get_safe_api_key("GEMINI_API_KEY", DEFAULT_GEMINI_KEY),
@@ -1407,7 +1425,8 @@ def get_status():
             "state": get_device_status("HMI_MCU"),
             "rssi": device_stats["HMI_MCU"]["rssi"],
             "ip": device_stats["HMI_MCU"]["ip"],
-            "temp": device_stats["HMI_MCU"]["temp"]
+            "temp": device_stats["HMI_MCU"]["temp"],
+            "pending_action": {"id": pending_hmi_actions[0]["id"], "desc": pending_hmi_actions[0]["desc"]} if pending_hmi_actions else None
         },
         "drivemcu": {
             "state": get_device_status("DriveMCU"),
@@ -1665,9 +1684,66 @@ def send_robot3axis_command():
         return jsonify({"status": "success", "command": cmd, "state": robot3axis_state})
     return jsonify({"status": "error"}), 400
 
+
+# --- 드라이브 시퀀스 상태 및 전역 변수 ---
+drive_sequence_state = "IDLE"
+drive_pid_target = 150
+
+def execute_drive_sequence(direction, target_ip):
+    global drive_sequence_state
+    if target_ip == "Unknown":
+        broadcast_system_log("[Drive Seq] Offline Mode: 시뮬레이션 전용으로 실행합니다.", "System")
+        
+    try:
+        if direction == "LEFT" and drive_sequence_state == "IDLE":
+            broadcast_system_log("[Drive Seq] 좌측 90도 요 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b-50,-50", "DriveMCU")
+            update_motor_state("b-50,-50")
+            time.sleep(1.0)
+            broadcast_system_log("[Drive Seq] 롤 회전(물체 이송)", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b50,-50", "DriveMCU")
+            update_motor_state("b50,-50")
+            drive_sequence_state = "LEFT_DONE"
+            
+        elif direction == "RIGHT" and drive_sequence_state == "LEFT_DONE":
+            broadcast_system_log("[Drive Seq] 원상복구: 역 롤 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b-50,50", "DriveMCU")
+            update_motor_state("b-50,50")
+            time.sleep(1.0)
+            broadcast_system_log("[Drive Seq] 원상복구: 역 요 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b50,50", "DriveMCU")
+            update_motor_state("b50,50")
+            drive_sequence_state = "IDLE"
+            
+        elif direction == "RIGHT" and drive_sequence_state == "IDLE":
+            broadcast_system_log("[Drive Seq] 우측 90도 요 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b50,50", "DriveMCU")
+            update_motor_state("b50,50")
+            time.sleep(1.0)
+            broadcast_system_log("[Drive Seq] 롤 회전(물체 이송)", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b50,-50", "DriveMCU")
+            update_motor_state("b50,-50")
+            drive_sequence_state = "RIGHT_DONE"
+            
+        elif direction == "LEFT" and drive_sequence_state == "RIGHT_DONE":
+            broadcast_system_log("[Drive Seq] 원상복구: 역 롤 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b-50,50", "DriveMCU")
+            update_motor_state("b-50,50")
+            time.sleep(1.0)
+            broadcast_system_log("[Drive Seq] 원상복구: 역 요 회전", "System")
+            if target_ip != "Unknown": send_tcp_command_async(target_ip, 5002, "b-50,-50", "DriveMCU")
+            update_motor_state("b-50,-50")
+            drive_sequence_state = "IDLE"
+        else:
+            broadcast_system_log(f"[Drive Seq] 무시됨: 현재 상태({drive_sequence_state})에서는 반대 조작만 가능합니다.", "System")
+            threading.Thread(target=tts_to_pcm_and_send, args=("해당 방향으로는 조작할 수 없습니다. 반대 방향으로 원상복구 해주세요.",), daemon=True).start()
+    except Exception as e:
+        broadcast_system_log(f"[Drive Seq] Error: {str(e)}", "System")
+
 @app.route('/api/control/update', methods=['POST'])
 def update_control_state():
     try:
+        global drive_pid_target
         data = request.get_json(silent=True)
         if not data: return jsonify({"status": "error"}), 400
         
@@ -1709,6 +1785,19 @@ def update_control_state():
             log_msg = f"Input Event -> Toggle Mode: {mode} | Push Switch (Sub): {sub_mode} | Joystick: {joy_str}"
             broadcast_system_log(log_msg, "ControlMCU")
             
+            # --- 푸쉬 버튼(음성 입력) 상태 변경 처리 ---
+            if sub_mode != prev_sub_mode:
+                if sub_mode == 2:
+                    broadcast_system_log("Voice Input Button Pressed. Starting PC Mic...", "ControlMCU")
+                    threading.Thread(target=send_end_of_speech_beep, args=(remote_ip,), daemon=True).start()
+                    send_tcp_command_async(remote_ip, 5002, "mic_ready", "ControlMCU")
+                    broadcast_event({"type": "control_mic", "action": "start"})
+                else:
+                    broadcast_system_log("Voice Input Button Released. Stopping PC Mic...", "ControlMCU")
+                    threading.Thread(target=send_end_of_speech_beep, args=(remote_ip,), daemon=True).start()
+                    send_tcp_command_async(remote_ip, 5002, "mic_done", "ControlMCU")
+                    broadcast_event({"type": "control_mic", "action": "stop"})
+            
         device_stats["ControlMCU"]["mode"] = mode
         device_stats["ControlMCU"]["sub_mode"] = sub_mode
         device_stats["ControlMCU"]["joystick"] = joystick
@@ -1716,79 +1805,85 @@ def update_control_state():
         # --- Logic Handling ---
         cmd = None
         target_mcu = None
-        steps = 100 # Default steps per joystick push
+        steps = 50 # Default steps per joystick push (50 is smooth for 120ms continuous hold)
         
-        if mode == "A": # Robot3AxisMCU
+        # Mode A: Robot X-Z Axis (Continuous)
+        if mode == "A": 
             target_mcu = "Robot3AxisMCU"
-            if sub_mode == 1: # X, Z
-                if joystick.get("up"): cmd = f"rz{steps}"
-                elif joystick.get("down"): cmd = f"rz-{steps}"
-                elif joystick.get("left"): cmd = f"rx-{steps}"
-                elif joystick.get("right"): cmd = f"rx{steps}"
-            else: # Y, Grab
-                if joystick.get("up"): cmd = f"ry{steps}"
-                elif joystick.get("down"): cmd = f"ry-{steps}"
-                elif joystick.get("left"): cmd = "grab open"
-                elif joystick.get("right"): cmd = "grab close"
+            if joystick.get("up"): cmd = f"rz{steps}"
+            elif joystick.get("down"): cmd = f"rz-{steps}"
+            elif joystick.get("left"): cmd = f"rx-{steps}"
+            elif joystick.get("right"): cmd = f"rx{steps}"
+            
+        # Mode N: Robot Y Axis & Gripper (Y continuous, Gripper one-shot)
+        elif mode == "N": 
+            target_mcu = "Robot3AxisMCU"
+            if joystick.get("up"): cmd = f"ry{steps}"
+            elif joystick.get("down"): cmd = f"ry-{steps}"
+            elif joystick.get("left") and state_changed: cmd = "grab open"
+            elif joystick.get("right") and state_changed: cmd = "grab close"
                 
-        elif mode == "B": # DriveMCU (Rail/Disk)
+        # Mode B: DriveMCU PID & Sequence Control (One-shot only)
+        elif mode == "B" and state_changed: 
             target_mcu = "DriveMCU"
-            if sub_mode == 1: # Rail/Yaw
-                if joystick.get("up"): cmd = f"df {steps}"
-                elif joystick.get("down"): cmd = f"db {steps}"
-                elif joystick.get("left"): cmd = f"dl {steps}"
-                elif joystick.get("right"): cmd = f"dr {steps}"
-            else: # Roll
-                if joystick.get("up"): cmd = f"mxr{steps},myr-{steps}"
-                elif joystick.get("down"): cmd = f"mxr-{steps},myr{steps}"
-        else: # Neutral (Mode N)
-            target_mcu = None
-            cmd = None
+            if joystick.get("up"): 
+                drive_pid_target += 5
+                cmd = f"mzt{drive_pid_target}"
+                threading.Thread(target=tts_to_pcm_and_send, args=(f"Z축 목표 거리를 {drive_pid_target}으로 올립니다.",), daemon=True).start()
+            elif joystick.get("down"):
+                drive_pid_target = max(0, drive_pid_target - 5)
+                cmd = f"mzt{drive_pid_target}"
+                threading.Thread(target=tts_to_pcm_and_send, args=(f"Z축 목표 거리를 {drive_pid_target}으로 내립니다.",), daemon=True).start()
+            elif joystick.get("left") or joystick.get("right"):
+                direction = "LEFT" if joystick.get("left") else "RIGHT"
+                threading.Thread(target=execute_drive_sequence, args=(direction, device_stats["DriveMCU"]["ip"]), daemon=True).start()
+                cmd = None
 
         # --- Forward Command ---
         if cmd and target_mcu:
             target_ip = device_stats[target_mcu]["ip"]
-            if target_ip != "Unknown":
-                try:
-                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    tcp_sock.settimeout(1.0)
-                    tcp_sock.connect((target_ip, 5002))
-                    # Batch command for DriveMCU or single command
-                    if ',' in cmd and target_mcu == "DriveMCU":
-                        cmds = cmd.split(',')
-                        for c in cmds:
-                            tcp_sock.sendall((c + "\n").encode())
-                            time.sleep(0.01)
-                    else:
-                        tcp_sock.sendall((cmd + "\n").encode())
-                    tcp_sock.close()
+            if target_ip and target_ip != "Unknown":
+                # 비동기 전송으로 변경 (Flask 워커 블로킹 방지)
+                if ',' in cmd and target_mcu == "DriveMCU":
+                    cmds = cmd.split(',')
+                    for c in cmds:
+                        send_tcp_command_async(target_ip, 5002, c, target_mcu)
+                        time.sleep(0.01)
+                else:
+                    send_tcp_command_async(target_ip, 5002, cmd, target_mcu)
+                
+                if state_changed: # 최초 입력 시에만 로그 출력 (연속 입력 도배 방지)
                     broadcast_system_log(f"ControlMCU -> {target_mcu}: {cmd}", "System")
                     
-                    # Update Internal Simulation State if needed
-                    if target_mcu == "Robot3AxisMCU":
-                        # Simulate locally
-                        try:
-                            # Parse steps from cmd (e.g. "rx100" or "rx-100")
-                            s_val = 0
-                            if cmd.startswith("rx") or cmd.startswith("ry") or cmd.startswith("rz"):
-                                s_val = int(cmd[2:])
-                            
-                            if cmd.startswith("rx"): 
-                                robot3axis_state["x_steps"] += s_val
-                                robot3axis_state["x_deg"] += (s_val * 0.5)
-                            elif cmd.startswith("ry"): 
-                                robot3axis_state["y_steps"] += s_val
-                                robot3axis_state["y_mm"] += (s_val * -0.043)
-                            elif cmd.startswith("rz"): 
-                                robot3axis_state["z_steps"] += s_val
-                                robot3axis_state["z_mm"] += (s_val * -0.228)
-                            broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
-                        except: pass
-                    elif target_mcu == "DriveMCU":
-                        update_motor_state(cmd)
+            # Update Internal Simulation State if needed (오프라인 상태 및 연속 입력 반영)
+            if target_mcu == "Robot3AxisMCU":
+                # Simulate locally
+                try:
+                    # Parse steps from cmd (e.g. "rx100" or "rx-100")
+                    s_val = 0
+                    if cmd.startswith("rx") or cmd.startswith("ry") or cmd.startswith("rz"):
+                        s_val = int(cmd[2:])
+                    
+                    if cmd.startswith("rx"): 
+                        robot3axis_state["x_steps"] += s_val
+                        robot3axis_state["x_deg"] += (s_val * 0.5)
+                    elif cmd.startswith("ry"): 
+                        robot3axis_state["y_steps"] += s_val
+                        robot3axis_state["y_mm"] += (s_val * -0.043)
+                    elif cmd.startswith("rz"): 
+                        robot3axis_state["z_steps"] += s_val
+                        robot3axis_state["z_mm"] += (s_val * -0.228)
+                    elif cmd == "grab open":
+                        robot3axis_state["grab_state"] = "open"
+                    elif cmd == "grab close":
+                        robot3axis_state["grab_state"] = "closed"
+                    
+                    broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
+                except: pass
+            elif target_mcu == "DriveMCU" and state_changed:
+                update_motor_state(cmd)
                         
-                except Exception as e:
-                    broadcast_system_log(f"Control Link Failed: {e}", "Error")
+
 
         # Broadcast Status update for UI
         payload = {"type": "status", "status": get_status()}
@@ -1865,7 +1960,6 @@ def send_drive_command():
         # 1. Update Internal State
         CONFIG["drivemcu_command"] = cmd
         update_motor_state(cmd)
-        broadcast_event({"type": "drive_update", "state": motor_state, "settings": drive_settings})
         
         # 2. Send via TCP (Async to improve HMI responsiveness)
         if CONFIG["drivemcu_ip"]:
@@ -2452,14 +2546,13 @@ def get_music_status():
 
 RADIO_STATIONS = [
     {"name": "CBS 음악FM (93.9 MHz - 가요/팝 명가)", "url": "https://m-aac.cbs.co.kr/mweb_cbs939/_definst_/cbs939.stream/playlist.m3u8"},
-    {"name": "KBS Cool FM (89.1 MHz - 대중음악/예능)", "url": "http://kbs-kong.gscdn.com/coolfm/_definst_/coolfm.stream/playlist.m3u8"},
-    {"name": "SBS Power FM (107.7 MHz - 종합예능)", "url": "http://radiolive.sbs.co.kr/powerpc/powerfm.stream/playlist.m3u8"},
-    {"name": "MBC FM4U (91.9 MHz - 감성팝/예능)", "url": "http://mini-fm.imbc.com/fm4u/_definst_/fm4u.stream/playlist.m3u8"},
-    {"name": "YTN 라디오 (94.5 MHz - 24시간 실시간 뉴스)", "url": "https://ytnradio.ytn.co.kr/ytnradio/_definst_/ytnradio.stream/playlist.m3u8"},
-    {"name": "EBS 교육방송 (104.5 MHz - 어학/지성)", "url": "http://ebs-aac.gscdn.com/ebs_fm/_definst_/ebs_fm.stream/playlist.m3u8"},
-    {"name": "Lofi Girl Live (24시간 공부용 비트)", "url": "http://stream.zeno.fm/0r0xa792u0eut"},
-    {"name": "SomaFM Groove Salad (세련된 전자 앰비언트)", "url": "http://ice1.somafm.com/groovesalad-128-mp3"},
-    {"name": "Cafe del Mar (정통 스페인 칠아웃)", "url": "http://stream.cafedelmar.com:8000/stream"}
+    {"name": "BBS 불교방송 (101.9 MHz - 명상/불교)", "url": "http://bbslive.clouducs.com/bbsfm-live/play.sdp/playlist.m3u8"},
+    {"name": "CPBC 평화방송 (105.3 MHz - 클래식/천주교)", "url": "https://stream.epbc.co.kr/cpbc_fm/fmlive/playlist.m3u8"},
+    {"name": "Arirang Radio (글로벌 K-pop)", "url": "http://ebsonair.arirang.com/arirangradio/arirangradio.stream/playlist.m3u8"},
+    {"name": "Lofi Girl Live (24시간 공부용 힙합 비트)", "url": "https://www.youtube.com/watch?v=4xDzrUhVKcg"},
+    {"name": "Chillhop Radio (재즈/로파이)", "url": "https://www.youtube.com/watch?v=5yx6BWlEVcY"},
+    {"name": "K-Pop Live 24/7 (유튜브 라이브)", "url": "https://www.youtube.com/watch?v=qT2x-3p_0W4"},
+    {"name": "클래식 실시간 스트리밍 (Mozart, Chopin)", "url": "https://www.youtube.com/watch?v=1bXhS9U-KjE"}
 ]
 
 @app.route('/api/radio/play', methods=['POST'])
@@ -2492,6 +2585,22 @@ def play_radio_station():
             
         if not stream_url:
             return jsonify({"status": "error", "message": "Stream URL is empty"}), 400
+            
+        # 유튜브 URL일 경우 yt-dlp를 사용해 직접 스트리밍 주소(m3u8) 해독
+        if "youtube.com" in stream_url or "youtu.be" in stream_url:
+            broadcast_system_log(f"유튜브 라이브 스트림 해독 중: {station_name}", "Sound")
+            try:
+                import yt_dlp
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'quiet': True,
+                    'nocheckcertificate': True
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(stream_url, download=False)
+                    stream_url = info.get('url', stream_url)
+            except Exception as e:
+                return jsonify({"status": "error", "message": f"YouTube Live stream resolution failed: {e}"}), 400
             
         # 1. Voice Queue 중단
         voice_queue_manager.stop()
@@ -2539,8 +2648,14 @@ def list_music_files():
         if not os.path.exists(music_dir):
             os.makedirs(music_dir, exist_ok=True)
             
-        files = [f for f in os.listdir(music_dir) if f.lower().endswith(('.mp3', '.wav', '.ogg'))]
-        return jsonify({"status": "success", "files": files})
+        youtube_dir = os.path.join(music_dir, "Youtube")
+        os.makedirs(youtube_dir, exist_ok=True)
+        
+        local_files = [f for f in os.listdir(music_dir) if os.path.isfile(os.path.join(music_dir, f)) and f.lower().endswith(('.mp3', '.wav', '.ogg'))]
+        yt_files = [f"Youtube/{f}" for f in os.listdir(youtube_dir) if os.path.isfile(os.path.join(youtube_dir, f)) and f.lower().endswith(('.mp3', '.wav', '.ogg'))]
+        
+        files = local_files + yt_files
+        return jsonify({"status": "success", "files": files, "local_files": local_files, "youtube_files": yt_files})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -2575,35 +2690,35 @@ def play_youtube_audio():
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
             
-        audio_dir = os.path.join(base_dir, "static", "audio")
-        os.makedirs(audio_dir, exist_ok=True)
+        music_dir = os.path.join(base_dir, "MusicData")
+        youtube_dir = os.path.join(music_dir, "Youtube")
+        os.makedirs(youtube_dir, exist_ok=True)
         
-        # 고유 타임스탬프 기반 파일명 지정 (WinError 32 및 윈도우 파일 공유 락 원천 회쇄!)
-        import time
-        unique_timestamp = int(time.time())
-        output_base = os.path.join(audio_dir, f"yt_download_{unique_timestamp}")
-        output_file = output_base + ".wav"
+        output_template = os.path.join(youtube_dir, '%(title)s.%(ext)s')
         
-        # 이전 쓰레기 임시 오디오 파일들 백그라운드 안전 청소 (자원 누수 방지)
-        for old_file in os.listdir(audio_dir):
-            if old_file.startswith("yt_download_") and old_file.endswith(".wav"):
+        def progress_hook(d):
+            if d['status'] == 'downloading':
                 try:
-                    os.remove(os.path.join(audio_dir, old_file))
-                except Exception:
-                    pass # 현재 재생 등으로 잠긴 파일은 무리하게 지우지 않고 무결 통과
-                    
+                    percent_str = d.get('_percent_str', '').strip()
+                    if percent_str:
+                        broadcast_event({"type": "youtube_progress", "text": f"Downloading... {percent_str}"})
+                except:
+                    pass
+        
         ydl_opts = {
             'format': 'bestaudio/best',
-            'outtmpl': output_base + '.%(ext)s', # 확장자 충돌 방지를 위한 올바른 템플릿 구성
+            'noplaylist': True,
+            'outtmpl': output_template,
+            'progress_hooks': [progress_hook],
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'wav',
                 'preferredquality': '192',
             }],
             'keepvideo': False,
-            'quiet': False, # 디버깅이 용이하도록 완전 침묵 해제
+            'quiet': False,
             'no_warnings': False,
-            'nocheckcertificate': True, # SSL 인증서 검증 오류 우회
+            'nocheckcertificate': True,
             'headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -2613,49 +2728,38 @@ def play_youtube_audio():
         
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+                info = ydl.extract_info(url, download=True)
+                title = info.get('title', 'Unknown Title')
+                # yt-dlp generates safe filenames, we can construct the final wav path
+                # Or safely find the newest wav file in youtube_dir if name matching is hard
+                expected_filename = ydl.prepare_filename(info)
+                # Since we use postprocessor to wav, replace extension with wav
+                base_name = os.path.splitext(os.path.basename(expected_filename))[0]
+                final_wav_name = base_name + ".wav"
+                final_wav_path = os.path.join(youtube_dir, final_wav_name)
         except Exception as dl_err:
             broadcast_system_log(f"yt-dlp 다운로드 실행 오류: {dl_err}", "Error")
             return jsonify({"status": "error", "message": f"Download extraction failed: {dl_err}"}), 500
             
-        if not os.path.exists(output_file):
-            # 혹시나 임시 파일 명칭 매칭 오차 대비 자동 변환 복구 장치 작동
-            actual_wav = None
-            for file_in_dir in os.listdir(audio_dir):
-                if file_in_dir.startswith(f"yt_download_{unique_timestamp}") and file_in_dir.endswith(".wav"):
-                    actual_wav = os.path.join(audio_dir, file_in_dir)
-                    break
-            if actual_wav and os.path.exists(actual_wav):
-                # 고유 경로명이 완벽히 다를 때만 rename을 진행하여 WinError 32 원천 예방!
-                if os.path.abspath(actual_wav) != os.path.abspath(output_file):
-                    try:
-                        os.rename(actual_wav, output_file)
-                    except Exception:
-                        output_file = actual_wav # 그냥 잠긴 파일 주소 그대로 대체
-                else:
-                    output_file = actual_wav
-            else:
-                return jsonify({"status": "error", "message": "YouTube audio WAV extraction file not found on disk."}), 500
+        if not os.path.exists(final_wav_path):
+            return jsonify({"status": "error", "message": "YouTube audio WAV extraction file not found on disk."}), 500
             
-        broadcast_system_log("유튜브 오디오 추출 및 WAV 패키징 완료, 재생 준비 중...", "Sound")
+        broadcast_system_log(f"유튜브 오디오 저장 완료: {final_wav_name}, 재생 준비 중...", "Sound")
         
-        # 디코딩 및 linear resampling (초고속!)
-        audio_data, fs = sf.read(output_file)
-        if len(audio_data.shape) > 1:
-            audio_data = audio_data[:, 0] # Mono 변환
-            
-        pcm_data_float = resample_linear(audio_data, fs, SAMPLE_RATE)
-        pcm_data = (pcm_data_float * 32767).astype(np.int16)
+        # 이제 임시 스트리밍이 아니라, 보관함에 들어갔으므로 MusicPlayer를 사용하여 정식 재생!
+        # 기존 음악 플레이어 중지
+        music_player.stop()
+        time.sleep(0.05)
         
-        # 100ms 침묵 패딩
-        silence_padding = np.zeros(1600, dtype=np.int16)
-        final_pcm = np.concatenate([silence_padding, pcm_data])
+        rel_path = f"Youtube/{final_wav_name}"
+        music_player.load(rel_path, final_wav_path)
+        music_player.play()
         
-        # 즉시 연주하도록 priority=0으로 대기열에 추가!
-        voice_queue_manager.add_pcm(final_pcm, priority=0)
+        broadcast_system_log(f"유튜브 음악 재생 시작: {title}", "Sound")
+        # 클라이언트 UI 업데이트를 위한 broadcast
+        broadcast_event({"type": "music_status", "status": music_player.get_status()})
         
-        broadcast_system_log("유튜브 오디오 스트리밍 재생 시작", "Sound")
-        return jsonify({"status": "success", "message": "YouTube audio streaming initiated successfully."})
+        return jsonify({"status": "success", "message": f"YouTube audio saved and playing: {title}"})
         
     except Exception as e:
         broadcast_system_log(f"유튜브 재생 오류: {e}", "Error")
@@ -2705,9 +2809,9 @@ class AudioMirrorStreamer:
         
         try:
             import soundcard as sc
-            default_speaker = sc.default_speaker()
+            loopback_mic = sc.get_microphone(id=str(sc.default_speaker().id), include_loopback=True)
             # 윈도우 스피커 루프백 레코더 확보 (48kHz 스테레오)
-            self.recorder = default_speaker.recorder(samplerate=48000, channels=2)
+            self.recorder = loopback_mic.recorder(samplerate=48000, channels=2)
         except Exception as e:
             broadcast_system_log(f"스피커 루프백 캡처 초기화 실패: {e}", "Error")
             with self.lock:
@@ -2902,6 +3006,259 @@ def ai_persona_api():
             return jsonify({"status": "success"})
         return jsonify({"status": "error", "message": "Save failed"}), 500
 
+# --- HMI Approval Queue for Voice Commands ---
+pending_hmi_actions = []
+
+def queue_action(desc, callback):
+    global pending_hmi_actions
+    action_id = str(int(time.time() * 1000))
+    pending_hmi_actions.append({
+        "id": action_id,
+        "desc": desc,
+        "callback": callback
+    })
+    broadcast_system_log(f"HMI 승인 대기 중: {desc}", "System")
+    return f"사용자의 HMI 보드 승인을 대기중입니다. (요청: {desc})"
+
+@app.route('/api/hmi/approve', methods=['POST'])
+def hmi_approve():
+    data = request.get_json(silent=True) or {}
+    action_id = data.get("id")
+    approved = data.get("approve", False)
+    
+    global pending_hmi_actions
+    target = next((a for a in pending_hmi_actions if str(a["id"]) == str(action_id)), None)
+    if target:
+        pending_hmi_actions.remove(target)
+        if approved:
+            broadcast_system_log(f"HMI 승인됨: {target['desc']}", "System")
+            try:
+                target["callback"]()
+            except Exception as e:
+                broadcast_system_log(f"실행 오류: {e}", "System")
+        else:
+            broadcast_system_log(f"HMI 거부됨: {target['desc']}", "System")
+            threading.Thread(target=tts_to_pcm_and_send, args=(f"명령이 취소되었습니다. ({target['desc']})",), daemon=True).start()
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Action not found"}), 404
+
+
+def get_mcu_system_status() -> dict:
+    """Returns the current online/offline status, IP, environment sensors, and motor coordinates of all connected devices. Use this to check if DriveMCU is Online, to know current motor angles, or to view camera's recent analysis results under 'imagesendermcu' -> 'last_analysis' and config."""
+    return get_status()
+
+def control_drivemcu_motor(command: str) -> str:
+    """Sends a control command to the DriveMCU motor. Returns success after HMI approval."""
+    state = get_status()
+    connections = state.get("connections", {})
+    is_online = connections.get("drivemcu") == "Online" and device_stats["DriveMCU"]["ip"] != "Unknown"
+    ip = CONFIG.get("drivemcu_ip")
+
+    def on_approve():
+        if is_online and ip and ip != "Unknown":
+            send_tcp_command_async(ip, 5002, command, "DriveMCU")
+        else:
+            threading.Thread(target=tts_to_pcm_and_send, args=("드라이브 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            broadcast_system_log("DriveMCU is Offline. Applying to simulation only.", "System")
+            
+        update_motor_state(command)
+        payload = {"type": "status", "status": get_status()}
+        broadcast_event(payload)
+        
+    return queue_action(f"드라이브 제어({command})", on_approve)
+
+def control_pneumatic_gripper(action: str) -> str:
+    """Controls the pneumatic gripper. Action must be 'open' or 'close'."""
+    if action.lower() == "close":
+        cmd, state_val, msg = "grab close", "closed", "그리퍼 클로즈!"
+    else:
+        cmd, state_val, msg = "grab open", "open", "그리퍼 오픈!"
+    
+    target_ip = device_stats["Robot3AxisMCU"]["ip"]
+    is_online = target_ip and target_ip != "Unknown"
+
+    def on_approve():
+        robot3axis_state["grab_state"] = state_val
+        if is_online:
+            send_tcp_command_async(target_ip, 5002, cmd, "Robot3Axis")
+            threading.Thread(target=tts_to_pcm_and_send, args=(msg,), daemon=True).start()
+        else:
+            threading.Thread(target=tts_to_pcm_and_send, args=("로봇 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            broadcast_system_log("Robot3AxisMCU is Offline. Applying to simulation only.", "System")
+        broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
+    return queue_action(f"그리퍼 {action}", on_approve)
+
+def trigger_image_sensor() -> str:
+    """Triggers the ImageSenderMCU to capture and analyze an image."""
+    def on_approve():
+        CONFIG["imagesendermcu"]["command"] = "capture"
+        threading.Thread(target=tts_to_pcm_and_send, args=("이미지 캡쳐 및 분석을 시작합니다!",), daemon=True).start()
+        broadcast_system_log("ImageSender command updated: capture", "System")
+        broadcast_event({"type": "status", "status": get_status()})
+    return queue_action("이미지 센서 촬영", on_approve)
+
+def update_camera_settings(resolution: str, jpeg_quality: int, transmission_mode: str) -> str:
+    """Updates the ImageSenderMCU camera settings. Valid resolution: VGA, SVGA, XGA, SXGA, UXGA. Valid quality: 5 to 40. Valid mode: TCP, UDP."""
+    def on_approve():
+        CONFIG["imagesendermcu"]["resolution"] = resolution
+        CONFIG["imagesendermcu"]["jpeg_quality"] = max(5, min(40, jpeg_quality))
+        CONFIG["imagesendermcu"]["transmission_mode"] = transmission_mode
+        CONFIG["imagesendermcu"]["command"] = "UPDATE"
+        save_config_to_env()
+        threading.Thread(target=tts_to_pcm_and_send, args=(f"카메라 설정을 해상도 {resolution}, 품질 {jpeg_quality}로 변경합니다.",), daemon=True).start()
+        broadcast_system_log(f"Camera Settings Applied: Res={resolution}, Qual={jpeg_quality}, Mode={transmission_mode}", "System")
+        broadcast_event({"type": "status", "status": get_status()})
+    return queue_action(f"카메라 설정 변경 ({resolution})", on_approve)
+
+def move_3axis_robot(x_deg: float, y_mm: float, z_mm: float) -> str:
+    """Moves the 3-axis robot to an absolute preset coordinate."""
+    target_x_steps = int(x_deg * 2.0)
+    target_y_steps = int(y_mm * 1000.0 / -43.0)
+    target_z_steps = int(z_mm * 1400.0 / -320.0)
+    
+    sx = target_x_steps - robot3axis_state["x_steps"]
+    sy = target_y_steps - robot3axis_state["y_steps"]
+    sz = target_z_steps - robot3axis_state["z_steps"]
+    cmd = f"a{sx},{sy},{sz}"
+    
+    target_ip = device_stats["Robot3AxisMCU"]["ip"]
+    is_online = target_ip and target_ip != "Unknown"
+
+    def on_approve():
+        robot3axis_state["x_steps"] += sx
+        robot3axis_state["x_deg"] = x_deg
+        robot3axis_state["y_steps"] += sy
+        robot3axis_state["y_mm"] = y_mm
+        robot3axis_state["z_steps"] += sz
+        robot3axis_state["z_mm"] = z_mm
+        
+        if is_online:
+            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 절대 좌표 이동을 시작합니다.",), daemon=True).start()
+            send_tcp_command_async(target_ip, 5002, cmd, "Robot3Axis")
+        else:
+            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇이 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            broadcast_system_log("Robot3AxisMCU is Offline. Applying to simulation only.", "System")
+            
+        broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
+        
+    return queue_action(f"3축 로봇 이동({x_deg}deg, {y_mm}mm, {z_mm}mm)", on_approve)
+
+def homing_all_robots() -> str:
+    """Returns all robots to their home/origin positions."""
+    def on_approve():
+        results = []
+        is_drive_online = device_stats["DriveMCU"]["ip"] != "Unknown"
+        is_robot_online = device_stats["Robot3AxisMCU"]["ip"] != "Unknown"
+        
+        # DriveMCU Homing in simulation
+        steps_x = -motor_state["mx_steps"]
+        steps_y = -motor_state["my_steps"]
+        if is_drive_online:
+            send_tcp_command_async(device_stats["DriveMCU"]["ip"], 5002, f"b{steps_x},{steps_y}", "DriveMCU")
+            results.append("DriveMCU homing.")
+        
+        update_motor_state("CMD_HOME")
+            
+        # Robot3AxisMCU Homing in simulation
+        sx, sy, sz = -robot3axis_state["x_steps"], -robot3axis_state["y_steps"], -robot3axis_state["z_steps"]
+        if is_robot_online:
+            send_tcp_command_async(device_stats["Robot3AxisMCU"]["ip"], 5002, f"a{sx},{sy},{sz}", "Robot3Axis")
+            results.append("Robot3AxisMCU homing.")
+            
+        robot3axis_state.update({"x_steps": 0, "y_steps": 0, "z_steps": 0, "x_deg": 0.0, "y_mm": 0.0, "z_mm": 0.0})
+        broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
+            
+        if is_drive_online or is_robot_online:
+            threading.Thread(target=tts_to_pcm_and_send, args=("모든 로봇을 원점 위치로 복귀시킵니다.",), daemon=True).start()
+        else:
+            threading.Thread(target=tts_to_pcm_and_send, args=("로봇들이 오프라인 상태입니다. 시뮬레이션에만 원점 복귀를 반영합니다.",), daemon=True).start()
+            
+        broadcast_event({"type": "status", "status": get_status()})
+    return queue_action("전체 로봇 원점 복귀", on_approve)
+def get_available_music_list() -> list:
+    """Returns a list of local music files available to play. Use this to find a filename to play when the user asks for local music."""
+    try:
+        import requests
+        response = requests.get(f"http://127.0.0.1:{CONFIG.get('local_port', 5000)}/api/music/list")
+        if response.status_code == 200:
+            return response.json().get("files", [])
+    except:
+        pass
+    return []
+
+def play_local_music_file(filename: str) -> str:
+    """Plays a local music file. The filename MUST be exactly one of the files returned by get_available_music_list()."""
+    try:
+        import requests
+        response = requests.post(f"http://127.0.0.1:{CONFIG.get('local_port', 5000)}/api/music/play", json={"filename": filename})
+        if response.status_code == 200:
+            return "Playing local music successfully."
+    except Exception as e:
+        return f"Failed to play music: {e}"
+    return "Failed to play music."
+
+def play_youtube_search(query: str) -> str:
+    """Searches YouTube for the query (e.g. 'Beatles Let It Be' or '아이유 좋은날') and plays the first audio result."""
+    try:
+        import yt_dlp
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'noplaylist': True,
+            'quiet': True,
+            'default_search': 'ytsearch1'
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(query, download=False)
+            if 'entries' in info and len(info['entries']) > 0:
+                video = info['entries'][0]
+                url = video.get('webpage_url')
+                title = video.get('title')
+                import requests
+                import threading
+                threading.Thread(target=lambda: requests.post(f"http://127.0.0.1:{CONFIG.get('local_port', 5000)}/api/youtube/play", json={"url": url}), daemon=True).start()
+                return f"Playing YouTube audio: {title}"
+    except Exception as e:
+        return f"Failed to search or play YouTube: {e}"
+    return "Failed to find any YouTube results."
+
+def search_youtube_list(query: str) -> list:
+    """Searches YouTube and returns a list of top 5 videos. Use this when the user's music request is ambiguous."""
+    try:
+        import yt_dlp
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'noplaylist': True,
+            'quiet': True,
+            'default_search': 'ytsearch5',
+            'extract_flat': True
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(query, download=False)
+            results = []
+            if 'entries' in info:
+                for idx, entry in enumerate(info['entries']):
+                    results.append({
+                        "id": idx + 1,
+                        "title": entry.get('title'),
+                        "channel": entry.get('uploader'),
+                        "duration": entry.get('duration'),
+                        "url": entry.get('url')
+                    })
+            return results
+    except Exception as e:
+        return [f"Error: {e}"]
+    return []
+
+def play_youtube_url(url: str) -> str:
+    """Plays a specific YouTube URL. Call this after the user has selected a video from the search results."""
+    try:
+        import requests
+        import threading
+        threading.Thread(target=lambda: requests.post(f"http://127.0.0.1:{CONFIG.get('local_port', 5000)}/api/youtube/play", json={"url": url}), daemon=True).start()
+        return f"Started downloading and playing YouTube URL: {url}"
+    except Exception as e:
+        return f"Failed to play YouTube URL: {e}"
+
 
 def get_gemini_conversational_response(user_text):
     global conversation_history
@@ -2923,19 +3280,35 @@ def get_gemini_conversational_response(user_text):
             "- [friendly]: for general casual friendly talk\n"
             "- [whispering]: for quiet, secret, confidential, or very soft replies\n"
             "Example format: '[cheerful] 안녕하세요! 오늘 어떤 즐거운 일이 있으셨나요?'\n"
-            "IMPORTANT: Never include SSML tags, markdown formatting like ** or #, or any technical configuration data in your output."
+            "IMPORTANT: Never include SSML tags, markdown formatting like ** or #, or any technical configuration data in your output.\n"
+            "TOOLS & CAPABILITIES:\n"
+            "You are a highly capable robot AI assistant. You must proactively use the provided tools to fulfill user requests:\n"
+            "1. Music & YouTube: You can search and play YouTube audio, or play locally saved music.\n"
+            "2. Vision & Camera: You can capture images from the robot's camera for material analysis, or update camera settings (brightness, etc.).\n"
+            "3. Robot Control: You can move the DriveMCU (wheels), move the 3-Axis Robot arm, operate the pneumatic gripper, and perform homing.\n"
+            "4. System Status: You can check the real-time status of all MCUs to diagnose issues.\n"
+            "5. Ambiguity Handling: If the user's request is ambiguous (e.g., 'play music' without a specific song, or 'move the motor' without specifying which robot part), DO NOT guess. Instead, proactively ask the user to clarify by providing options. For example, if they want YouTube music, use search_youtube_list to get top 5 results and show them to the user so they can choose. If they want motor control, ask if they mean the Drive wheels or the 3-Axis arm.\n"
+            "Do not hesitate to call multiple tools if necessary."
         )
         
-        # 공식 system_instruction 파라미터 사용으로 답변 누출 방지
+        # 공식 system_instruction 파라미터 및 tools 사용
         model = genai.GenerativeModel(
             model_name=CONFIG["model_name"],
-            system_instruction=system_instruction
+            system_instruction=system_instruction,
+            tools=[get_mcu_system_status, control_drivemcu_motor, control_pneumatic_gripper, trigger_image_sensor, move_3axis_robot, homing_all_robots, update_camera_settings, get_available_music_list, play_local_music_file, play_youtube_search, search_youtube_list, play_youtube_url]
         )
         
-        chat = model.start_chat(history=[
-            {"role": r["role"].lower().replace("ai", "model"), "parts": [r["text"]]} 
-            for r in conversation_history[-10:]
-        ])
+        # 이전 대화 기록 포맷 변환 (함수 호출 기록 등 복잡한 객체는 제외하고 텍스트만 유지)
+        formatted_history = []
+        for r in conversation_history[-10:]:
+            # 시스템 및 에러 메시지 필터링
+            if r["role"] in ["User", "AI"]:
+                formatted_history.append({"role": r["role"].lower().replace("ai", "model"), "parts": [r["text"]]})
+
+        chat = model.start_chat(
+            history=formatted_history,
+            enable_automatic_function_calling=True
+        )
         
         response = chat.send_message(user_text)
         ai_text = response.text.strip()
@@ -2945,6 +3318,7 @@ def get_gemini_conversational_response(user_text):
         
         return ai_text
     except Exception as e:
+        print(f"Gemini Chat Error: {e}")
         return f"죄송합니다, 오류가 발생했습니다: {str(e)}"
 
 def powershell_tts(text, output_file):

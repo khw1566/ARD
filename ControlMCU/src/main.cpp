@@ -17,7 +17,7 @@
 #define TOGGLE_A 35
 #define TOGGLE_B 36
 #define PUSH_BTN 11       // GPIO11 = 버튼 입력
-#define BUTTON_LED_PIN 10 // 버튼에 달린 외부 LED
+#define BUTTON_LED_PIN 4 // 4번 핀의 LED (음성입력 상태 표시)
 #define LED_PIN 48        // 보드 내장 WS2812B RGB LED
 #define NUM_LEDS 1
 
@@ -54,6 +54,7 @@ String serverUrl = "http://192.168.0.35:5000";
 volatile char currentMode = 'N'; // 'A', 'N'(Neutral), 'B'
 volatile int currentSubMode = 1;
 bool joyState[4] = {false, false, false, false};
+volatile bool forceStateUpdate = false; // 즉시 상태 전송 플래그
 
 // --- Task Handles ---
 TaskHandle_t hControlTask = NULL;
@@ -569,10 +570,11 @@ void networkTask(void *pvParameters) {
     unsigned long current = millis();
     unsigned long interval = isAnyJoy ? 120 : 2000;
 
-    if (current - lastSend >= interval) {
+    if (current - lastSend >= interval || forceStateUpdate) {
+      forceStateUpdate = false;
       sendStateToPC();
       sendHeartbeat(); // 표준 하트비트 추가 전송
-      lastSend = current;
+      lastSend = millis();
     }
 
     if (Serial.available()) {
@@ -673,14 +675,15 @@ void controlTask(void *pvParameters) {
 
     // Sub-mode Push (Latching Switch)
     bool btn = (digitalRead(PUSH_BTN) == LOW);
-    currentSubMode = btn ? 2 : 1;
-    digitalWrite(BUTTON_LED_PIN,
-                 btn ? HIGH : LOW); // 버튼 누름(유지) 상태일 때 LED 켬
-
+    
     if (btn != (lastBtn == LOW)) {
+      currentSubMode = btn ? 2 : 1;
+      forceStateUpdate = true; // PC로 즉시 상태 변경 전송 요청
+      
       if (btn) {
-        Serial.println("[Audio] Play Next Station (Test)");
-        // 버튼 누를 때마다 다른 스트림으로 변경 테스트 가능 (필요시)
+        Serial.println("[Input] Voice Button Pressed");
+      } else {
+        Serial.println("[Input] Voice Button Released");
       }
     }
     lastBtn = btn ? LOW : HIGH;
@@ -747,7 +750,7 @@ void tcpServerTask(void *pvParameters) {
     if (client) {
       Serial.println("[TCP Server] PC Center connected");
       String command = "";
-      while (client.connected()) {
+      while (client.connected() || client.available()) {
         if (client.available()) {
           char c = client.read();
           if (c == '\n' || c == '\r') {
@@ -776,6 +779,18 @@ void tcpServerTask(void *pvParameters) {
                 isAiSpeaking = false;
                 Serial.println("[TCP Server] Stop command executed. All audio stopped.");
                 client.println("Audio stopped");
+              }
+              else if (command == "mic_ready") {
+                digitalWrite(BUTTON_LED_PIN, HIGH);
+                audio.stopSong(); // 오디오 스트리밍 중지
+                Serial.println("[TCP Server] Mic Ready");
+                client.println("OK");
+              }
+              else if (command == "mic_done") {
+                digitalWrite(BUTTON_LED_PIN, LOW);
+                audio.stopSong(); // 오디오 스트리밍 중지
+                Serial.println("[TCP Server] Mic Done");
+                client.println("OK");
               }
               else if (command.startsWith("radio=")) {
                 int eqIdx = command.indexOf('=');
@@ -827,7 +842,7 @@ void setup() {
   pinMode(TOGGLE_B, INPUT_PULLUP);
   pinMode(PUSH_BTN, INPUT_PULLUP);
   pinMode(BUTTON_LED_PIN, OUTPUT);
-  digitalWrite(BUTTON_LED_PIN, HIGH);
+  digitalWrite(BUTTON_LED_PIN, LOW); // 기본 상태는 꺼짐 (LOW)
 
   pinMode(AMP_SD, OUTPUT);
   digitalWrite(AMP_SD, HIGH);

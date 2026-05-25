@@ -2187,6 +2187,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         mainChat.scrollTop = mainChat.scrollHeight;
                     }
                 }
+            } else if (data.type === 'control_mic') {
+                if (data.action === 'start' && !isPcMicActive) {
+                    if (typeof togglePCMic === 'function') togglePCMic();
+                } else if (data.action === 'stop' && isPcMicActive) {
+                    if (typeof stopPCMic === 'function') stopPCMic();
+                }
             } else if (data.type === 'update') {
                 if (data.analysis && data.analysis.type === 'voice') {
                     // STT 완료 시 임시 로딩 버블 즉시 삭제
@@ -2223,6 +2229,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (data.type === 'log') {
                 addLog(data.source, data.message, data.timestamp);
+            } else if (data.type === 'youtube_progress') {
+                const mainChat = document.getElementById('chat-display-main');
+                if (mainChat) {
+                    let progBubble = document.getElementById('youtube-progress-bubble');
+                    if (!progBubble) {
+                        progBubble = document.createElement('div');
+                        progBubble.id = 'youtube-progress-bubble';
+                        progBubble.className = 'chat-bubble chat-bubble-ai';
+                        progBubble.style.background = 'rgba(16, 185, 129, 0.1)';
+                        progBubble.style.border = '1px solid #10b981';
+                        progBubble.innerHTML = `<span class="role" style="color:#10b981;">System Info</span><div class="text" id="youtube-progress-text"></div>`;
+                        mainChat.appendChild(progBubble);
+                    }
+                    document.getElementById('youtube-progress-text').textContent = data.text;
+                    mainChat.scrollTop = mainChat.scrollHeight;
+                    
+                    if (window.ytProgTimer) clearTimeout(window.ytProgTimer);
+                    window.ytProgTimer = setTimeout(() => {
+                        const pb = document.getElementById('youtube-progress-bubble');
+                        if (pb) pb.remove();
+                    }, 5000);
+                }
             } else if (data.type === 'robot3axis_update') {
                 window.currentRobot3AxisState = data.state;
                 if (window.updateRobot3AxisHUD) {
@@ -3181,13 +3209,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (data.status === 'success') {
                 container.innerHTML = '';
-                const files = data.files || [];
-                if (files.length === 0) {
+                const localFiles = data.local_files || [];
+                const ytFiles = data.youtube_files || [];
+                
+                if (localFiles.length === 0 && ytFiles.length === 0) {
                     container.innerHTML = '<div style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding-top: 200px;">보관함이 비어 있습니다. (MusicData 폴더)</div>';
                     return;
                 }
                 
-                files.forEach(file => {
+                const createSectionHeader = (title) => {
+                    const header = document.createElement('div');
+                    header.style.color = 'var(--success)';
+                    header.style.fontSize = '0.8rem';
+                    header.style.fontWeight = 'bold';
+                    header.style.marginTop = '15px';
+                    header.style.marginBottom = '8px';
+                    header.style.paddingBottom = '4px';
+                    header.style.borderBottom = '1px solid rgba(16,185,129,0.3)';
+                    header.innerText = title;
+                    container.appendChild(header);
+                };
+
+                const createFileItem = (file, isYoutube) => {
                     const item = document.createElement('div');
                     item.className = 'music-item';
                     item.style.padding = '12px 16px';
@@ -3206,7 +3249,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.style.alignItems = 'center';
                     item.style.gap = '10px';
                     
-                    item.innerHTML = `<span class="music-icon" style="font-size: 0.95rem; color: #94a3b8; transition: color 0.2s;">🎵</span> <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${file}</span>`;
+                    const icon = isYoutube ? '📺' : '🎵';
+                    const displayName = isYoutube ? file.replace('Youtube/', '') : file;
+                    
+                    item.innerHTML = `<span class="music-icon" style="font-size: 0.95rem; color: #94a3b8; transition: color 0.2s;">${icon}</span> <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>`;
                     
                     item.addEventListener('mouseenter', () => {
                         if (selectedMusicFile !== file) {
@@ -3225,7 +3271,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             item.querySelector('.music-icon').style.color = '#94a3b8';
                         }
                     });
-                    
                     item.addEventListener('click', () => {
                         selectedMusicFile = file;
                         
@@ -3238,6 +3283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             el.style.background = 'rgba(255,255,255,0.03)';
                             el.style.border = '1px solid rgba(255,255,255,0.06)';
                             el.style.transform = 'none';
+                            el.style.boxShadow = 'none';
                             const icon = el.querySelector('.music-icon');
                             if (icon) icon.style.color = '#94a3b8';
                         });
@@ -3249,7 +3295,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     container.appendChild(item);
-                });
+                };
+
+                if (localFiles.length > 0) {
+                    createSectionHeader('💿 수동 추가 음악');
+                    localFiles.forEach(f => createFileItem(f, false));
+                }
+                
+                if (ytFiles.length > 0) {
+                    createSectionHeader('📺 유튜브 다운로드 음악');
+                    ytFiles.forEach(f => createFileItem(f, true));
+                }
             }
         } catch (e) {
             console.error('Failed to load music files', e);
