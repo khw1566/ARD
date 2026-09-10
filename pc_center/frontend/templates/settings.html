@@ -102,29 +102,49 @@
             border-bottom-color: var(--primary, #ffffff);
         }
 
+        /* Compact layout for Fit-to-Screen (No Page Drag/Scroll) */
         .settings-body {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
+            padding: 10px 18px;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .settings-view {
             display: none;
-            max-width: 1500px;
+            width: 100%;
+            max-width: 100%;
             margin: 0 auto;
+            flex: 1;
+            min-height: 0;
         }
 
         .settings-view.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-view > .card {
+            flex: 1;
+            margin-bottom: 0 !important;
+            padding: 14px 18px !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow-y: auto;
         }
 
         /* Responsive 2-column layout for Hardware & Network monitoring */
         .hw-split-layout {
             display: grid;
-            grid-template-columns: minmax(320px, 380px) 1fr;
-            gap: 20px;
-            align-items: start;
+            grid-template-columns: minmax(300px, 340px) 1fr;
+            gap: 14px;
+            align-items: stretch;
+            flex: 1;
+            min-height: 0;
         }
 
         @media (max-width: 1024px) {
@@ -136,14 +156,133 @@
         .hw-left-col {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
+            justify-content: space-between;
         }
 
         .hw-right-col {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
             min-width: 0;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .hw-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        @media (max-width: 800px) {
+            .hw-charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hw-chart-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 120px;
+            flex: 1;
+        }
+
+        .hw-canvas-container {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            min-height: 80px;
+            max-height: 100%;
+        }
+
+        /* Telemetry Stream Bar under ASCII Banner */
+        .telemetry-stream-bar {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .telemetry-mcu-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .mcu-live-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim, #888888);
+            transition: all 0.2s ease;
+        }
+
+        .mcu-live-chip.online {
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #ffffff;
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .mcu-pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-dim, #888888);
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .mcu-pulse-dot.pulse {
+            background: var(--success, #22c55e);
+            box-shadow: 0 0 8px var(--success, #22c55e);
+            transform: scale(1.25);
+        }
+
+        .telemetry-chart-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 4px 10px;
+        }
+
+        .telemetry-chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim, #888888);
+            white-space: nowrap;
+        }
+
+        .telemetry-canvas-box {
+            width: 220px;
+            height: 38px;
+            position: relative;
         }
 
         .auto-refresh-badge {
@@ -260,25 +399,26 @@
             background: linear-gradient(135deg, rgba(20, 24, 33, 0.95), rgba(11, 15, 25, 0.95));
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-left: 3px solid var(--primary, #0696D7);
-            border-radius: 8px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            padding: 8px 14px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
 
         .ard-ascii-pre {
             margin: 0;
             font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
-            font-size: 0.72rem;
-            line-height: 1.15;
+            font-size: 0.65rem;
+            line-height: 1.1;
             color: var(--primary, #0696D7);
-            text-shadow: 0 0 10px rgba(6, 150, 215, 0.35);
-            letter-spacing: 0.05em;
+            text-shadow: 0 0 8px rgba(6, 150, 215, 0.35);
+            letter-spacing: 0.04em;
             white-space: pre;
             user-select: none;
         }
@@ -286,8 +426,8 @@
         .ard-ascii-meta {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            min-width: 240px;
+            gap: 3px;
+            min-width: 220px;
         }
 
         .ard-ascii-meta-badge {
@@ -305,16 +445,16 @@
         }
 
         .ard-ascii-title {
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: var(--text-main, #ffffff);
             letter-spacing: 0.02em;
         }
 
         .ard-ascii-desc {
-            font-size: 0.76rem;
+            font-size: 0.72rem;
             color: var(--text-dim, #888888);
-            line-height: 1.4;
+            line-height: 1.3;
         }
     </style>
 </head>
@@ -384,73 +524,113 @@
                 <div class="ard-ascii-title">ARD 통합 시스템 엔지니어링 콘솔</div>
                 <div class="ard-ascii-desc">Multi-MCU 패킷 텔레메트리, AI 시각/음성 분석 엔진 및 실시간 동기화 제어 센터</div>
             </div>
+
+            <!-- Real-time MCU Connection & Packet Flow Stream Bar -->
+            <div class="telemetry-stream-bar">
+                <div class="telemetry-mcu-badges">
+                    <span style="font-size: 0.72rem; color: var(--primary, #0696D7); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-right: 2px;">MCU STATUS:</span>
+                    <div class="mcu-live-chip" id="chip-imagesendermcu" title="영상 송신 보드 (ImageSenderMCU)">
+                        <span class="mcu-pulse-dot" id="dot-imagesendermcu"></span>
+                        <span>CAM</span>
+                        <span id="txt-imagesendermcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-hmi_mcu" title="HMI 디스플레이 제어 보드 (HMI MCU)">
+                        <span class="mcu-pulse-dot" id="dot-hmi_mcu"></span>
+                        <span>HMI</span>
+                        <span id="txt-hmi_mcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-drivemcu" title="모터 주행 구동 보드 (DriveMCU)">
+                        <span class="mcu-pulse-dot" id="dot-drivemcu"></span>
+                        <span>DRIVE</span>
+                        <span id="txt-drivemcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-controlmcu" title="메인 통합 제어 및 음성 제어 보드 (ControlMCU)">
+                        <span class="mcu-pulse-dot" id="dot-controlmcu"></span>
+                        <span>CTRL</span>
+                        <span id="txt-controlmcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-robot3axismcu" title="3축 로봇 매니퓰레이터 보드 (Robot3AxisMCU)">
+                        <span class="mcu-pulse-dot" id="dot-robot3axismcu"></span>
+                        <span>3AXIS</span>
+                        <span id="txt-robot3axismcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                </div>
+
+                <!-- Live Sparkline Chart for Heartbeat & Control Signals -->
+                <div class="telemetry-chart-wrap">
+                    <div class="telemetry-chart-legend">
+                        <div><span style="color:#22c55e;">●</span> 하트비트: <span id="telemetry-hb-count" style="color:#ffffff; font-weight:bold;">0</span></div>
+                        <div><span style="color:#38bdf8;">●</span> 제어신호: <span id="telemetry-ctrl-count" style="color:#ffffff; font-weight:bold;">0</span></div>
+                    </div>
+                    <div class="telemetry-canvas-box">
+                        <canvas id="telemetry-live-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 1. STYLE & COLOR TAB -->
         <section id="tab-theme" class="settings-view active">
-            <div class="card status-card" style="margin-bottom: 20px;">
-                <h2 data-i18n="theme_setting_title" style="margin-bottom: 8px;">UI 스타일 및 색상 커스텀</h2>
-                <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">
-                    실시간으로 변경한 색상 테마는 브라우저 로컬 저장소에 영구 저장되며, 대시보드 메인 화면 및 터미널 화면에 즉시 동기화 적용됩니다.
-                </p>
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2 data-i18n="theme_setting_title" style="margin: 0; font-size: 1.05rem;">UI 스타일 및 색상 커스텀</h2>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">대시보드 메인 및 터미널 화면 실시간 동기화</span>
+                </div>
 
                 <!-- Color Presets -->
-                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" data-i18n="theme_preset_label">색상 테마 프리셋</div>
-                <div class="preset-container">
-                    <button class="preset-btn" onclick="applyColorPreset('autodesk')" style="border-color: #0696D7; color: #0696D7; font-weight: bold;" data-i18n="theme_preset_autodesk">오토데스크 CAD 전문가 모드 (Autodesk CAD)</button>
-                    <button class="preset-btn" onclick="applyColorPreset('monochrome')" data-i18n="theme_preset_monochrome">모노크롬 (기본 B&W)</button>
-                    <button class="preset-btn" onclick="applyColorPreset('ocean')" data-i18n="theme_preset_ocean">오션 딥블루 (Ocean)</button>
-                    <button class="preset-btn" onclick="applyColorPreset('cyberpunk')" data-i18n="theme_preset_cyberpunk">사이버 네온 (Cyberpunk)</button>
-                    <button class="preset-btn" onclick="applyColorPreset('emerald')" data-i18n="theme_preset_emerald">에메랄드 포레스트 (Emerald)</button>
-                    <button class="preset-btn" onclick="resetColorTheme()" style="border-color: var(--accent); color: var(--accent);" data-i18n="theme_reset_btn">색상 초기화</button>
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" data-i18n="theme_preset_label">색상 테마 프리셋</div>
+                <div class="preset-container" style="margin-top: 0; margin-bottom: 12px; gap: 8px;">
+                    <button class="preset-btn" onclick="applyColorPreset('autodesk')" style="border-color: #0696D7; color: #0696D7; font-weight: bold; padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_autodesk">오토데스크 CAD 전문가 모드 (Autodesk CAD)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('monochrome')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_monochrome">모노크롬 (기본 B&W)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('ocean')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_ocean">오션 딥블루 (Ocean)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('cyberpunk')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_cyberpunk">사이버 네온 (Cyberpunk)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('emerald')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_emerald">에메랄드 포레스트 (Emerald)</button>
+                    <button class="preset-btn" onclick="resetColorTheme()" style="border-color: var(--accent); color: var(--accent); padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_reset_btn">색상 초기화</button>
                 </div>
 
                 <!-- Custom Color Pickers -->
-                <div class="color-grid">
-                    <div class="color-card">
+                <div class="color-grid" style="gap: 10px; margin-bottom: 12px;">
+                    <div class="color-card" style="padding: 10px 14px;">
                         <div class="color-card-info">
-                            <label data-i18n="theme_primary_color">기본 강조 색상 (Primary)</label>
-                            <span id="label-primary-val">#ffffff</span>
+                            <label style="font-size: 0.82rem;" data-i18n="theme_primary_color">기본 강조 색상 (Primary)</label>
+                            <span id="label-primary-val" style="font-size: 0.72rem;">#ffffff</span>
                         </div>
-                        <input type="color" id="picker-primary" class="color-picker-input">
+                        <input type="color" id="picker-primary" class="color-picker-input" style="width: 34px; height: 34px;">
                     </div>
 
-                    <div class="color-card">
+                    <div class="color-card" style="padding: 10px 14px;">
                         <div class="color-card-info">
-                            <label data-i18n="theme_secondary_color">보조 강조 색상 (Secondary)</label>
-                            <span id="label-secondary-val">#94a3b8</span>
+                            <label style="font-size: 0.82rem;" data-i18n="theme_secondary_color">보조 강조 색상 (Secondary)</label>
+                            <span id="label-secondary-val" style="font-size: 0.72rem;">#94a3b8</span>
                         </div>
-                        <input type="color" id="picker-secondary" class="color-picker-input">
+                        <input type="color" id="picker-secondary" class="color-picker-input" style="width: 34px; height: 34px;">
                     </div>
 
-                    <div class="color-card">
+                    <div class="color-card" style="padding: 10px 14px;">
                         <div class="color-card-info">
-                            <label data-i18n="theme_bg_color">배경 색상 (Background)</label>
-                            <span id="label-bg-val">#000000</span>
+                            <label style="font-size: 0.82rem;" data-i18n="theme_bg_color">배경 색상 (Background)</label>
+                            <span id="label-bg-val" style="font-size: 0.72rem;">#000000</span>
                         </div>
-                        <input type="color" id="picker-bg" class="color-picker-input">
+                        <input type="color" id="picker-bg" class="color-picker-input" style="width: 34px; height: 34px;">
                     </div>
 
-                    <div class="color-card">
+                    <div class="color-card" style="padding: 10px 14px;">
                         <div class="color-card-info">
-                            <label data-i18n="theme_card_bg">카드/패널 배경 (Card Surface)</label>
-                            <span id="label-card-val">#111111</span>
+                            <label style="font-size: 0.82rem;" data-i18n="theme_card_bg">카드/패널 배경 (Card Surface)</label>
+                            <span id="label-card-val" style="font-size: 0.72rem;">#111111</span>
                         </div>
-                        <input type="color" id="picker-card" class="color-picker-input">
+                        <input type="color" id="picker-card" class="color-picker-input" style="width: 34px; height: 34px;">
                     </div>
                 </div>
 
                 <!-- Live Preview Card -->
-                <div class="live-preview-box">
-                    <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--primary);">UI 컴포넌트 실시간 미리보기</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">
-                        선택된 색상이 버튼, 배지, 입력 필드 및 카드 스타일에 즉각적으로 어떻게 반영되는지 검토할 수 있습니다.
-                    </p>
-                    <div class="preview-elements-row">
-                        <button class="btn-primary" style="width: auto; padding: 6px 16px;">Primary Button</button>
-                        <button class="preset-btn" style="padding: 6px 16px;">Secondary Button</button>
-                        <span class="status-badge" style="background: rgba(255,255,255,0.08); border: 1px solid var(--primary); color: var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem;">Accent Badge</span>
-                        <input type="text" value="Text Field Sample" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;" readonly>
+                <div class="live-preview-box" style="padding: 12px 16px; margin-top: 4px;">
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin-bottom: 6px;">UI 컴포넌트 실시간 미리보기</div>
+                    <div class="preview-elements-row" style="margin-top: 4px; gap: 10px;">
+                        <button class="btn-primary" style="width: auto; padding: 5px 14px; font-size: 0.8rem;">Primary Button</button>
+                        <button class="preset-btn" style="padding: 5px 14px; font-size: 0.8rem;">Secondary Button</button>
+                        <span class="status-badge" style="background: rgba(255,255,255,0.08); border: 1px solid var(--primary); color: var(--primary); padding: 3px 8px; border-radius: 4px; font-size: 0.72rem;">Accent Badge</span>
+                        <input type="text" value="Text Field Sample" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); padding: 5px 10px; border-radius: 4px; font-size: 0.78rem;" readonly>
                     </div>
                 </div>
             </div>
@@ -459,36 +639,36 @@
         <!-- 2. STATS TAB -->
         <section id="tab-stats" class="settings-view">
             <div class="card status-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0;" data-i18n="stats_modal_title">시스템 통신 패킷 & API 동작 통계</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 1.05rem;" data-i18n="stats_modal_title">시스템 통신 패킷 & API 동작 통계</h2>
                     <div style="display: flex; gap: 8px;">
-                        <button id="tab-stats-refresh-btn" class="preset-btn" data-i18n="stats_refresh_btn">새로고침</button>
-                        <button id="tab-stats-reset-btn" class="preset-btn" style="border-color: var(--danger); color: var(--danger);" data-i18n="stats_reset_btn">통계 초기화</button>
+                        <button id="tab-stats-refresh-btn" class="preset-btn" style="padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_refresh_btn">새로고침</button>
+                        <button id="tab-stats-reset-btn" class="preset-btn" style="border-color: var(--danger); color: var(--danger); padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_reset_btn">통계 초기화</button>
                     </div>
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="stats-kpi-grid">
-                    <div class="stats-kpi-card">
+                <div class="stats-kpi-grid" style="margin-bottom: 12px; gap: 10px;">
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
                         <div class="stats-kpi-label" data-i18n="stats_uptime">서버 가동 시간</div>
-                        <div class="stats-kpi-val" id="st-kpi-uptime">00:00:00</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-uptime">00:00:00</div>
                         <div class="stats-kpi-sub" id="st-kpi-start-time">시작: -</div>
                     </div>
-                    <div class="stats-kpi-card">
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
                         <div class="stats-kpi-label" data-i18n="stats_total_packets">총 MCU 패킷</div>
-                        <div class="stats-kpi-val" id="st-kpi-mcu-total">0</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-mcu-total">0</div>
                         <div class="stats-kpi-sub"><span data-i18n="stats_mcu_success_rate">MCU 성공률</span>: <span id="st-kpi-mcu-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
                     </div>
-                    <div class="stats-kpi-card">
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
                         <div class="stats-kpi-label" data-i18n="stats_total_api">총 API/MCP 호출</div>
-                        <div class="stats-kpi-val" id="st-kpi-api-total">0</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-api-total">0</div>
                         <div class="stats-kpi-sub"><span data-i18n="stats_api_success_rate">API/MCP 성공률</span>: <span id="st-kpi-api-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
                     </div>
                 </div>
 
                 <!-- MCU Table -->
-                <h3 style="font-size: 1rem; color: var(--primary); margin: 20px 0 10px 0;" data-i18n="stats_mcu_section">MCU별 패킷 통계</h3>
-                <div style="overflow-x: auto; margin-bottom: 25px;">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--primary); margin: 6px 0 6px 0;" data-i18n="stats_mcu_section">MCU별 패킷 통계</div>
+                <div style="overflow-x: auto; margin-bottom: 12px; max-height: 180px;">
                     <table class="stats-table">
                         <thead>
                             <tr>
@@ -507,8 +687,8 @@
                 </div>
 
                 <!-- API Table -->
-                <h3 style="font-size: 1rem; color: var(--secondary); margin: 0 0 10px 0;" data-i18n="stats_api_section">API 및 AI / MCP 동작 통계</h3>
-                <div style="overflow-x: auto;">
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--secondary); margin: 4px 0 6px 0;" data-i18n="stats_api_section">API 및 AI / MCP 동작 통계</div>
+                <div style="overflow-x: auto; max-height: 160px;">
                     <table class="stats-table">
                         <thead>
                             <tr>
@@ -529,55 +709,60 @@
         <!-- 3. NETWORK & HARDWARE TAB -->
         <section id="tab-network" class="settings-view">
             <div class="card status-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-                    <h2 style="margin: 0;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
-                    <button id="tab-hw-refresh-btn" class="preset-btn" data-i18n="stats_refresh_btn">새로고침</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2 style="margin: 0; font-size: 1.05rem;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
+                    <button id="tab-hw-refresh-btn" class="preset-btn" style="padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_refresh_btn">새로고침</button>
                 </div>
 
                 <!-- 2-Column Split Layout for Maximum Horizontal Space Utilization -->
                 <div class="hw-split-layout">
                     <!-- Left Column: KPI Metric Cards & System Spec Info -->
                     <div class="hw-left-col">
-                        <div class="hw-kpi-card">
-                            <div class="hw-kpi-label" data-i18n="hw_cpu_usage">CPU 사용률</div>
-                            <div class="hw-kpi-val" id="tab-hw-cpu-val">0%</div>
-                            <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="hw-kpi-card" style="padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_cpu_usage">CPU 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-cpu-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
+                            </div>
+                            <div class="hw-kpi-card" style="border-left: 3px solid #818cf8; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_ram_usage">RAM 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-ram-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
+                            </div>
                         </div>
-                        <div class="hw-kpi-card" style="border-left: 3px solid #818cf8;">
-                            <div class="hw-kpi-label" data-i18n="hw_ram_usage">RAM 사용률</div>
-                            <div class="hw-kpi-val" id="tab-hw-ram-val">0%</div>
-                            <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
-                        </div>
-                        <div class="hw-kpi-card" style="border-left: 3px solid #34d399;">
-                            <div class="hw-kpi-label" data-i18n="hw_gpu_usage">GPU 사용률</div>
-                            <div class="hw-kpi-val" id="tab-hw-gpu-val">0%</div>
-                            <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
-                        </div>
-                        <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24;">
-                            <div class="hw-kpi-label" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
-                            <div class="hw-kpi-val" style="font-size: 1.15rem;" id="tab-hw-net-val">↑ 0 KB/s | ↓ 0 KB/s</div>
-                            <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="hw-kpi-card" style="border-left: 3px solid #34d399; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_gpu_usage">GPU 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-gpu-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
+                            </div>
+                            <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
+                                <div class="hw-kpi-val" style="font-size: 0.95rem; line-height: 1.3;" id="tab-hw-net-val">↑ 0 KB/s<br>↓ 0 KB/s</div>
+                                <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+                            </div>
                         </div>
 
                         <!-- System Specs Box -->
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; margin-top: 4px;">
-                            <h3 style="font-size: 0.88rem; color: var(--secondary); margin: 0 0 10px 0;" data-i18n="hw_section_spec">시스템 및 인터페이스 사양</h3>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
-                                    <div class="hw-spec-title" data-i18n="hw_spec_os">운영체제</div>
-                                    <div class="hw-spec-desc" id="tab-hw-spec-os">-</div>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px;" data-i18n="hw_section_spec">시스템 및 인터페이스 사양</div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_os">운영체제</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-os">-</div>
                                 </div>
-                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
-                                    <div class="hw-spec-title" data-i18n="hw_spec_cpu">프로세서</div>
-                                    <div class="hw-spec-desc" id="tab-hw-spec-cpu">-</div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_cpu">프로세서</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-cpu">-</div>
                                 </div>
-                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
-                                    <div class="hw-spec-title" data-i18n="hw_spec_ram">전체 메모리</div>
-                                    <div class="hw-spec-desc" id="tab-hw-spec-ram">-</div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_ram">전체 메모리</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-ram">-</div>
                                 </div>
                                 <div class="hw-spec-item">
-                                    <div class="hw-spec-title" data-i18n="hw_spec_gpu">그래픽 장치</div>
-                                    <div class="hw-spec-desc" id="tab-hw-spec-gpu">-</div>
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_gpu">그래픽 장치</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-gpu">-</div>
                                 </div>
                             </div>
                         </div>
@@ -586,8 +771,8 @@
                     <!-- Right Column: 2x2 Performance History Graphs (최근 60초) -->
                     <div class="hw-right-col">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                            <h3 style="font-size: 0.92rem; color: var(--primary); margin: 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초 실시간)</h3>
-                            <span style="font-size: 0.72rem; color: var(--text-dim);">1초 주기 시계열 측정</span>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin: 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초 실시간)</div>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">1초 주기 시계열 측정</span>
                         </div>
                         <div class="hw-charts-grid" style="margin-top: 0;">
                             <div class="hw-chart-box">
@@ -696,6 +881,109 @@
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=1"></script>
     <script>
+        // --- Live Sparkline Telemetry Chart for Banner ---
+        let cTelemetry = null;
+        const telemetryHistory = {
+            labels: Array(20).fill(''),
+            heartbeats: Array(20).fill(0),
+            controls: Array(20).fill(0)
+        };
+
+        function initTelemetryChart() {
+            if (cTelemetry) return;
+            const canvas = document.getElementById('telemetry-live-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            cTelemetry = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: telemetryHistory.labels,
+                    datasets: [
+                        {
+                            label: 'HB',
+                            data: telemetryHistory.heartbeats,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'CTRL',
+                            data: telemetryHistory.controls,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: 0 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+
+        function updateTelemetryStream(data) {
+            initTelemetryChart();
+            let totalHb = 0;
+            let totalCtrl = 0;
+
+            const mcus = ['imagesendermcu', 'hmi_mcu', 'drivemcu', 'controlmcu', 'robot3axismcu'];
+            mcus.forEach(key => {
+                const item = (data.mcu_stats && data.mcu_stats[key]) ? data.mcu_stats[key] : null;
+                const chip = document.getElementById(`chip-${key}`);
+                const dot = document.getElementById(`dot-${key}`);
+                const txt = document.getElementById(`txt-${key}`);
+
+                if (item) {
+                    totalHb += (item.heartbeat || 0);
+                    totalCtrl += (item.control_cmd || 0);
+
+                    const totalPkts = item.total_packets || 0;
+                    if (txt) txt.textContent = `${totalPkts.toLocaleString()} pkts`;
+
+                    // Check if recently active (last_timestamp exists)
+                    if (chip) chip.classList.add('online');
+                    if (dot) {
+                        dot.classList.add('pulse');
+                        setTimeout(() => dot.classList.remove('pulse'), 800);
+                    }
+                } else {
+                    if (chip) chip.classList.remove('online');
+                }
+            });
+
+            const hbEl = document.getElementById('telemetry-hb-count');
+            const ctrlEl = document.getElementById('telemetry-ctrl-count');
+            if (hbEl) hbEl.textContent = totalHb.toLocaleString();
+            if (ctrlEl) ctrlEl.textContent = totalCtrl.toLocaleString();
+
+            if (cTelemetry) {
+                telemetryHistory.heartbeats.push(totalHb);
+                telemetryHistory.heartbeats.shift();
+                telemetryHistory.controls.push(totalCtrl);
+                telemetryHistory.controls.shift();
+
+                cTelemetry.data.datasets[0].data = [...telemetryHistory.heartbeats];
+                cTelemetry.data.datasets[1].data = [...telemetryHistory.controls];
+                cTelemetry.update();
+            }
+        }
+
         // --- Tab Switching & Auto-refresh Logic ---
         const tabBtns = document.querySelectorAll('.settings-tab-btn');
         const tabViews = document.querySelectorAll('.settings-view');
@@ -706,9 +994,9 @@
 
         function refreshActiveTab() {
             if (!isAutoRefreshEnabled) return;
-            if (activeTabId === 'tab-stats') {
-                loadStats();
-            } else if (activeTabId === 'tab-network') {
+            // Always refresh stats for top banner telemetry stream
+            loadStats();
+            if (activeTabId === 'tab-network') {
                 loadHw();
             }
         }
@@ -838,6 +1126,7 @@
         }
 
         function renderStats(data) {
+            updateTelemetryStream(data);
             document.getElementById('st-kpi-uptime').textContent = data.uptime_formatted || '00:00:00';
             document.getElementById('st-kpi-start-time').textContent = (currentLang === 'ko' ? '시작: ' : 'Started: ') + (data.server_start_time || '-');
             document.getElementById('st-kpi-mcu-total').textContent = (data.total_mcu_packets || 0).toLocaleString();
@@ -1100,6 +1389,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             syncColorPickersUI();
             updateLanguage(currentLang);
+            initTelemetryChart();
+            loadStats();
             setAutoRefresh(true);
         });
     </script>
