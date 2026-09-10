@@ -196,7 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const showOfflineUI = () => {
                     document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020617;color:#f8fafc;font-family:sans-serif;text-align:center;">
                         <div>
-                            <div style="font-size: 5rem; margin-bottom: 20px;">💤</div>
+                            <div style="margin-bottom: 20px; display: flex; justify-content: center;">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                            </div>
                             <h1 style="color:#f87171; font-size: 3rem; margin-bottom: 20px; letter-spacing: 5px;">SYSTEM OFFLINE</h1>
                             <p style="font-size: 1.2rem; color: #94a3b8;">The ARD Control Server has been shut down successfully.</p>
                             <p style="margin-top: 20px; opacity: 0.6;">You can now safely close this browser window.</p>
@@ -447,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.status === 'success') {
                 editor.value = data.content;
-                if (status) { status.textContent = '✓ 파일 로드됨'; status.style.color = 'var(--success)'; status.style.display = 'inline'; }
+                if (status) { status.textContent = '파일 로드됨'; status.style.color = 'var(--success)'; status.style.display = 'inline'; }
             }
         } catch (e) {
             if (editor) editor.value = '// 파일 로드 실패: 서버를 확인해 주세요.';
@@ -470,15 +472,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (data.status === 'success') {
-                if (status) { status.textContent = '✅ 저장 완료 — AI에 즉시 반영됨'; status.style.color = 'var(--success)'; status.style.display = 'inline'; }
+                if (status) { status.textContent = '저장 완료 — AI에 즉시 반영됨'; status.style.color = 'var(--success)'; status.style.display = 'inline'; }
             } else {
-                if (status) { status.textContent = '❌ 저장 실패'; status.style.color = 'var(--danger)'; status.style.display = 'inline'; }
+                if (status) { status.textContent = '저장 실패'; status.style.color = 'var(--danger)'; status.style.display = 'inline'; }
             }
         } catch (e) {
-            if (status) { status.textContent = '❌ 오류'; status.style.color = 'var(--danger)'; status.style.display = 'inline'; }
+            if (status) { status.textContent = '오류 발생'; status.style.color = 'var(--danger)'; status.style.display = 'inline'; }
         }
         btn.disabled = false;
-        btn.textContent = '💾 저장';
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>저장</span>`;
         setTimeout(() => { if (status) status.style.display = 'none'; }, 4000);
     });
 
@@ -826,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('azure_region')?.addEventListener('change', saveSoundMCUConfig);
     document.getElementById('emotion-lab-degree')?.addEventListener('change', saveSoundMCUConfig);
 
-    // --- 🎭 Microsoft Azure 감정 음성 연구소 (Emotional Voice Lab) 재생/정지 제어 ---
+    // --- Microsoft Azure 감정 음성 연구소 (Emotional Voice Lab) 재생/정지 제어 ---
     let emotionLabAudio = null;
 
     window.playEmotionLabSpeech = async function() {
@@ -843,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (statusSpan) {
-                statusSpan.textContent = "Azure Neural TTS 합성 및 오디오 생성 중... ⚡";
+                statusSpan.textContent = "Azure Neural TTS 합성 및 오디오 생성 중...";
                 statusSpan.style.display = "block";
             }
             if (playBtn) playBtn.disabled = true;
@@ -866,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             if (data.status === 'success') {
-                if (statusSpan) statusSpan.textContent = "오디오 재생 중... 🔊";
+                if (statusSpan) statusSpan.textContent = "오디오 재생 중...";
                 
                 emotionLabAudio = new Audio(data.audio_url);
                 emotionLabAudio.play();
@@ -880,7 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 emotionLabAudio.addEventListener('error', (err) => {
                     console.error("Audio Playback Error:", err);
                     if (statusSpan) {
-                        statusSpan.textContent = "❌ 오디오 재생 실패";
+                        statusSpan.textContent = "오디오 재생 실패";
                         statusSpan.style.color = "var(--danger)";
                     }
                     if (playBtn) playBtn.disabled = false;
@@ -990,13 +992,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/test_melody', { method: 'POST' });
             const result = await res.json();
             if (result.status === 'success') {
-                setAudioStatus('✅ 멜로디 전송 완료! MCU 출력을 확인하세요.');
+                setAudioStatus('멜로디 전송 완료! MCU 출력을 확인하세요.');
                 if (window.addLog) window.addLog('System', '멜로디 테스트 전송이 시작되었습니다.');
             } else {
-                setAudioStatus('❌ 전송 실패: ' + result.message, true);
+                setAudioStatus('전송 실패: ' + result.message, true);
             }
         } catch (e) {
-            setAudioStatus('❌ 네트워크 오류: ' + e.message, true);
+            setAudioStatus('네트워크 오류: ' + e.message, true);
         } finally {
             testMelodyBtn.disabled = false;
         }
@@ -1015,13 +1017,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await res.json();
             if (result.status === 'success') {
-                setAudioStatus('✅ TTS 전송 완료! MCU 출력을 확인하세요.');
+                setAudioStatus('TTS 전송 완료! MCU 출력을 확인하세요.');
                 if (window.addLog) window.addLog('System', `TTS 테스트 전송 시작: "${text}"`);
             } else {
-                setAudioStatus('❌ 전송 실패: ' + result.message, true);
+                setAudioStatus('전송 실패: ' + result.message, true);
             }
         } catch (e) {
-            setAudioStatus('❌ 네트워크 오류: ' + e.message, true);
+            setAudioStatus('네트워크 오류: ' + e.message, true);
         } finally {
             testTtsBtn.disabled = false;
         }
@@ -3679,10 +3681,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.style.alignItems = 'center';
                     item.style.gap = '10px';
                     
-                    const icon = isYoutube ? '📺' : '🎵';
+                    const svgIcon = isYoutube 
+                        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>`
+                        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`;
                     const displayName = isYoutube ? file.replace('Youtube/', '') : file;
                     
-                    item.innerHTML = `<span class="music-icon" style="font-size: 0.95rem; color: #94a3b8; transition: color 0.2s;">${icon}</span> <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>`;
+                    item.innerHTML = `<span class="music-icon" style="font-size: 0.95rem; color: #94a3b8; transition: color 0.2s; display: flex; align-items: center;">${svgIcon}</span> <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${displayName}</span>`;
                     
                     item.addEventListener('mouseenter', () => {
                         if (selectedMusicFile !== file) {
@@ -3728,12 +3732,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 if (localFiles.length > 0) {
-                    createSectionHeader('💿 수동 추가 음악');
+                    createSectionHeader('수동 추가 음악');
                     localFiles.forEach(f => createFileItem(f, false));
                 }
                 
                 if (ytFiles.length > 0) {
-                    createSectionHeader('📺 유튜브 다운로드 음악');
+                    createSectionHeader('유튜브 다운로드 음악');
                     ytFiles.forEach(f => createFileItem(f, true));
                 }
             }
@@ -4199,13 +4203,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         container.style.transform = 'scale(1.05)';
                     }
                     if (icon) {
-                        icon.textContent = '🌊';
-                        icon.style.animation = 'spin 4s linear infinite';
+                        icon.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3-3 5-3 5 6 7 6 5-6 8-3"></path><path d="M2 14s3-3 5-3 5 6 7 6 5-6 8-3"></path></svg>`;
+                        icon.style.animation = 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite';
                     }
                     if (btn) {
                         btn.style.background = '#ef4444';
                         btn.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.2)';
-                        btn.innerHTML = '⏹ STOP AUDIO MIRRORING';
+                        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg><span>STOP AUDIO MIRRORING</span>`;
                     }
                 } else {
                     if (container) {
@@ -4215,13 +4219,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         container.style.transform = 'scale(1.0)';
                     }
                     if (icon) {
-                        icon.textContent = '🎙️';
+                        icon.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
                         icon.style.animation = 'none';
                     }
                     if (btn) {
                         btn.style.background = 'var(--primary)';
                         btn.style.boxShadow = '0 4px 12px rgba(0, 242, 254, 0.2)';
-                        btn.innerHTML = '▶ START AUDIO MIRRORING';
+                        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;"><polygon points="5 3 19 12 5 21"></polygon></svg><span>START AUDIO MIRRORING</span>`;
                     }
                 }
             }

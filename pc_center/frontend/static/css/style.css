@@ -1784,11 +1784,11 @@ input:not(:checked) ~ .mode-label-test {
     top: calc(100% + 6px);
     left: 0;
     min-width: 230px;
-    background: #0f172a;
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 10px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.15);
-    padding: 6px 0;
+    background: var(--card-bg, #2B2B2B);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    padding: 4px 0;
     display: none;
     flex-direction: column;
     z-index: 9999;
@@ -1809,12 +1809,12 @@ input:not(:checked) ~ .mode-label-test {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 14px;
+    padding: 8px 14px;
     width: 100%;
     background: transparent;
     border: none;
-    color: var(--text-main);
-    font-size: 0.82rem;
+    color: var(--text-main, #FFFFFF);
+    font-size: 0.8rem;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -1823,17 +1823,43 @@ input:not(:checked) ~ .mode-label-test {
 
 .dropdown-item svg {
     flex-shrink: 0;
-    color: var(--text-dim);
+    color: var(--text-dim, #A0A0A0);
     transition: color 0.15s ease;
 }
 
 .dropdown-item:hover {
-    background: rgba(56, 189, 248, 0.15);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main, #FFFFFF);
 }
 
 .dropdown-item:hover svg {
     color: var(--primary);
+}
+
+body.theme-autodesk .header-dropdown-menu {
+    background: #252525 !important;
+    border: 1px solid #484848 !important;
+    border-radius: 2px !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7) !important;
+}
+
+body.theme-autodesk .dropdown-item {
+    font-size: 11px !important;
+    color: #FFFFFF !important;
+    padding: 6px 12px !important;
+}
+
+body.theme-autodesk .dropdown-item:hover {
+    background: #383838 !important;
+    color: #FFFFFF !important;
+}
+
+body.theme-autodesk .dropdown-item:hover svg {
+    color: #0696D7 !important;
+}
+
+body.theme-autodesk .dropdown-divider {
+    background: #383838 !important;
 }
 
 .dropdown-divider {

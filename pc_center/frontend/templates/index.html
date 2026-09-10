@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARD Control Center</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7">
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <style>
         /* Sub-tab styles */
         .subtab-btn {
@@ -298,19 +299,24 @@
                         <!-- Sub-tab Navigation Buttons -->
                         <div style="display: flex; gap: 8px;">
                             <button onclick="switchSubTab('chat')" id="subtab-btn-chat" class="subtab-btn active-subtab" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                💬 채팅방
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                <span>채팅방</span>
                             </button>
                             <button onclick="switchSubTab('radio')" id="subtab-btn-radio" class="subtab-btn" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                📻 라디오
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                <span>라디오</span>
                             </button>
                             <button onclick="switchSubTab('music')" id="subtab-btn-music" class="subtab-btn" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                🎵 음악
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                <span>음악</span>
                             </button>
                             <button onclick="switchSubTab('youtube')" id="subtab-btn-youtube" class="subtab-btn" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                🔴 유튜브
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                <span>유튜브</span>
                             </button>
                             <button onclick="switchSubTab('mirror')" id="subtab-btn-mirror" class="subtab-btn" style="padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                🔊 PC 사운드
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                <span>PC 사운드</span>
                             </button>
                         </div>
 
@@ -318,13 +324,14 @@
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <!-- Global Volume Slider -->
                             <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.15); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-                                <span style="font-size: 0.8rem; color: var(--text-dim);">🔊</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                                 <input type="range" id="global-media-volume" min="0" max="21" value="12" style="width: 80px; height: 4px; cursor: pointer;" oninput="syncGlobalVolume(this.value)">
                                 <span id="global-media-volume-val" style="font-size: 0.75rem; font-weight: bold; color: var(--primary); width: 15px;">12</span>
                             </div>
                             <!-- Global Stop Button -->
-                            <button onclick="stopAllAudio()" class="btn-primary" style="background: #ef4444; color: white; font-weight: bold; font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); transition: all 0.2s ease; margin: 0; width: auto; height: auto;">
-                                🛑 STOP
+                            <button onclick="stopAllAudio()" class="btn-primary" style="background: #ef4444; color: white; font-weight: bold; font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); transition: all 0.2s ease; margin: 0; width: auto; height: auto; display: flex; align-items: center; gap: 5px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+                                <span>STOP</span>
                             </button>
                         </div>
                     </div>
@@ -365,7 +372,8 @@
                                 <!-- Preset Radio Station Card -->
                                 <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 12px;">
                                     <h4 style="font-size: 0.95rem; font-weight: bold; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px;">
-                                        📻 Preset Premium Stations
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                        <span>Preset Premium Stations</span>
                                     </h4>
                                     <p style="color: var(--text-dim); font-size: 0.8rem; margin: 0; line-height: 1.4;">
                                         PC Center를 통해 무한 스트리밍 중계가 제공되는 선별된 고품질 글로벌 방송 채널입니다.
@@ -377,14 +385,16 @@
                                         </select>
                                     </div>
                                     <button onclick="playSelectedRadio()" class="btn-primary" style="width: 100%; height: 42px; background: var(--primary); font-weight: 600; font-size: 0.95rem; margin: 5px 0 0 0; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer; color: white;">
-                                        ▶ PLAY SELECTED STATION
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                        <span>PLAY SELECTED STATION</span>
                                     </button>
                                 </div>
 
                                 <!-- Custom Live Stream URL Input Card -->
                                 <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 12px;">
                                     <h4 style="font-size: 0.95rem; font-weight: bold; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px;">
-                                        ⚡ Custom Internet Stream (Infinite Channels)
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                                        <span>Custom Internet Stream (Infinite Channels)</span>
                                     </h4>
                                     <p style="color: var(--text-dim); font-size: 0.8rem; margin: 0; line-height: 1.4;">
                                         임의의 인터넷 실시간 방송 주소(Icecast, SHOUTcast, MP3 Stream)를 입력하여 무제한 채널 스트리밍을 즐기세요!
@@ -399,8 +409,9 @@
                                             <input type="text" id="radio-custom-url" placeholder="http://icecast.somafm.com/groovesalad-128-mp3" style="width: 100%; height: 38px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; padding: 0 12px; font-size: 0.85rem; outline: none;">
                                         </div>
                                     </div>
-                                    <button onclick="playCustomRadio()" class="btn-primary" style="width: 100%; height: 42px; background: linear-gradient(135deg, var(--primary), #0284c7); font-weight: 600; font-size: 0.95rem; margin: 5px 0 0 0; border: none; cursor: pointer; color: white;">
-                                        ⚡ STREAM CUSTOM RADIO URL
+                                    <button onclick="playCustomRadio()" class="btn-primary" style="width: 100%; height: 42px; background: linear-gradient(135deg, var(--primary), #0284c7); font-weight: 600; font-size: 0.95rem; margin: 5px 0 0 0; border: none; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                                        <span>STREAM CUSTOM RADIO URL</span>
                                     </button>
                                 </div>
 
@@ -413,14 +424,15 @@
                             <!-- ARD Premium Music Station Header Bar -->
                             <div style="max-width: 1200px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(15,23,42,0.4)); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(16,185,129,0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                                 <div style="display: flex; align-items: center; gap: 15px;">
-                                    <span style="font-size: 1.6rem;">🎵</span>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                                     <div>
                                         <h3 style="font-size: 1.2rem; font-weight: bold; color: #fff; margin: 0; letter-spacing: 0.5px;">ARD Premium Music Station</h3>
                                         <p style="font-size: 0.8rem; color: var(--text-dim); margin: 3px 0 0 0;">넓은 메인 화면 최적화 및 프리미엄 사운드 믹싱 EQ 제어 센터</p>
                                     </div>
                                 </div>
                                 <button onclick="refreshMusicList()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); cursor: pointer; font-size: 0.78rem; padding: 6px 16px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 6px; transition: all 0.2s; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
-                                    🔄 라이브러리 갱신
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    <span>라이브러리 갱신</span>
                                 </button>
                             </div>
 
@@ -430,7 +442,7 @@
                                 <!-- [Left Column] Full Size Music Library -->
                                 <div style="background: rgba(15, 23, 42, 0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
                                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
-                                        <span style="font-size: 1.1rem; color: var(--success);">📁</span>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                                         <h4 style="font-size: 0.95rem; font-weight: bold; color: #fff; margin: 0;">음악 파일 보관함 (Music Library)</h4>
                                     </div>
                                     
@@ -474,12 +486,12 @@
                                         <!-- Playback Control Buttons -->
                                         <div style="display: flex; justify-content: center; gap: 15px; align-items: center;">
                                             <!-- Play/Pause Button -->
-                                            <button onclick="toggleMusicPlay()" id="music-play-btn" style="background: var(--success); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); border: none; cursor: pointer; margin: 0; transition: all 0.2s; color: white;">
-                                                ▶
+                                            <button onclick="toggleMusicPlay()" id="music-play-btn" style="background: var(--success); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); border: none; cursor: pointer; margin: 0; transition: all 0.2s; color: white;">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
                                             </button>
                                             <!-- Stop Button -->
-                                            <button onclick="stopMusicPlayer()" id="music-stop-btn" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; padding: 0; margin: 0; transition: all 0.2s; color: white; cursor: pointer;">
-                                                ⏹
+                                            <button onclick="stopMusicPlayer()" id="music-stop-btn" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; transition: all 0.2s; color: white; cursor: pointer;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
                                             </button>
                                         </div>
 
@@ -489,7 +501,8 @@
                                     <div style="background: rgba(15, 23, 42, 0.6); padding: 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.25);">
                                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 5px;">
                                             <h4 style="font-size: 0.9rem; font-weight: bold; color: var(--success); margin: 0; display: flex; align-items: center; gap: 6px;">
-                                                🎚️ 3-Band Parametric Equalizer (FFT-based)
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                                                <span>3-Band Parametric Equalizer (FFT-based)</span>
                                             </h4>
                                             <div style="display: flex; gap: 6px;">
                                                 <button onclick="applyEQPreset('flat')" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s;">Flat</button>
@@ -529,8 +542,9 @@
                         <!-- Sub-tab 4: YouTube Play View -->
                         <div id="subtab-content-youtube" class="subtab-content" style="display: none; padding: 25px; overflow-y: auto;">
                             <div style="max-width: 500px; margin: 20px auto; background: rgba(255,255,255,0.02); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column;">
-                                <h3 style="font-size: 1.1rem; font-weight: bold; color: #ff0000; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                                    🔴 YouTube Audio Streamer
+                                <h3 style="font-size: 1.1rem; font-weight: bold; color: #ff4444; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                    <span>YouTube Audio Streamer</span>
                                 </h3>
                                 <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5;">
                                     임의의 유튜브 주소(URL)를 입력하면 비디오 데이터 없이 오디오 스트림만 즉각 추출/디코딩 및 리샘플링하여 보드 스피커로 무선 PCM 오디오 재생을 개시합니다.
@@ -539,8 +553,9 @@
                                     <label for="youtube-url-input" style="font-weight: 600;">YouTube Video URL</label>
                                     <input type="text" id="youtube-url-input" placeholder="https://www.youtube.com/watch?v=..." style="width: 100%; height: 42px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; padding: 0 12px; font-size: 0.9rem;">
                                 </div>
-                                <button onclick="playYoutubeAudio()" id="youtube-play-btn" class="btn-primary" style="width: 100%; height: 42px; background: #ff0000; font-weight: 600; border: none; box-shadow: 0 4px 10px rgba(255, 0, 0, 0.2); font-size: 0.95rem; margin: 0;">
-                                    ▶ STREAM YOUTUBE AUDIO
+                                <button onclick="playYoutubeAudio()" id="youtube-play-btn" class="btn-primary" style="width: 100%; height: 42px; background: #dc2626; font-weight: 600; border: none; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2); font-size: 0.95rem; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                    <span>STREAM YOUTUBE AUDIO</span>
                                 </button>
                             </div>
                         </div>
@@ -549,18 +564,22 @@
                         <div id="subtab-content-mirror" class="subtab-content" style="display: none; padding: 25px; overflow-y: auto;">
                             <div style="max-width: 500px; margin: 20px auto; background: rgba(255,255,255,0.02); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; text-align: center;">
                                 <h3 style="font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                                    🔊 PC Desktop Audio Streamer
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    <span>PC Desktop Audio Streamer</span>
                                 </h3>
                                 <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 25px; line-height: 1.5;">
                                     PC 시스템에서 재생되는 모든 사운드(음악, 비디오, 게임 등)를 실시간으로 가로채어(WASAPI Loopback) MCU 보드 스피커로 무선 PCM 중계 재생을 개시합니다.
                                 </p>
                                 
                                 <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(0,242,254,0.04); border: 2px solid rgba(0,242,254,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 25px; position: relative; transition: all 0.3s;" id="mirror-wave-container">
-                                    <span style="font-size: 2.5rem; transition: all 0.3s;" id="mirror-icon-display">🎙️</span>
+                                    <span style="display: flex; align-items: center; justify-content: center; transition: all 0.3s;" id="mirror-icon-display">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                    </span>
                                 </div>
 
-                                <button onclick="toggleAudioMirror()" id="mirror-toggle-btn" class="btn-primary" style="width: 100%; height: 42px; background: var(--primary); font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.2); font-size: 0.95rem; margin: 0; border-radius: 8px; transition: all 0.2s;">
-                                    ▶ START AUDIO MIRRORING
+                                <button onclick="toggleAudioMirror()" id="mirror-toggle-btn" class="btn-primary" style="width: 100%; height: 42px; background: var(--primary); font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.2); font-size: 0.95rem; margin: 0; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                    <span>START AUDIO MIRRORING</span>
                                 </button>
                             </div>
                         </div>
@@ -775,7 +794,9 @@
             </section>
             
             <div class="resizer" id="drag-me">
-                <div class="resizer-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">▶</div>
+                <div class="resizer-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
             </div>
 
             <aside id="sidebar-panel" class="right-col scroll-panel">
@@ -1264,8 +1285,9 @@
                                     <input type="range" id="mcu-volume" min="0" max="21" value="12" style="width: 100%; cursor: pointer;">
                                 </div>
                                 <div style="display: flex; flex-direction: column; width: 100%;">
-                                    <button onclick="stopAllAudio()" class="btn-primary" style="background: #ef4444; color: white; font-weight: 600; width: 100%; height: 35px; border-radius: 6px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                                        🛑 STOP AUDIO
+                                    <button onclick="stopAllAudio()" class="btn-primary" style="background: #ef4444; color: white; font-weight: 600; width: 100%; height: 35px; border-radius: 6px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                                        <span>STOP AUDIO</span>
                                     </button>
                                 </div>
                             </div>
@@ -1356,10 +1378,12 @@
                         </p>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                             <button id="test-melody-btn" class="btn-primary" style="background: #3b82f6; font-weight: 600; font-size: 0.8rem; height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0;">
-                                🎵 멜로디 테스트 전송
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                <span>멜로디 테스트 전송</span>
                             </button>
                             <button id="test-tts-btn" class="btn-primary" style="background: #10b981; font-weight: 600; font-size: 0.8rem; height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0;">
-                                🗣️ TTS 음성 테스트 전송
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                <span>TTS 음성 테스트 전송</span>
                             </button>
                         </div>
                         <div class="input-group" style="margin-top: 5px;">
@@ -1370,11 +1394,11 @@
                         </div>
                     </div>
                     
-                    <!-- 🎭 Microsoft Azure 감정 음성 연구소 (Emotional Speech Laboratory) -->
+                    <!-- Microsoft Azure 감정 음성 연구소 (Emotional Speech Laboratory) -->
                     <div class="card status-card" style="margin-top: 15px; border-top: 3px solid #a855f7; background: linear-gradient(135deg, rgba(168, 85, 247, 0.05), rgba(15, 23, 42, 0.6));">
                         <h2 style="color: #c084fc; margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                            🎭 감정 음성 연구소 (Emotional TTS Lab)
+                            <span>감정 음성 연구소 (Emotional TTS Lab)</span>
                         </h2>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 15px; line-height: 1.4;">
                             마이크로소프트 Azure의 고성능 신경망 음성 모델(<span style="color: #c084fc; font-weight: bold;">SunHiNeural</span>)의 감정 스타일(style)과 연기 세기(styledegree)의 실시간 차이를 즉시 비교 감상해 보세요!
@@ -1383,13 +1407,13 @@
                         <div class="input-group" style="margin-bottom: 12px;">
                             <label style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 6px; display: block;">1. 감정 스타일 선택 (Style)</label>
                             <select id="emotion-lab-style" style="width: 100%; height: 38px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 0 10px; font-size: 0.85rem; outline: none; cursor: pointer;">
-                                <option value="friendly">😊 친근하고 부드러운 대화체 (Friendly)</option>
-                                <option value="cheerful">🎉 기쁘고 쾌활한 목소리 (Cheerful)</option>
-                                <option value="sad">😭 서글프고 사과하는 목소리 (Sad)</option>
-                                <option value="excited">🤩 흥분되고 매우 활기찬 목소리 (Excited)</option>
-                                <option value="angry">😡 화나고 엄하고 단호한 목소리 (Angry)</option>
-                                <option value="whispering">🤫 비밀스럽게 속삭이는 조용한 톤 (Whispering)</option>
-                                <option value="empathetic">💖 공감하고 감싸안는 따뜻한 음색 (Empathetic)</option>
+                                <option value="friendly">친근하고 부드러운 대화체 (Friendly)</option>
+                                <option value="cheerful">기쁘고 쾌활한 목소리 (Cheerful)</option>
+                                <option value="sad">서글프고 사과하는 목소리 (Sad)</option>
+                                <option value="excited">흥분되고 매우 활기찬 목소리 (Excited)</option>
+                                <option value="angry">화나고 엄하고 단호한 목소리 (Angry)</option>
+                                <option value="whispering">비밀스럽게 속삭이는 조용한 톤 (Whispering)</option>
+                                <option value="empathetic">공감하고 감싸안는 따뜻한 음색 (Empathetic)</option>
                             </select>
                         </div>
                         
@@ -1413,14 +1437,15 @@
                         
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
                             <button id="emotion-lab-play-btn" onclick="playEmotionLabSpeech()" class="btn-primary" style="background: linear-gradient(135deg, #a855f7, #7c3aed); font-weight: bold; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; border: none; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);">
-                                🔊 즉시 음성 합성 & 재생 (PLAY)
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                <span>즉시 음성 합성 & 재생 (PLAY)</span>
                             </button>
                             <button id="emotion-lab-stop-btn" onclick="stopEmotionLabSpeech()" class="btn-primary" style="background: #334155; font-weight: bold; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0; border: 1px solid rgba(255,255,255,0.1);">
-                                ⏹ STOP
+                                <span>STOP</span>
                             </button>
                         </div>
                         <div id="emotion-lab-status" style="margin-top: 8px; font-size: 0.65rem; color: #c084fc; font-style: italic; text-align: right; display: none;">
-                            Azure Neural TTS 합성 중... ⚡
+                            Azure Neural TTS 합성 중...
                         </div>
                     </div>
                     
@@ -1433,8 +1458,14 @@
                             </label>
                             <textarea id="persona-editor" style="width: 100%; height: 200px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.5; resize: vertical;"></textarea>
                             <div style="display: flex; gap: 10px; margin-top: 12px;">
-                                <button id="save-persona-btn" class="btn-primary" style="flex: 1; height: 40px; font-weight: 600;">💾 SAVE PERSONA</button>
-                                <button id="reload-persona-btn" class="btn-primary" style="flex: 1; height: 40px; background: var(--secondary);">🔄 RELOAD</button>
+                                <button id="save-persona-btn" class="btn-primary" style="flex: 1; height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                    <span>SAVE PERSONA</span>
+                                </button>
+                                <button id="reload-persona-btn" class="btn-primary" style="flex: 1; height: 40px; background: var(--secondary); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    <span>RELOAD</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1571,12 +1602,12 @@
                         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
                             <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; display: block; font-weight: bold; letter-spacing: 0.5px;">LOCATION PRESETS</label>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <button onclick="applyPreset(0, 0, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">🏠 Origin (0,0,0)</button>
-                                <button onclick="applyPreset(0, 150, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">🛡 Safe Home</button>
-                                <button onclick="applyPreset(90, 80, 50)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">🔍 Scanning</button>
-                                <button onclick="applyPreset(-45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">📥 Drop Zone A</button>
-                                <button onclick="applyPreset(45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">📤 Drop Zone B</button>
-                                <button onclick="applyPreset(180, 120, 20)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">📦 Storage</button>
+                                <button onclick="applyPreset(0, 0, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Origin (0,0,0)</button>
+                                <button onclick="applyPreset(0, 150, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Safe Home</button>
+                                <button onclick="applyPreset(90, 80, 50)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Scanning</button>
+                                <button onclick="applyPreset(-45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Drop Zone A</button>
+                                <button onclick="applyPreset(45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Drop Zone B</button>
+                                <button onclick="applyPreset(180, 120, 20)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Storage</button>
                             </div>
                         </div>
                     </div>
@@ -1630,7 +1661,10 @@
                         </div>
 
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 12px;">
-                            <button id="run-sequence-btn" class="btn-primary" style="background: var(--success); font-weight: bold; font-size: 0.8rem;">▶ 시퀀스 실행</button>
+                            <button id="run-sequence-btn" class="btn-primary" style="background: var(--success); font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                <span>시퀀스 실행</span>
+                            </button>
                             <button id="clear-sequence-btn" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem;">초기화</button>
                         </div>
                     </div>
@@ -1996,7 +2030,9 @@
                     </svg>
                     <h2 style="margin: 0; font-size: 1.1rem; color: #fff;" data-i18n="terminal_title">ARD 내부 터미널 콘솔</h2>
                 </div>
-                <button id="terminal-modal-close" class="tab-btn" style="padding: 4px 10px; font-size: 0.9rem; line-height: 1;">✕</button>
+                <button id="terminal-modal-close" class="tab-btn" style="padding: 4px 10px; font-size: 0.9rem; line-height: 1; display: flex; align-items: center; justify-content: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
             <!-- Terminal Quick Commands Toolbar -->
@@ -2072,11 +2108,13 @@
 
         function toggleSidebar() {
             rightCol.classList.toggle('hidden');
-            const toggleBtn = document.querySelector('.resizer-toggle');
-            if (rightCol.classList.contains('hidden')) {
-                if (toggleBtn) toggleBtn.textContent = '◀';
-            } else {
-                if (toggleBtn) toggleBtn.textContent = '▶';
+            const toggleIcon = document.querySelector('.resizer-toggle .toggle-icon');
+            if (toggleIcon) {
+                if (rightCol.classList.contains('hidden')) {
+                    toggleIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    toggleIcon.style.transform = 'rotate(0deg)';
+                }
             }
         }
     </script>
