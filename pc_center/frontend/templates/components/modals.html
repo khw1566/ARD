@@ -1,0 +1,303 @@
+    <!-- Pricing Modal -->
+    <div id="pricing-modal" class="modal">
+        <div class="modal-content card" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0;" data-i18n="pricing_title">Pricing (1M Tokens) @ 1,503.77원</h2>
+                <span id="close-modal" style="cursor: pointer; font-size: 1.5rem;">&times;</span>
+            </div>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Input (1M)</th>
+                        <th>Output (1M)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>gemini-3.1-flash-lite</td><td>376원 ($0.25)</td><td>2,256원 ($1.50)</td></tr>
+                    <tr><td>gemini-3-flash</td><td>752원 ($0.50)</td><td>4,511원 ($3.00)</td></tr>
+                    <tr><td>gemini-2.5-flash</td><td>451원 ($0.30)</td><td>3,759원 ($2.50)</td></tr>
+                    <tr><td>gemini-2.5-flash-lite</td><td>150원 ($0.10)</td><td>602원 ($0.40)</td></tr>
+                    <tr class="highlight"><td>gemini-2.0-flash-lite</td><td>113원 ($0.075)</td><td>451원 ($0.30)</td></tr>
+                    <tr><td>gemini-2.0-flash</td><td>150원 ($0.10)</td><td>602원 ($0.40)</td></tr>
+                    <tr><td>gemini-robotics-er</td><td>1,880원 ($1.25)</td><td>7,519원 ($5.00)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Communication & API Statistics Modal -->
+    <div id="stats-modal" class="modal">
+        <div class="modal-content card stats-modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <h2 style="margin: 0; font-size: 1.25rem;" data-i18n="stats_modal_title">시스템 통신 패킷 & API 동작 통계</h2>
+                </div>
+                <span id="close-stats-modal" style="cursor: pointer; font-size: 1.6rem; line-height: 1; color: var(--text-dim);">&times;</span>
+            </div>
+
+            <!-- Summary KPI Cards -->
+            <div class="stats-kpi-grid">
+                <div class="stats-kpi-card">
+                    <div class="stats-kpi-label" data-i18n="stats_uptime">서버 가동 시간</div>
+                    <div class="stats-kpi-val" id="stats-kpi-uptime">00:00:00</div>
+                    <div class="stats-kpi-sub" id="stats-kpi-start-time">시작: -</div>
+                </div>
+                <div class="stats-kpi-card">
+                    <div class="stats-kpi-label" data-i18n="stats_total_packets">총 MCU 패킷</div>
+                    <div class="stats-kpi-val" id="stats-kpi-mcu-total">0</div>
+                    <div class="stats-kpi-sub"><span data-i18n="stats_mcu_success_rate">MCU 성공률</span>: <span id="stats-kpi-mcu-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                </div>
+                <div class="stats-kpi-card">
+                    <div class="stats-kpi-label" data-i18n="stats_total_api">총 API/MCP 호출</div>
+                    <div class="stats-kpi-val" id="stats-kpi-api-total">0</div>
+                    <div class="stats-kpi-sub"><span data-i18n="stats_api_success_rate">API/MCP 성공률</span>: <span id="stats-kpi-api-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                </div>
+            </div>
+
+            <!-- Scrollable Content Section -->
+            <div style="overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 4px;">
+                <!-- 1. MCU Communication Table -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 1rem; color: var(--primary); margin: 0;" data-i18n="stats_mcu_section">MCU별 패킷 통계</h3>
+                </div>
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_board">보드 / 모듈명</th>
+                                <th data-i18n="stats_th_heartbeat">하트비트</th>
+                                <th data-i18n="stats_th_control">제어신호</th>
+                                <th data-i18n="stats_th_sensor">센서신호</th>
+                                <th data-i18n="stats_th_total_packets">누적 패킷</th>
+                                <th data-i18n="stats_th_errors">오류/실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 통신 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-mcu-tbody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. API & MCP Operation Table -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 1rem; color: var(--secondary); margin: 0;" data-i18n="stats_api_section">API 및 AI / MCP 동작 통계</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_api">API / 엔진</th>
+                                <th data-i18n="stats_th_calls">호출 횟수</th>
+                                <th data-i18n="stats_th_success">성공</th>
+                                <th data-i18n="stats_th_fail">실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 통신 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-api-tbody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer Controls -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <button id="stats-reset-btn" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span data-i18n="stats_reset_btn">통계 초기화</span>
+                </button>
+                <button id="stats-refresh-btn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                    <span data-i18n="stats_refresh_btn">새로고침</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control PC Hardware & Network Monitor Modal -->
+    <div id="hw-modal" class="modal">
+        <div class="modal-content card hw-modal-content" style="max-width: 1050px; width: 96%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                    <h2 style="margin: 0; font-size: 1.25rem;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
+                </div>
+                <span id="close-hw-modal" style="cursor: pointer; font-size: 1.6rem; line-height: 1; color: var(--text-dim);">&times;</span>
+            </div>
+
+            <!-- Top Real-time Stat Cards -->
+            <div class="hw-kpi-grid">
+                <div class="hw-kpi-card" style="border-left: 3px solid #38bdf8;">
+                    <div class="hw-kpi-label" data-i18n="hw_cpu_usage">CPU 사용률</div>
+                    <div class="hw-kpi-val" id="hw-cpu-val">0%</div>
+                    <div class="hw-kpi-sub" id="hw-cpu-sub">0 MHz | 0 Cores</div>
+                </div>
+                <div class="hw-kpi-card" style="border-left: 3px solid #818cf8;">
+                    <div class="hw-kpi-label" data-i18n="hw_ram_usage">RAM 사용률</div>
+                    <div class="hw-kpi-val" id="hw-ram-val">0%</div>
+                    <div class="hw-kpi-sub" id="hw-ram-sub">0.0 / 0.0 GB</div>
+                </div>
+                <div class="hw-kpi-card" style="border-left: 3px solid #34d399;">
+                    <div class="hw-kpi-label" data-i18n="hw_gpu_usage">GPU 사용률</div>
+                    <div class="hw-kpi-val" id="hw-gpu-val">0%</div>
+                    <div class="hw-kpi-sub" id="hw-gpu-sub">-</div>
+                </div>
+                <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24;">
+                    <div class="hw-kpi-label" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
+                    <div class="hw-kpi-val" style="font-size: 1.15rem;" id="hw-net-val">↑ 0 KB/s | ↓ 0 KB/s</div>
+                    <div class="hw-kpi-sub" id="hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+                </div>
+            </div>
+
+            <!-- Scrollable Charts and Details -->
+            <div style="overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 0.95rem; color: var(--primary); margin: 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초)</h3>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">1초 간격 실시간 갱신</span>
+                </div>
+
+                <!-- 2x2 Performance Charts Grid -->
+                <div class="hw-charts-grid">
+                    <!-- CPU Chart -->
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>CPU (<span id="hw-cpu-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #38bdf8;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="hw-chart-cpu"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- RAM Chart -->
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>RAM (<span id="hw-ram-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #818cf8;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="hw-chart-ram"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- GPU Chart -->
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>GPU (<span id="hw-gpu-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #34d399;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="hw-chart-gpu"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Network Chart -->
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>Network (KB/s)</span>
+                            <span class="hw-chart-badge" style="color: #fbbf24;">↑ Tx / ↓ Rx</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="hw-chart-net"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Specification & Interfaces Info -->
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 0.95rem; color: var(--secondary); margin-bottom: 8px;" data-i18n="hw_section_spec">시스템 및 네트워크 인터페이스 상세 정보</h3>
+                    <div class="hw-spec-grid">
+                        <div class="hw-spec-card">
+                            <div class="hw-spec-title" data-i18n="hw_spec_cpu">프로세서 (CPU)</div>
+                            <div class="hw-spec-content" id="hw-spec-cpu-val">-</div>
+                        </div>
+                        <div class="hw-spec-card">
+                            <div class="hw-spec-title" data-i18n="hw_spec_ram">전체 메모리 (RAM)</div>
+                            <div class="hw-spec-content" id="hw-spec-ram-val">-</div>
+                        </div>
+                        <div class="hw-spec-card">
+                            <div class="hw-spec-title" data-i18n="hw_spec_gpu">그래픽 장치 (GPU)</div>
+                            <div class="hw-spec-content" id="hw-spec-gpu-val">-</div>
+                        </div>
+                        <div class="hw-spec-card">
+                            <div class="hw-spec-title" data-i18n="hw_net_interfaces">네트워크 어댑터 IP</div>
+                            <div class="hw-spec-content" id="hw-spec-net-val">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Controls -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <button id="hw-refresh-btn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                    <span data-i18n="stats_refresh_btn">새로고침</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Internal Terminal Console Modal -->
+    <div id="terminal-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 17 10 11 4 5"></polyline>
+                        <line x1="12" y1="19" x2="20" y2="19"></line>
+                    </svg>
+                    <h2 style="margin: 0; font-size: 1.1rem; color: #fff;" data-i18n="terminal_title">ARD 내부 터미널 콘솔</h2>
+                </div>
+                <button id="terminal-modal-close" class="tab-btn" style="padding: 4px 10px; font-size: 0.9rem; line-height: 1; display: flex; align-items: center; justify-content: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Terminal Quick Commands Toolbar -->
+            <div class="terminal-toolbar">
+                <span style="font-size: 0.75rem; color: var(--secondary); margin-right: 6px;">빠른 실행:</span>
+                <button class="term-quick-btn" data-cmd="help">help</button>
+                <button class="term-quick-btn" data-cmd="version">version</button>
+                <button class="term-quick-btn" data-cmd="hw">hardware</button>
+                <button class="term-quick-btn" data-cmd="stats">stats</button>
+                <button class="term-quick-btn" data-cmd="server restart">server restart</button>
+                <button class="term-quick-btn" data-cmd="clear">clear</button>
+            </div>
+
+            <!-- Terminal Screen / Log Area -->
+            <div id="terminal-screen" class="terminal-screen">
+                <div class="term-line term-welcome">ARD Interactive System Terminal [Version 2.4.0]</div>
+                <div class="term-line term-welcome">'help'를 입력하면 사용 가능한 내부 명령어를 확인할 수 있습니다.</div>
+                <div class="term-line" style="margin-bottom: 8px;">---------------------------------------------------------------------</div>
+            </div>
+
+            <!-- Terminal Input Prompt -->
+            <div class="terminal-prompt-bar">
+                <span class="terminal-prompt-prefix">ARD:~$</span>
+                <input type="text" id="terminal-input" class="terminal-input" placeholder="명령어를 입력하세요... (예: version, server restart, ping 127.0.0.1)" autocomplete="off" spellcheck="false">
+                <button id="terminal-send-btn" class="btn-primary" style="padding: 6px 14px; font-size: 0.8rem;">전송</button>
+            </div>
+        </div>
+    </div>

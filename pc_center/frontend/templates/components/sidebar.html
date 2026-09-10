@@ -1,0 +1,914 @@
+            <aside id="sidebar-panel" class="right-col scroll-panel">
+                <details class="accordion-card settings-card" open style="margin-bottom: 20px;">
+                    <summary><h2 data-i18n="settings_header" style="margin:0;">전역 카메라 및 AI 설정</h2></summary>
+                    <div>
+                    <form id="config-form">
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="api_key">API Key</label>
+                            <input type="password" id="api_key" value="{{ config.api_key }}">
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="model_name" style="display: flex; justify-content: space-between; align-items: center;">
+                                Model <span id="open-pricing-modal" style="cursor: pointer; color: var(--primary);">ⓘ</span>
+                            </label>
+                            <select id="model_name">
+                                <option value="gemini-3.1-flash-lite-preview" {{ 'selected' if config.model_name == 'gemini-3.1-flash-lite-preview' }}>gemini-3.1-flash-lite-preview</option>
+                                <option value="gemini-3-flash-preview" {{ 'selected' if config.model_name == 'gemini-3-flash-preview' }}>gemini-3-flash-preview</option>
+                                <option value="gemini-2.5-flash" {{ 'selected' if config.model_name == 'gemini-2.5-flash' }}>gemini-2.5-flash</option>
+                                <option value="gemini-2.5-flash-lite" {{ 'selected' if config.model_name == 'gemini-2.5-flash-lite' }}>gemini-2.5-flash-lite</option>
+                                <option value="gemini-2.0-flash-lite" {{ 'selected' if config.model_name == 'gemini-2.0-flash-lite' }}>gemini-2.0-flash-lite</option>
+                                <option value="gemini-2.0-flash" {{ 'selected' if config.model_name == 'gemini-2.0-flash' }}>gemini-2.0-flash</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="camera_model">Camera Model</label>
+                            <select id="camera_model">
+                                <option value="OV5640" {{ 'selected' if config.imagesendermcu.camera_model == 'OV5640' }}>OV5640</option>
+                                <option value="OV3660" {{ 'selected' if config.imagesendermcu.camera_model == 'OV3660' }}>OV3660</option>
+                                <option value="OV2640" {{ 'selected' if config.imagesendermcu.camera_model == 'OV2640' }}>OV2640</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label for="resolution" data-i18n="res_label">Resolution</label>
+                            <select id="resolution">
+                                <option value="CIF" {{ 'selected' if config.imagesendermcu.resolution == 'CIF' }}>CIF (400x296)</option>
+                                <option value="VGA" {{ 'selected' if config.imagesendermcu.resolution == 'VGA' }}>VGA (640x480)</option>
+                                <option value="SVGA" {{ 'selected' if config.imagesendermcu.resolution == 'SVGA' }}>SVGA (800x600)</option>
+                                <option value="XGA" {{ 'selected' if config.imagesendermcu.resolution == 'XGA' }}>XGA (1024x768)</option>
+                                <option value="SXGA" {{ 'selected' if config.imagesendermcu.resolution == 'SXGA' }}>SXGA (1280x1024)</option>
+                                <option value="UXGA" {{ 'selected' if config.imagesendermcu.resolution == 'UXGA' }}>UXGA (1600x1200)</option>
+                                <option value="QSXGA" {{ 'selected' if config.imagesendermcu.resolution == 'QSXGA' }}>QSXGA (2592x1944)</option>
+                            </select>
+                            <span id="cam-warning-msg" style="display:block; margin-top:5px; font-size:0.75rem; color:#facc15;"></span>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label>JPEG Quality: <span id="quality-val" style="color: var(--primary); display:none;">{{ config.imagesendermcu.jpeg_quality }}</span></label>
+                            <div class="input-with-number">
+                                <input type="range" id="jpeg_quality" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}">
+                                <input type="number" id="jpeg_quality-num" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="hmi_mcu_ip">HMI MCU IP (Receiver)</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="hmi_mcu_ip" value="{{ config.hmi_mcu_ip }}" placeholder="192.168.x.x">
+                                <button type="button" id="sync-r-ip-config" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;">Auto</button>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="transmission-mode" data-i18n="mode_label">Transmission Mode</label>
+                            <select id="transmission-mode">
+                                <option value="UDP" {{ 'selected' if config.imagesendermcu.transmission_mode == 'UDP' }}>UDP (High Speed)</option>
+                                <option value="HTTP" {{ 'selected' if config.imagesendermcu.transmission_mode == 'HTTP' }}>HTTP (Reliable)</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="transmitter_ip" data-i18n="ip_label">Transmitter IP</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="transmitter_ip" value="{{ config.transmitter_ip }}" placeholder="192.168.x.x">
+                                <button type="button" id="sync-t-ip" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;">Auto</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 5px;" data-i18n="apply_btn">Apply Settings</button>
+                    </form>
+                    </div>
+                </details>
+
+
+
+                <div id="imagesendermcu-tab" class="tab-content active">
+                    <!-- New Mini Motor Sim for Transmitter Tab -->
+                    <div class="card mini-sim-card" style="padding: 0; overflow: hidden; height: 180px; position: relative; margin-bottom: 15px; border: 1px solid var(--primary);">
+                        <div id="mini-three-container" style="width: 100%; height: 100%;"></div>
+                        <div style="position: absolute; top: 5px; left: 10px; font-size: 0.7rem; color: var(--primary); font-weight: bold; pointer-events: none;">3D SIM PREVIEW</div>
+                    </div>
+
+                    <details class="accordion-card status-card" open>
+                        <summary><h2 data-i18n="analysis_header" style="margin:0;">이미지 분석 결과</h2></summary>
+                        <div>
+                        <div class="result-item">
+                            <label data-i18n="object_label">객체:</label>
+                            <span id="object-name">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="type_label">유형:</label>
+                            <span id="object-type">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="material_label">재질:</label>
+                            <span id="object-material">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="coords_label">좌표 (X, Y):</label>
+                            <span id="object-coords">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="updated_label">최근 업데이트:</label>
+                            <span id="process-time">-</span>
+                        </div>
+                    </div>
+                    </details>
+                    
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button id="capture-btn-trans" class="btn-primary" style="width: 100%;" data-i18n="capture_now_btn">신규 이미지 분석 (Capture Now)</button>
+                    </div>
+
+                    <details class="accordion-card transmission-card">
+                        <summary><h2 data-i18n="transmission_header" style="margin:0;">송신 세부 정보</h2></summary>
+                        <div>
+                        <div class="result-item">
+                            <label data-i18n="sensor_label">Sensor:</label>
+                            <span id="sensor-info">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="res_label">Resolution:</label>
+                            <span id="res-info">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="size_label">Image Size:</label>
+                            <span id="size-info">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label data-i18n="duration_label">Duration:</label>
+                            <span id="duration-info">-</span>
+                        </div>
+                        <div class="result-item" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 5px;">
+                            <label style="color: var(--secondary);" data-i18n="cost_label">Est. Session Cost:</label>
+                            <span id="cost-info" style="color: var(--success);">0원 ($0.00)</span>
+                        </div>
+                    </div>
+                    </details>
+
+                    <details class="accordion-card auto-capture-card">
+                        <summary><h2 data-i18n="autocapture_header" style="margin:0;">자동 캡처 도구</h2></summary>
+                        <div>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label><span data-i18n="interval_label">Interval</span>: <span id="interval-val" style="color: var(--primary); display:none;">5</span>s</label>
+                            <div class="input-with-number">
+                                <input type="range" id="capture-interval" min="1" max="60" value="5">
+                                <input type="number" id="capture-interval-num" min="1" max="60" value="5">
+                                <span style="font-size: 0.8rem; color: var(--text-dim);">s</span>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button id="start-auto-btn" class="btn-primary" style="background: var(--success);" data-i18n="start_btn">Start</button>
+                            <button id="stop-auto-btn" class="btn-primary" style="background: var(--danger);" disabled data-i18n="stop_btn">Stop</button>
+                        </div>
+                    </div>
+                    </details>
+                </div>
+
+
+
+                <div id="drivemcu-tab" class="tab-content">
+                    <div class="card status-card" style="border-left: 4px solid var(--secondary); margin-bottom: 20px;">
+                        <h2 data-i18n="drive_settings_header">구동 보드 설정 (DriveMCU)</h2>
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="drivemcu_ip" data-i18n="ip_label">DriveMCU IP</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="drivemcu_ip" value="{{ config.drivemcu_ip }}" placeholder="192.168.0.x">
+                                <button type="button" id="sync-d-ip" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;">Auto</button>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div class="input-group">
+                                <label data-i18n="gear_ratio_x">Gear Ratio X</label>
+                                <input type="number" id="gear_ratio_x" value="{{ config.gear_ratio_x }}" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="gear_ratio_y">Gear Ratio Y</label>
+                                <input type="number" id="gear_ratio_y" value="{{ config.gear_ratio_y }}" step="0.1">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div class="input-group">
+                                <label data-i18n="gear_ratio_z">Gear Ratio Z (Rail)</label>
+                                <input type="number" id="gear_ratio_z" value="{{ config.gear_ratio_z or 1.0 }}" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="motor_delay">Motor Delay (ms)</label>
+                                <input type="number" id="motor_delay" value="{{ config.motor_delay }}" min="0" max="100">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div class="input-group">
+                                <label data-i18n="i2c_clock">I2C Clock (Hz)</label>
+                                <select id="i2c-clock-speed" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
+                                    <option value="50000">50 kHz (Low)</option>
+                                    <option value="100000" selected>100 kHz (Standard)</option>
+                                    <option value="400000">400 kHz (Fast)</option>
+                                    <option value="1000000">1000 kHz (Fast+ / Unstable)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="tx_interval">Tx Interval (ms)</label>
+                                <input type="number" id="tof-tx-interval" value="1000" step="100" min="50">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                            <div class="input-group">
+                                <label data-i18n="gps_enable">GPS Module</label>
+                                <div style="display: flex; align-items: center; gap: 10px; height: 100%;">
+                                    <label class="switch">
+                                        <input type="checkbox" id="gps-enable-toggle" {% if config.get('drivemcu_gps') %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span id="gps-status-text" style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">{% if config.get('drivemcu_gps') %}ON{% else %}OFF{% endif %}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Environment Display Panel -->
+                        <div id="env-display" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 5px; margin-bottom: 20px; font-size: 0.75rem; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.05);">
+                                <div style="color: var(--secondary); margin-bottom: 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Temperature</div>
+                                <div style="font-size: 1rem; font-weight: bold; color: var(--text-color);"><span id="env-temp">-</span><span style="font-size: 0.7rem; margin-left: 2px;">°C</span></div>
+                            </div>
+                            <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.05);">
+                                <div style="color: var(--secondary); margin-bottom: 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Humidity</div>
+                                <div style="font-size: 1rem; font-weight: bold; color: var(--text-color);"><span id="env-humid">-</span><span style="font-size: 0.7rem; margin-left: 2px;">%</span></div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="color: var(--secondary); margin-bottom: 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Pressure</div>
+                                <div style="font-size: 1rem; font-weight: bold; color: var(--text-color);"><span id="env-press">-</span><span style="font-size: 0.6rem; margin-left: 2px;">hPa</span></div>
+                            </div>
+                        </div>
+
+                        <button id="save-drive-config" class="btn-primary" style="background: var(--secondary);">Apply Drive Config</button>
+                    </div>
+
+
+                    <div class="card drive-control-card" style="grid-column: span 2;">
+                        <h2 data-i18n="disk_control_header">Disk (Differential) Control</h2>
+                        <div class="input-group">
+                            <label><span data-i18n="movement_steps">Movement Steps:</span> <span id="disk-steps-val" style="color: var(--primary);">500</span></label>
+                            <div class="input-with-number">
+                                <input type="range" id="motor-steps-disk" min="10" max="5000" value="500" step="10">
+                                <input type="number" id="motor-steps-disk-num" min="10" max="5000" value="500" step="10">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <button id="disk-fw-btn" class="btn-primary" data-i18n="forward_btn">Forward</button>
+                            <button id="disk-bw-btn" class="btn-primary" style="background: var(--secondary);" data-i18n="backward_btn">Backward</button>
+                            <button id="disk-cw-btn" class="btn-primary" style="background: #6366f1;" data-i18n="cw_btn">Rotate CW</button>
+                            <button id="disk-ccw-btn" class="btn-primary" style="background: #8b5cf6;" data-i18n="ccw_btn">Rotate CCW</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button id="disk-home-btn" class="btn-primary" style="background: #10b981;" data-i18n="home_btn">Return Origin</button>
+                            <button id="motor-global-stop" class="btn-primary" style="background: var(--danger);" data-i18n="emergency_btn">EMERGENCY STOP</button>
+                        </div>
+                    </div>
+
+                    <!-- Consolidated Motor Control Card -->
+                    <div class="card drive-control-card" style="grid-column: span 2; border-top: 2px solid var(--secondary);">
+                        <h2 data-i18n="motor_control_header">모터별 개별 제어 및 설정 (DriveMCU)</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <!-- X Axis -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 12px;" data-i18n="motor_x_header">X축 모터 제어</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="movement_steps">이동 스텝 (Steps)</span></label>
+                                    <input type="number" id="motor-steps-x" value="200" step="10">
+                                </div>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="rpm_label">최대 속도 (RPM)</span>: <span id="rpm-val-x" style="color: var(--secondary);">100</span></label>
+                                    <input type="number" id="motor-rpm-x" value="100" step="5">
+                                    <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">Delay: <span id="delay-val-x">3000</span>µs</div>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 15px;">
+                                    <label><span data-i18n="acceleration_label">가속도 (Steps/s²)</span></label>
+                                    <input type="number" id="motor-accel-x" value="2000" step="100">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <button id="move-fw-btn-x" class="btn-primary" style="background: var(--secondary); font-size: 0.75rem; padding: 8px 0;">+ CW</button>
+                                    <button id="move-bw-btn-x" class="btn-primary" style="background: #334155; font-size: 0.75rem; padding: 8px 0;">- CCW</button>
+                                </div>
+                            </div>
+
+                            <!-- Y Axis -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 12px;" data-i18n="motor_y_header">Y축 모터 제어</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="movement_steps">이동 스텝 (Steps)</span></label>
+                                    <input type="number" id="motor-steps-y" value="200" step="10">
+                                </div>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="rpm_label">최대 속도 (RPM)</span>: <span id="rpm-val-y" style="color: var(--secondary);">100</span></label>
+                                    <input type="number" id="motor-rpm-y" value="100" step="5">
+                                    <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">Delay: <span id="delay-val-y">3000</span>µs</div>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 15px;">
+                                    <label><span data-i18n="acceleration_label">가속도 (Steps/s²)</span></label>
+                                    <input type="number" id="motor-accel-y" value="2000" step="100">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <button id="move-fw-btn-y" class="btn-primary" style="background: var(--secondary); font-size: 0.75rem; padding: 8px 0;" data-i18n="y_cw_btn">+ CW</button>
+                                    <button id="move-bw-btn-y" class="btn-primary" style="background: #334155; font-size: 0.75rem; padding: 8px 0;" data-i18n="y_ccw_btn">- CCW</button>
+                                </div>
+                            </div>
+
+                            <!-- Z Axis (Rail) -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 12px;" data-i18n="motor_z_header">Z축 레일 제어</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="movement_steps">이동 스텝 (Steps)</span></label>
+                                    <input type="number" id="motor-steps-z" value="200" step="10">
+                                </div>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label><span data-i18n="rpm_label">최대 속도 (RPM)</span>: <span id="rpm-val-z" style="color: var(--secondary);">100</span></label>
+                                    <input type="number" id="motor-rpm-z" value="100" step="5">
+                                </div>
+                                <div class="input-group" style="margin-bottom: 15px;">
+                                    <label><span data-i18n="acceleration_label">가속도 (Steps/s²)</span></label>
+                                    <input type="number" id="motor-accel-z" value="2000" step="100">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <button id="move-fw-btn-z" class="btn-primary" style="background: var(--secondary); font-size: 0.75rem; padding: 8px 0;" data-i18n="z_fw_btn">+ FW</button>
+                                    <button id="move-bw-btn-z" class="btn-primary" style="background: #334155; font-size: 0.75rem; padding: 8px 0;" data-i18n="z_bw_btn">- BW</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rail PID Control Card -->
+                    <div class="card drive-control-card" style="grid-column: span 2; border-left-color: var(--success);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 style="margin: 0; color: var(--success);" data-i18n="z_pid_header">Z-Axis Rail PID Control</h2>
+                            <label class="switch">
+                                <input type="checkbox" id="rail-pid-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <label><span data-i18n="z_target_dist">Target Distance (ToF):</span> <span id="pid-target-val" style="color: var(--success); font-weight: bold;">140</span> mm</label>
+                            <input type="range" id="pid-target-slider" min="140" max="180" value="140" style="accent-color: var(--success);">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div class="input-group">
+                                <label data-i18n="pid_p">P (Proportional)</label>
+                                <input type="number" id="pid-p-input" value="20.0" step="0.5">
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="pid_i">I (Integral)</label>
+                                <input type="number" id="pid-i-input" value="0.05" step="0.01">
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="pid_d">D (Derivative)</label>
+                                <input type="number" id="pid-d-input" value="5.0" step="0.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rail Calibration Card -->
+                    <div class="card drive-control-card" style="grid-column: span 2; border-left-color: #6366f1;">
+                        <h2 style="margin-bottom: 15px; color: #6366f1;" data-i18n="z_cal_header">Z-Axis Rail Calibration</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: flex-end;">
+                            <div class="input-group">
+                                <label data-i18n="z_steps_mm">Steps per mm (Z-Axis)</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="number" id="rail-steps-mm-input" value="43.48" step="0.01" style="flex: 1;">
+                                    <button id="rail-steps-mm-apply-btn" class="btn-primary" style="width: auto; background: #6366f1; padding: 0 15px;" data-i18n="btn_set">SET</button>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <button id="rail-auto-cal-btn" class="btn-primary" style="background: #10b981; margin: 0; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    <span data-i18n="btn_auto_cal">AUTO CALIBRATE (MZA)</span>
+                                </button>
+                                <button id="system-home-btn" class="btn-primary" style="background: #3b82f6; margin: 0; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                    <span data-i18n="btn_system_home">SYSTEM HOME</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.75rem; color: var(--text-dim); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;" data-i18n="z_cal_note">
+                            <strong>Note:</strong> Auto Calibration moves the motor 1000 steps and measures actual displacement using the ToF sensor.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hmi_mcu-tab" class="tab-content">
+                    <div class="card status-card">
+                        <h2 data-i18n="hmi_settings_header">HMI 수신 보드 설정</h2>
+                        <div class="input-group">
+                            <label>HMI Image Quality: <span id="hmi-quality-val" style="color: var(--primary);">10</span></label>
+                            <input type="range" id="hmi_image_quality" min="1" max="63" value="10">
+                        </div>
+                        <div class="input-group">
+                            <label for="transmitter_ip">Transmitter IP</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="transmitter_ip_hmi" value="{{ config.imagesendermcu.transmitter_ip }}" disabled>
+                                <button type="button" id="sync-r-ip" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;">Sync</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="controlmcu-tab" class="tab-content">
+                    <!-- Control MCU System Status -->
+                    <div class="card status-card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
+                        <h2 style="margin-bottom: 15px; color: var(--primary);">Control MCU Status</h2>
+                        <div class="result-item">
+                            <label>System Mode:</label>
+                            <span id="controlmcu-mode-display">-</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Sub Mode:</label>
+                            <span id="controlmcu-sub-display">-</span>
+                        </div>
+                    </div>
+                    <!-- PC Microphone Input -->
+                    <div class="card" style="background: rgba(56, 189, 248, 0.05); border: 1px solid var(--primary); padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div id="pc-mic-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: #475569;"></div>
+                                <div>
+                                    <span style="font-weight: bold; color: var(--primary);">PC Mic Input (Internal)</span>
+                                    <p style="margin: 0; font-size: 0.65rem; color: var(--text-dim);">보드 없이 PC 마이크로 명령 수행</p>
+                                </div>
+                            </div>
+                            <button id="toggle-pc-mic" class="btn-primary" style="width: auto; padding: 6px 18px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                <span id="mic-btn-text">START MIC</span>
+                            </button>
+                        </div>
+                        <div id="mic-wave-container" style="display: flex; align-items: center; justify-content: center; gap: 6px; height: 32px; margin-top: 15px; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                            <div class="mic-bar" style="height: 10%; width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.05s ease;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Voice AI Basic Controls -->
+                    <div class="card status-card">
+                        <h2 data-i18n="tab_sound">Control & Voice AI Settings</h2>
+                        <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px;">
+                            <!-- Row 1: Toggles (2 columns) -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 0.85rem;" data-i18n="voice_mode">Voice Mode</label>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 0.75rem;" data-i18n="ptt_mode">PTT</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="voice-mode-toggle" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span style="font-size: 0.75rem; white-space: nowrap;" data-i18n="vad_mode">VAD</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 0.85rem; white-space: nowrap;">Play AI Response on PC</label>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 0.75rem; color: var(--text-dim);">OFF</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="pc-audio-output-toggle" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span style="font-size: 0.75rem;">ON</span>
+                                        <button onclick="testAudio()" style="margin-left: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 4px 10px; font-size: 0.7rem; border-radius: 4px; cursor: pointer; transition: all 0.2s; white-space: nowrap;" onmouseover="this.style.background='rgba(56, 189, 248, 0.2)'" onmouseout="this.style.background='rgba(56, 189, 248, 0.1)'">TEST AUDIO</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Row 2: Sliders & Emergency Stop (3 columns) -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: flex-end;">
+                                <div style="display: flex; flex-direction: column; width: 100%;">
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 0.85rem; white-space: nowrap;" data-i18n="sensitivity">Sensitivity</label>
+                                    <input type="range" id="voice-sensitivity" min="0" max="1000" value="500" style="width: 100%; cursor: pointer;">
+                                </div>
+                                <div style="display: flex; flex-direction: column; width: 100%;">
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 0.85rem; white-space: nowrap;">Volume: <span id="mcu-volume-val" style="color: var(--primary);">12</span></label>
+                                    <input type="range" id="mcu-volume" min="0" max="21" value="12" style="width: 100%; cursor: pointer;">
+                                </div>
+                                <div style="display: flex; flex-direction: column; width: 100%;">
+                                    <button onclick="stopAllAudio()" class="btn-primary" style="background: #ef4444; color: white; font-weight: 600; width: 100%; height: 35px; border-radius: 6px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                                        <span>STOP AUDIO</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Engine Settings -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div class="input-group">
+                                <label for="stt-engine-select">STT Engine</label>
+                                <select id="stt-engine-select">
+                                    <option value="Whisper-Local">Whisper (Local)</option>
+                                    <option value="OpenAI-API">OpenAI Whisper API</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="tts-engine-select">TTS Engine</label>
+                                <select id="tts-engine-select">
+                                    <option value="Edge-TTS">Edge-TTS (Online)</option>
+                                    <option value="Azure-TTS">Azure-TTS (Microsoft)</option>
+                                    <option value="gTTS">gTTS (Google)</option>
+                                    <option value="Sherpa">Sherpa-ONNX (Local)</option>
+                                    <option value="OpenAI">OpenAI TTS</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="openai-key-container" class="input-group" style="display: none; margin-bottom: 15px; border: 1px solid var(--secondary); padding: 10px; border-radius: 8px;">
+                            <label for="openai_api_key">OpenAI API Key</label>
+                            <input type="password" id="openai_api_key" placeholder="sk-...">
+                        </div>
+
+                        <div id="azure-key-container" class="input-group" style="display: none; margin-bottom: 15px; border: 1px solid var(--primary); padding: 10px; border-radius: 8px;">
+                            <div style="margin-bottom: 8px;">
+                                <label for="azure_api_key">Azure Speech API Key</label>
+                                <input type="password" id="azure_api_key" placeholder="Enter Azure Speech API Key" value="{{ config.soundmcu.azure_api_key or '' }}">
+                            </div>
+                            <div>
+                                <label for="azure_region">Azure Speech Region</label>
+                                <input type="text" id="azure_region" placeholder="e.g. koreacentral" value="{{ config.soundmcu.azure_region or 'koreacentral' }}">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label for="tts-voice-select">Voice Selection</label>
+                            <select id="tts-voice-select">
+                                <option value="ko-KR-SunHiNeural">ko-KR-SunHiNeural (Default)</option>
+                            </select>
+                        </div>
+
+                        <!-- Advanced Voice Settings -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div class="input-group">
+                                <label>Pitch: <span id="pitch-val" style="color: var(--primary);">0</span>%</label>
+                                <input type="range" id="tts-pitch" min="-50" max="100" value="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Rate: <span id="rate-val" style="color: var(--primary);">0</span>%</label>
+                                <input type="range" id="tts-rate" min="-50" max="100" value="0">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label>TTS Presets</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                                <button onclick="applyTTSPreset('child')" class="btn-primary" style="background: #ec4899; font-size: 0.75rem;">Child</button>
+                                <button onclick="applyTTSPreset('elderly')" class="btn-primary" style="background: #8b5cf6; font-size: 0.75rem;">Elderly</button>
+                                <button onclick="applyTTSPreset('reset')" class="btn-primary" style="background: var(--secondary); font-size: 0.75rem;">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="controlmcu_ip">Control Board IP (UDP)</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="controlmcu_ip" value="{{ config.controlmcu_ip or '' }}" placeholder="192.168.x.x">
+                                <button type="button" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;" onclick="const input = document.getElementById('controlmcu_ip'); input.value = document.getElementById('controlmcu-ip-display').dataset.ip || ''; input.dispatchEvent(new Event('change'));">Auto</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Voice & Melody Tester Card -->
+                    <div class="card status-card" style="margin-top: 15px; border-left: 4px solid var(--success);">
+                        <h2 style="color: var(--success); margin-top: 0; margin-bottom: 12px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            AI Voice & Melody Tester
+                        </h2>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 15px; line-height: 1.4;">
+                            PC에서 ControlMCU로 직접 멜로디 및 TTS 음성을 실시간 전송하는 UDP 오디오 라우팅을 검증합니다.
+                        </p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <button id="test-melody-btn" class="btn-primary" style="background: #3b82f6; font-weight: 600; font-size: 0.8rem; height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                <span>멜로디 테스트 전송</span>
+                            </button>
+                            <button id="test-tts-btn" class="btn-primary" style="background: #10b981; font-weight: 600; font-size: 0.8rem; height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                <span>TTS 음성 테스트 전송</span>
+                            </button>
+                        </div>
+                        <div class="input-group" style="margin-top: 5px;">
+                            <input type="text" id="test-tts-input" value="안녕하세요. 지능형 로봇 시스템 테스트 중입니다." placeholder="전송할 TTS 문장을 입력하세요..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                        <div id="test-audio-status" style="margin-top: 8px; font-size: 0.7rem; color: #94a3b8; font-style: italic; text-align: right; display: none;">
+                            오디오 전송 요청 중...
+                        </div>
+                    </div>
+                    
+                    <!-- Microsoft Azure 감정 음성 연구소 (Emotional Speech Laboratory) -->
+                    <div class="card status-card" style="margin-top: 15px; border-top: 3px solid #a855f7; background: linear-gradient(135deg, rgba(168, 85, 247, 0.05), rgba(15, 23, 42, 0.6));">
+                        <h2 style="color: #c084fc; margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                            <span>감정 음성 연구소 (Emotional TTS Lab)</span>
+                        </h2>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 15px; line-height: 1.4;">
+                            마이크로소프트 Azure의 고성능 신경망 음성 모델(<span style="color: #c084fc; font-weight: bold;">SunHiNeural</span>)의 감정 스타일(style)과 연기 세기(styledegree)의 실시간 차이를 즉시 비교 감상해 보세요!
+                        </p>
+                        
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 6px; display: block;">1. 감정 스타일 선택 (Style)</label>
+                            <select id="emotion-lab-style" style="width: 100%; height: 38px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 0 10px; font-size: 0.85rem; outline: none; cursor: pointer;">
+                                <option value="friendly">친근하고 부드러운 대화체 (Friendly)</option>
+                                <option value="cheerful">기쁘고 쾌활한 목소리 (Cheerful)</option>
+                                <option value="sad">서글프고 사과하는 목소리 (Sad)</option>
+                                <option value="excited">흥분되고 매우 활기찬 목소리 (Excited)</option>
+                                <option value="angry">화나고 엄하고 단호한 목소리 (Angry)</option>
+                                <option value="whispering">비밀스럽게 속삭이는 조용한 톤 (Whispering)</option>
+                                <option value="empathetic">공감하고 감싸안는 따뜻한 음색 (Empathetic)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin: 0;">2. 감정 강도 (Style Degree)</label>
+                                <span id="emotion-lab-degree-val" style="color: #c084fc; font-weight: bold; font-size: 0.85rem; font-family: monospace;">1.5</span>
+                            </div>
+                            <input type="range" id="emotion-lab-degree" min="0.1" max="2.0" step="0.1" value="1.5" style="width: 100%; height: 4px; cursor: pointer; accent-color: #a855f7;" oninput="document.getElementById('emotion-lab-degree-val').innerText = parseFloat(this.value).toFixed(1)">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-dim); margin-top: 4px;">
+                                <span>0.1 (아주 밋밋하게)</span>
+                                <span>1.0 (일반)</span>
+                                <span>2.0 (극대화된 연기선)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 6px; display: block;">3. 테스트 발화 텍스트</label>
+                            <textarea id="emotion-lab-text" style="width: 100%; height: 60px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 6px; padding: 8px; font-size: 0.85rem; outline: none; resize: none;">와! 오늘 날씨 정말 끝내주네요! 저랑 같이 시원하게 드라이브라도 가실래요? 너무 신나요!</textarea>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+                            <button id="emotion-lab-play-btn" onclick="playEmotionLabSpeech()" class="btn-primary" style="background: linear-gradient(135deg, #a855f7, #7c3aed); font-weight: bold; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; border: none; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                <span>즉시 음성 합성 & 재생 (PLAY)</span>
+                            </button>
+                            <button id="emotion-lab-stop-btn" onclick="stopEmotionLabSpeech()" class="btn-primary" style="background: #334155; font-weight: bold; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                <span>STOP</span>
+                            </button>
+                        </div>
+                        <div id="emotion-lab-status" style="margin-top: 8px; font-size: 0.65rem; color: #c084fc; font-style: italic; text-align: right; display: none;">
+                            Azure Neural TTS 합성 중...
+                        </div>
+                    </div>
+                    
+                    <!-- AI Persona Editor -->
+                    <div class="card status-card" style="margin-top: 15px;">
+                        <div class="input-group">
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: var(--primary);">AI Persona & Instructions</span>
+                                <span id="persona-save-status" style="font-size: 0.7rem; color: var(--success); display: none;">Saved!</span>
+                            </label>
+                            <textarea id="persona-editor" style="width: 100%; height: 200px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.5; resize: vertical;"></textarea>
+                            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                                <button id="save-persona-btn" class="btn-primary" style="flex: 1; height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                    <span>SAVE PERSONA</span>
+                                </button>
+                                <button id="reload-persona-btn" class="btn-primary" style="flex: 1; height: 40px; background: var(--secondary); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    <span>RELOAD</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="robot3axismcu-tab" class="tab-content">
+                    <div class="card settings-card" style="margin-bottom: 20px; border-top: 2px solid var(--primary);">
+                        <h2 data-i18n="r3_settings_header">구동보드 설정 (3축 로봇)</h2>
+                        <div class="input-group">
+                            <label for="robot3axismcu_ip">Robot3AxisMCU IP (TCP)</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="robot3axismcu_ip" placeholder="192.168.x.x">
+                                <button type="button" id="sync-r3-ip" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;" data-i18n="r3_sync_btn">Auto</button>
+                            </div>
+                        </div>
+
+                        <!-- Speed and Acceleration -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                            <!-- X Axis Config -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;" data-i18n="r3_x_axis">X축 모터 설정</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label data-i18n="r3_speed">최대 속도 (Steps/s)</label>
+                                    <input type="number" id="r3_speed_x" value="100" step="10">
+                                </div>
+                                <div class="input-group">
+                                    <label data-i18n="r3_accel">가속도 (Steps/s²)</label>
+                                    <input type="number" id="r3_accel_x" value="2000" step="100">
+                                </div>
+                            </div>
+                            
+                            <!-- Y Axis Config -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;" data-i18n="r3_y_axis">Y축 모터 설정</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label data-i18n="r3_speed">최대 속도 (Steps/s)</label>
+                                    <input type="number" id="r3_speed_y" value="700" step="50">
+                                </div>
+                                <div class="input-group">
+                                    <label data-i18n="r3_accel">가속도 (Steps/s²)</label>
+                                    <input type="number" id="r3_accel_y" value="2000" step="100">
+                                </div>
+                            </div>
+                            
+                            <!-- Z Axis Config -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;" data-i18n="r3_z_axis">Z축 모터 설정</h3>
+                                <div class="input-group" style="margin-bottom: 8px;">
+                                    <label data-i18n="r3_speed">최대 속도 (Steps/s)</label>
+                                    <input type="number" id="r3_speed_z" value="1000" step="100">
+                                </div>
+                                <div class="input-group">
+                                    <label data-i18n="r3_accel">가속도 (Steps/s²)</label>
+                                    <input type="number" id="r3_accel_z" value="2000" step="100">
+                                </div>
+                            </div>
+                        </div>
+                        <button id="save-r3-config" class="btn-primary" style="width: 100%; margin-top: 15px;" data-i18n="r3_apply">설정 적용</button>
+                    </div>
+
+                    <div class="card drive-control-card">
+                        <h2 data-i18n="r3_control_header">3축 로봇 단일 모터 제어</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <!-- X Axis -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0;" data-i18n="r3_x_axis">X축 (회전)</h3>
+                                <div class="input-group">
+                                    <label><span data-i18n="movement_steps">Steps</span>: <span id="robot3axis-steps-val-x" style="color: var(--primary);">200</span></label>
+                                    <input type="number" id="robot3axis-motor-steps-x" value="200" step="10">
+                                </div>
+                                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                    <button id="robot3axis-x-cw" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem;">+ CW</button>
+                                    <button id="robot3axis-x-ccw" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem; background: var(--secondary);">- CCW</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Y Axis -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0;" data-i18n="r3_y_axis">Y축 (수직)</h3>
+                                <div class="input-group">
+                                    <label><span data-i18n="movement_steps">Steps</span>: <span id="robot3axis-steps-val-y" style="color: var(--primary);">200</span></label>
+                                    <input type="number" id="robot3axis-motor-steps-y" value="200" step="10">
+                                </div>
+                                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                    <button id="robot3axis-y-up" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem;">+ UP</button>
+                                    <button id="robot3axis-y-down" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem; background: var(--secondary);">- DOWN</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Z Axis -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #334155;">
+                                <h3 style="color: var(--primary); font-size: 0.9rem; margin-top: 0;" data-i18n="r3_z_axis">Z축 (수평)</h3>
+                                <div class="input-group">
+                                    <label><span data-i18n="movement_steps">Steps</span>: <span id="robot3axis-steps-val-z" style="color: var(--primary);">200</span></label>
+                                    <input type="number" id="robot3axis-motor-steps-z" value="200" step="10">
+                                </div>
+                                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                    <button id="robot3axis-z-fw" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem;">+ FW</button>
+                                    <button id="robot3axis-z-bw" class="btn-primary" style="flex: 1; padding: 5px; font-size: 0.8rem; background: var(--secondary);">- BW</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button id="robot3axis-home" class="btn-primary" style="flex: 1; background: #10b981;" data-i18n="r3_home">초기 위치 (Zero)</button>
+                            <button id="robot3axis-stop" class="btn-primary" style="flex: 1; background: var(--danger);" data-i18n="emergency_stop_btn">EMERGENCY STOP</button>
+                        </div>
+                    </div>
+
+                    <!-- New PTP Move Section -->
+                    <div class="card drive-control-card" style="border-top: 2px solid var(--secondary);">
+                        <h2 data-i18n="r3_ptp_header">좌표 PTP 제어</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div class="input-group">
+                                <label>목표 X (deg)</label>
+                                <input type="number" id="ptp-x" value="0" step="1">
+                            </div>
+                            <div class="input-group">
+                                <label>목표 Y (mm)</label>
+                                <input type="number" id="ptp-y" value="0" step="1">
+                            </div>
+                            <div class="input-group">
+                                <label>목표 Z (mm)</label>
+                                <input type="number" id="ptp-z" value="0" step="1">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <button id="robot3axis-ptp-move" class="btn-primary" style="background: var(--primary); font-weight: bold;">목표 지점으로 이동</button>
+                            <button id="robot3axis-home" class="btn-primary" style="background: #059669; font-size: 0.8rem;">초기 위치 (Zero)</button>
+                        </div>
+                        
+                        <!-- Multi-Presets Grid -->
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; display: block; font-weight: bold; letter-spacing: 0.5px;">LOCATION PRESETS</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <button onclick="applyPreset(0, 0, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Origin (0,0,0)</button>
+                                <button onclick="applyPreset(0, 150, 0)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Safe Home</button>
+                                <button onclick="applyPreset(90, 80, 50)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Scanning</button>
+                                <button onclick="applyPreset(-45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Drop Zone A</button>
+                                <button onclick="applyPreset(45, 20, 100)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Drop Zone B</button>
+                                <button onclick="applyPreset(180, 120, 20)" class="btn-primary" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Storage</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sequence Control Section -->
+                    <div class="card drive-control-card" style="border-top: 2px solid var(--success); margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 style="margin: 0; font-size: 1.1rem;" data-i18n="r3_sequence_header">연속 동작 시퀀스</h2>
+                            <div id="sequence-status-badge" style="font-size: 0.65rem; padding: 3px 8px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--text-dim); font-weight: bold; border: 1px solid rgba(255,255,255,0.1);">READY</div>
+                        </div>
+
+                        <div class="sequence-table-container" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
+                                <thead style="position: sticky; top: 0; background: #1e293b; z-index: 1;">
+                                    <tr>
+                                        <th style="padding: 8px; text-align: center; width: 30px;">#</th>
+                                        <th style="padding: 8px; text-align: left;">Target (X, Y, Z)</th>
+                                        <th style="padding: 8px; text-align: center; width: 60px;">Wait</th>
+                                        <th style="padding: 8px; text-align: center; width: 60px;">Est.</th>
+                                        <th style="padding: 8px; text-align: center; width: 30px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sequence-list">
+                                    <tr id="empty-seq-msg">
+                                        <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-dim); font-style: italic;">시퀀스가 비어 있습니다.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="background: rgba(15, 23, 42, 0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.1);">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 0.6rem;">X(deg)</label>
+                                    <input type="number" id="seq-in-x" value="0" style="padding: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 0.6rem;">Y(mm)</label>
+                                    <input type="number" id="seq-in-y" value="0" style="padding: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 0.6rem;">Z(mm)</label>
+                                    <input type="number" id="seq-in-z" value="0" style="padding: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 0.6rem;">Wait(s)</label>
+                                    <input type="number" id="seq-in-wait" value="1.0" step="0.5" min="0" style="padding: 4px; font-size: 0.75rem;">
+                                </div>
+                            </div>
+                            <button id="add-seq-step" class="btn-primary" style="width: 100%; height: 28px; font-size: 0.75rem; background: var(--secondary);">+ 단계 추가</button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 12px;">
+                            <button id="run-sequence-btn" class="btn-primary" style="background: var(--success); font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"></polygon></svg>
+                                <span>시퀀스 실행</span>
+                            </button>
+                            <button id="clear-sequence-btn" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem;">초기화</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="master-control-tab" class="tab-content">
+                    <div class="card status-card">
+                        <h2 style="color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 10px;">MASTER CONTROL (Joystick & Mode)</h2>
+                        <div style="display: flex; gap: 20px;">
+                            <!-- Left: Virtual Joystick -->
+                            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                                <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 15px; letter-spacing: 1px;">VIRTUAL JOYSTICK</div>
+                                <div class="joystick-container" style="position: relative; width: 160px; height: 160px; background: rgba(255,255,255,0.05); border-radius: 50%; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1);">
+                                    <!-- Crosshair -->
+                                    <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 1px; background: rgba(255,255,255,0.1); transform: translateY(-50%); pointer-events: none;"></div>
+                                    <div style="position: absolute; left: 50%; top: 10%; bottom: 10%; width: 1px; background: rgba(255,255,255,0.1); transform: translateX(-50%); pointer-events: none;"></div>
+                                    
+                                    <!-- Stick -->
+                                    <div id="virtual-joystick-stick" style="position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; background: radial-gradient(circle at 30% 30%, #475569, #1e293b); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 10px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.2); cursor: grab; transition: transform 0.1s; display: flex; align-items: center; justify-content: center;">
+                                        <div style="width: 20px; height: 20px; border-radius: 50%; background: rgba(56, 189, 248, 0.5); filter: blur(2px);"></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+                                    <div style="flex: 1; text-align: center; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; font-family: monospace; color: var(--primary);">X: <span id="vj-x">0</span></div>
+                                    <div style="flex: 1; text-align: center; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; font-family: monospace; color: var(--primary);">Y: <span id="vj-y">0</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Mode Status -->
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 15px;">
+                                <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px;">CURRENT MODE</div>
+                                    <div id="mc-mode-display" style="font-size: 2rem; font-weight: bold; color: #cbd5e1; text-shadow: 0 0 10px rgba(255,255,255,0.2);">MODE A (Robot)</div>
+                                    <div id="mc-submode-display" style="font-size: 0.9rem; color: var(--primary); margin-top: 5px;">Sub-Mode 1: X/Z Axis</div>
+                                </div>
+                                
+                                <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.05); flex: 1;">
+                                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px;">MAPPING INFO</div>
+                                    <div id="mc-mapping-info" style="font-size: 0.85rem; color: #94a3b8; line-height: 1.6;">
+                                        <strong>UP/DOWN:</strong> Z Axis Control<br>
+                                        <strong>LEFT/RIGHT:</strong> X Axis Control
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
