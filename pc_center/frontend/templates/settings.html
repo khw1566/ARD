@@ -111,12 +111,61 @@
 
         .settings-view {
             display: none;
-            max-width: 1200px;
+            max-width: 1500px;
             margin: 0 auto;
         }
 
         .settings-view.active {
             display: block;
+        }
+
+        /* Responsive 2-column layout for Hardware & Network monitoring */
+        .hw-split-layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 380px) 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .hw-split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hw-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .hw-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .auto-refresh-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-dim, #888888);
+        }
+
+        .auto-refresh-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success, #22c55e);
+            box-shadow: 0 0 8px var(--success, #22c55e);
+            display: inline-block;
         }
 
         /* Color customizer styles */
@@ -217,6 +266,11 @@
             <span data-i18n="settings_page_title">ARD 시스템 통합 설정</span>
         </h1>
         <div class="settings-nav-links">
+            <div class="auto-refresh-badge">
+                <span class="auto-refresh-dot" id="auto-refresh-indicator"></span>
+                <span id="auto-refresh-label">AUTO 2s</span>
+            </div>
+            <button id="toggle-autorefresh-btn" class="preset-btn" style="padding: 5px 10px; font-size: 0.75rem;">자동갱신 ON</button>
             <button id="lang-btn-settings" class="preset-btn" style="padding: 5px 10px; font-size: 0.75rem;">KO / EN</button>
             <a href="/" target="_blank">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
@@ -393,94 +447,104 @@
         <!-- 3. NETWORK & HARDWARE TAB -->
         <section id="tab-network" class="settings-view">
             <div class="card status-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
                     <h2 style="margin: 0;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
                     <button id="tab-hw-refresh-btn" class="preset-btn" data-i18n="stats_refresh_btn">새로고침</button>
                 </div>
 
-                <!-- HW KPI Grid -->
-                <div class="hw-kpi-grid">
-                    <div class="hw-kpi-card">
-                        <div class="hw-kpi-label" data-i18n="hw_cpu_usage">CPU 사용률</div>
-                        <div class="hw-kpi-val" id="tab-hw-cpu-val">0%</div>
-                        <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
-                    </div>
-                    <div class="hw-kpi-card" style="border-left: 3px solid #818cf8;">
-                        <div class="hw-kpi-label" data-i18n="hw_ram_usage">RAM 사용률</div>
-                        <div class="hw-kpi-val" id="tab-hw-ram-val">0%</div>
-                        <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
-                    </div>
-                    <div class="hw-kpi-card" style="border-left: 3px solid #34d399;">
-                        <div class="hw-kpi-label" data-i18n="hw_gpu_usage">GPU 사용률</div>
-                        <div class="hw-kpi-val" id="tab-hw-gpu-val">0%</div>
-                        <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
-                    </div>
-                    <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24;">
-                        <div class="hw-kpi-label" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
-                        <div class="hw-kpi-val" style="font-size: 1.15rem;" id="tab-hw-net-val">↑ 0 KB/s | ↓ 0 KB/s</div>
-                        <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
-                    </div>
-                </div>
+                <!-- 2-Column Split Layout for Maximum Horizontal Space Utilization -->
+                <div class="hw-split-layout">
+                    <!-- Left Column: KPI Metric Cards & System Spec Info -->
+                    <div class="hw-left-col">
+                        <div class="hw-kpi-card">
+                            <div class="hw-kpi-label" data-i18n="hw_cpu_usage">CPU 사용률</div>
+                            <div class="hw-kpi-val" id="tab-hw-cpu-val">0%</div>
+                            <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
+                        </div>
+                        <div class="hw-kpi-card" style="border-left: 3px solid #818cf8;">
+                            <div class="hw-kpi-label" data-i18n="hw_ram_usage">RAM 사용률</div>
+                            <div class="hw-kpi-val" id="tab-hw-ram-val">0%</div>
+                            <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
+                        </div>
+                        <div class="hw-kpi-card" style="border-left: 3px solid #34d399;">
+                            <div class="hw-kpi-label" data-i18n="hw_gpu_usage">GPU 사용률</div>
+                            <div class="hw-kpi-val" id="tab-hw-gpu-val">0%</div>
+                            <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
+                        </div>
+                        <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24;">
+                            <div class="hw-kpi-label" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
+                            <div class="hw-kpi-val" style="font-size: 1.15rem;" id="tab-hw-net-val">↑ 0 KB/s | ↓ 0 KB/s</div>
+                            <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+                        </div>
 
-                <!-- 2x2 Charts Grid -->
-                <h3 style="font-size: 0.95rem; color: var(--primary); margin: 20px 0 10px 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초)</h3>
-                <div class="hw-charts-grid">
-                    <div class="hw-chart-box">
-                        <div class="hw-chart-header">
-                            <span>CPU (<span id="tab-hw-cpu-chart-pct">0%</span>)</span>
-                            <span class="hw-chart-badge" style="color: #38bdf8;">0 ~ 100%</span>
-                        </div>
-                        <div class="hw-canvas-container">
-                            <canvas id="tab-hw-chart-cpu"></canvas>
-                        </div>
-                    </div>
-                    <div class="hw-chart-box">
-                        <div class="hw-chart-header">
-                            <span>RAM (<span id="tab-hw-ram-chart-pct">0%</span>)</span>
-                            <span class="hw-chart-badge" style="color: #818cf8;">0 ~ 100%</span>
-                        </div>
-                        <div class="hw-canvas-container">
-                            <canvas id="tab-hw-chart-ram"></canvas>
-                        </div>
-                    </div>
-                    <div class="hw-chart-box">
-                        <div class="hw-chart-header">
-                            <span>GPU (<span id="tab-hw-gpu-chart-pct">0%</span>)</span>
-                            <span class="hw-chart-badge" style="color: #34d399;">0 ~ 100%</span>
-                        </div>
-                        <div class="hw-canvas-container">
-                            <canvas id="tab-hw-chart-gpu"></canvas>
+                        <!-- System Specs Box -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; margin-top: 4px;">
+                            <h3 style="font-size: 0.88rem; color: var(--secondary); margin: 0 0 10px 0;" data-i18n="hw_section_spec">시스템 및 인터페이스 사양</h3>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                                    <div class="hw-spec-title" data-i18n="hw_spec_os">운영체제</div>
+                                    <div class="hw-spec-desc" id="tab-hw-spec-os">-</div>
+                                </div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                                    <div class="hw-spec-title" data-i18n="hw_spec_cpu">프로세서</div>
+                                    <div class="hw-spec-desc" id="tab-hw-spec-cpu">-</div>
+                                </div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                                    <div class="hw-spec-title" data-i18n="hw_spec_ram">전체 메모리</div>
+                                    <div class="hw-spec-desc" id="tab-hw-spec-ram">-</div>
+                                </div>
+                                <div class="hw-spec-item">
+                                    <div class="hw-spec-title" data-i18n="hw_spec_gpu">그래픽 장치</div>
+                                    <div class="hw-spec-desc" id="tab-hw-spec-gpu">-</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="hw-chart-box">
-                        <div class="hw-chart-header">
-                            <span>Network (KB/s)</span>
-                            <span class="hw-chart-badge" style="color: #fbbf24;">↑ Tx / ↓ Rx</span>
-                        </div>
-                        <div class="hw-canvas-container">
-                            <canvas id="tab-hw-chart-net"></canvas>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- System Info Details -->
-                <h3 style="font-size: 0.95rem; color: var(--secondary); margin: 25px 0 10px 0;" data-i18n="hw_section_spec">시스템 및 네트워크 인터페이스 상세 정보</h3>
-                <div class="hw-spec-grid">
-                    <div class="hw-spec-item">
-                        <div class="hw-spec-title" data-i18n="hw_spec_os">운영체제</div>
-                        <div class="hw-spec-desc" id="tab-hw-spec-os">-</div>
-                    </div>
-                    <div class="hw-spec-item">
-                        <div class="hw-spec-title" data-i18n="hw_spec_cpu">프로세서</div>
-                        <div class="hw-spec-desc" id="tab-hw-spec-cpu">-</div>
-                    </div>
-                    <div class="hw-spec-item">
-                        <div class="hw-spec-title" data-i18n="hw_spec_ram">전체 메모리</div>
-                        <div class="hw-spec-desc" id="tab-hw-spec-ram">-</div>
-                    </div>
-                    <div class="hw-spec-item">
-                        <div class="hw-spec-title" data-i18n="hw_spec_gpu">그래픽 장치</div>
-                        <div class="hw-spec-desc" id="tab-hw-spec-gpu">-</div>
+                    <!-- Right Column: 2x2 Performance History Graphs (최근 60초) -->
+                    <div class="hw-right-col">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <h3 style="font-size: 0.92rem; color: var(--primary); margin: 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초 실시간)</h3>
+                            <span style="font-size: 0.72rem; color: var(--text-dim);">1초 주기 시계열 측정</span>
+                        </div>
+                        <div class="hw-charts-grid" style="margin-top: 0;">
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>CPU (<span id="tab-hw-cpu-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #38bdf8;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-cpu"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>RAM (<span id="tab-hw-ram-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #818cf8;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-ram"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>GPU (<span id="tab-hw-gpu-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #34d399;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-gpu"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>Network (KB/s)</span>
+                                    <span class="hw-chart-badge" style="color: #fbbf24;">↑ Tx / ↓ Rx</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-net"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -550,12 +614,62 @@
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=1"></script>
     <script>
-        // --- Tab Switching Logic ---
+        // --- Tab Switching & Auto-refresh Logic ---
         const tabBtns = document.querySelectorAll('.settings-tab-btn');
         const tabViews = document.querySelectorAll('.settings-view');
 
-        let statsInterval = null;
-        let hwInterval = null;
+        let activeTabId = 'tab-theme';
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+
+        function refreshActiveTab() {
+            if (!isAutoRefreshEnabled) return;
+            if (activeTabId === 'tab-stats') {
+                loadStats();
+            } else if (activeTabId === 'tab-network') {
+                loadHw();
+            }
+        }
+
+        function setAutoRefresh(enabled) {
+            isAutoRefreshEnabled = enabled;
+            const indicator = document.getElementById('auto-refresh-indicator');
+            const label = document.getElementById('auto-refresh-label');
+            const toggleBtn = document.getElementById('toggle-autorefresh-btn');
+
+            if (isAutoRefreshEnabled) {
+                if (indicator) {
+                    indicator.style.background = 'var(--success, #22c55e)';
+                    indicator.style.boxShadow = '0 0 8px var(--success, #22c55e)';
+                }
+                if (label) label.textContent = 'AUTO 2s';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '자동갱신 ON';
+                    toggleBtn.style.color = '#ffffff';
+                }
+                if (!autoRefreshInterval) {
+                    autoRefreshInterval = setInterval(refreshActiveTab, 2000);
+                }
+            } else {
+                if (indicator) {
+                    indicator.style.background = 'var(--text-dim, #888888)';
+                    indicator.style.boxShadow = 'none';
+                }
+                if (label) label.textContent = 'PAUSED';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '자동갱신 OFF';
+                    toggleBtn.style.color = 'var(--text-dim, #888888)';
+                }
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        }
+
+        document.getElementById('toggle-autorefresh-btn')?.addEventListener('click', () => {
+            setAutoRefresh(!isAutoRefreshEnabled);
+        });
 
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -564,24 +678,15 @@
 
                 btn.classList.add('active');
                 const targetId = btn.getAttribute('data-target');
+                activeTabId = targetId;
                 const targetView = document.getElementById(targetId);
                 if (targetView) targetView.classList.add('active');
 
-                // Interval management
+                // Immediate load when switching to dynamic tabs
                 if (targetId === 'tab-stats') {
                     loadStats();
-                    if (!statsInterval) statsInterval = setInterval(loadStats, 2000);
-                } else if (statsInterval) {
-                    clearInterval(statsInterval);
-                    statsInterval = null;
-                }
-
-                if (targetId === 'tab-network') {
+                } else if (targetId === 'tab-network') {
                     loadHw();
-                    if (!hwInterval) hwInterval = setInterval(loadHw, 2000);
-                } else if (hwInterval) {
-                    clearInterval(hwInterval);
-                    hwInterval = null;
                 }
             });
         });
@@ -651,31 +756,31 @@
         }
 
         function renderStats(data) {
-            const kpi = data.kpi || {};
-            document.getElementById('st-kpi-uptime').textContent = kpi.uptime_formatted || '00:00:00';
-            document.getElementById('st-kpi-start-time').textContent = '시작: ' + (kpi.server_start_time || '-');
-            document.getElementById('st-kpi-mcu-total').textContent = (kpi.total_mcu_packets || 0).toLocaleString();
-            document.getElementById('st-kpi-mcu-rate').textContent = (kpi.mcu_success_rate || 100) + '%';
-            document.getElementById('st-kpi-api-total').textContent = (kpi.total_api_calls || 0).toLocaleString();
-            document.getElementById('st-kpi-api-rate').textContent = (kpi.api_success_rate || 100) + '%';
+            document.getElementById('st-kpi-uptime').textContent = data.uptime_formatted || '00:00:00';
+            document.getElementById('st-kpi-start-time').textContent = (currentLang === 'ko' ? '시작: ' : 'Started: ') + (data.server_start_time || '-');
+            document.getElementById('st-kpi-mcu-total').textContent = (data.total_mcu_packets || 0).toLocaleString();
+            document.getElementById('st-kpi-mcu-rate').textContent = (data.overall_mcu_success_rate ?? 100) + '%';
+            document.getElementById('st-kpi-api-total').textContent = (data.total_api_calls || 0).toLocaleString();
+            document.getElementById('st-kpi-api-rate').textContent = (data.overall_api_success_rate ?? 100) + '%';
 
             // MCU Table
             const mcuTbody = document.getElementById('st-mcu-tbody');
-            if (mcuTbody && data.mcu) {
+            if (mcuTbody && data.mcu_stats) {
                 let html = '';
-                for (const [key, item] of Object.entries(data.mcu)) {
-                    const total = (item.heartbeat_count || 0) + (item.control_cmd_count || 0) + (item.sensor_data_count || 0);
-                    const rate = total > 0 ? (((total - (item.error_count || 0)) / total) * 100).toFixed(1) : '100.0';
+                for (const [key, item] of Object.entries(data.mcu_stats)) {
+                    const total = item.total_packets || 0;
+                    const err = item.error_count || 0;
+                    const rate = item.success_rate ?? 100.0;
                     html += `
                         <tr>
                             <td><strong>${item.name || key}</strong></td>
-                            <td>${(item.heartbeat_count || 0).toLocaleString()}</td>
-                            <td>${(item.control_cmd_count || 0).toLocaleString()}</td>
-                            <td>${(item.sensor_data_count || 0).toLocaleString()}</td>
+                            <td>${(item.heartbeat || 0).toLocaleString()}</td>
+                            <td>${(item.control_cmd || 0).toLocaleString()}</td>
+                            <td>${(item.sensor_data || 0).toLocaleString()}</td>
                             <td><strong>${total.toLocaleString()}</strong></td>
-                            <td style="color: ${item.error_count > 0 ? 'var(--danger)' : 'inherit'}">${(item.error_count || 0).toLocaleString()}</td>
-                            <td><span style="color: var(--success); font-weight: bold;">${rate}%</span></td>
-                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_packet_timestamp || '-'}</td>
+                            <td style="color: ${err > 0 ? 'var(--danger)' : 'inherit'}">${err.toLocaleString()}</td>
+                            <td><span style="color: ${rate >= 95 ? 'var(--success)' : (rate >= 80 ? '#fbbf24' : 'var(--danger)')}; font-weight: bold;">${rate}%</span></td>
+                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_timestamp || '-'}</td>
                         </tr>
                     `;
                 }
@@ -684,18 +789,20 @@
 
             // API Table
             const apiTbody = document.getElementById('st-api-tbody');
-            if (apiTbody && data.api) {
+            if (apiTbody && data.api_stats) {
                 let html = '';
-                for (const [key, item] of Object.entries(data.api)) {
-                    const total = (item.success_count || 0) + (item.fail_count || 0);
-                    const rate = total > 0 ? ((item.success_count / total) * 100).toFixed(1) : '100.0';
+                for (const [key, item] of Object.entries(data.api_stats)) {
+                    const total = item.call_count || 0;
+                    const succ = item.success_count || 0;
+                    const fail = item.fail_count || 0;
+                    const rate = item.success_rate ?? 100.0;
                     html += `
                         <tr>
                             <td><strong>${item.name || key}</strong></td>
                             <td>${total.toLocaleString()}</td>
-                            <td style="color: var(--success);">${(item.success_count || 0).toLocaleString()}</td>
-                            <td style="color: ${item.fail_count > 0 ? 'var(--danger)' : 'inherit'}">${(item.fail_count || 0).toLocaleString()}</td>
-                            <td><span style="color: var(--success); font-weight: bold;">${rate}%</span></td>
+                            <td style="color: var(--success);">${succ.toLocaleString()}</td>
+                            <td style="color: ${fail > 0 ? 'var(--danger)' : 'inherit'}">${fail.toLocaleString()}</td>
+                            <td><span style="color: ${rate >= 95 ? 'var(--success)' : (rate >= 80 ? '#fbbf24' : 'var(--danger)')}; font-weight: bold;">${rate}%</span></td>
                             <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_timestamp || '-'}</td>
                         </tr>
                     `;
@@ -907,10 +1014,11 @@
             updateLanguage(currentLang === 'ko' ? 'en' : 'ko');
         });
 
-        // Initialize pickers and language on DOM ready
+        // Initialize pickers, language, and start auto-refresh on DOM ready
         document.addEventListener('DOMContentLoaded', () => {
             syncColorPickersUI();
             updateLanguage(currentLang);
+            setAutoRefresh(true);
         });
     </script>
 </body>
