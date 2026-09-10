@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARD Unified System Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: var(--bg-color, #000000);
+            color: var(--text-main, #ffffff);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--card-bg, #111111);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .settings-header h1 {
+            font-size: 1.15rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary, #ffffff);
+            font-weight: 600;
+        }
+
+        .settings-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-nav-links a {
+            color: var(--text-dim, #888888);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+        }
+
+        .settings-nav-links a:hover {
+            color: var(--text-main, #ffffff);
+            border-color: var(--primary, #ffffff);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .settings-tabs-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 24px 0 24px;
+            background: var(--card-bg, #111111);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+
+        .settings-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim, #888888);
+            padding: 8px 16px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-tab-btn:hover {
+            color: var(--text-main, #ffffff);
+        }
+
+        .settings-tab-btn.active {
+            color: var(--primary, #ffffff);
+            border-bottom-color: var(--primary, #ffffff);
+        }
+
+        .settings-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            min-height: 0;
+        }
+
+        .settings-view {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .settings-view.active {
+            display: block;
+        }
+
+        /* Color customizer styles */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .color-card {
+            background: var(--card-bg, #111111);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .color-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .color-card-info label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main, #ffffff);
+        }
+
+        .color-card-info span {
+            font-size: 0.75rem;
+            color: var(--text-dim, #888888);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .color-picker-input {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .preset-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+            margin-bottom: 24px;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary, #ffffff);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .live-preview-box {
+            background: var(--card-bg, #111111);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-elements-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <header class="settings-header">
+        <h1>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span data-i18n="settings_page_title">ARD 시스템 통합 설정</span>
+        </h1>
+        <div class="settings-nav-links">
+            <button id="lang-btn-settings" class="preset-btn" style="padding: 5px 10px; font-size: 0.75rem;">KO / EN</button>
+            <a href="/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>대시보드 메인</span>
+            </a>
+            <a href="/terminal" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                <span>터미널 콘솔</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Sub Navigation Tabs -->
+    <nav class="settings-tabs-bar">
+        <button class="settings-tab-btn active" data-target="tab-theme">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 10 10 0 0 0 0-20"></path></svg>
+            <span data-i18n="tab_settings_theme">스타일/색상 설정</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-stats">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span data-i18n="tab_settings_stats">통신 및 패킷 통계</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-network">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+            <span data-i18n="tab_settings_network">PC 하드웨어 & 네트워크</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-general">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span data-i18n="tab_settings_general">일반/하드웨어 설정</span>
+        </button>
+    </nav>
+
+    <main class="settings-body">
+        <!-- 1. STYLE & COLOR TAB -->
+        <section id="tab-theme" class="settings-view active">
+            <div class="card status-card" style="margin-bottom: 20px;">
+                <h2 data-i18n="theme_setting_title" style="margin-bottom: 8px;">UI 스타일 및 색상 커스텀</h2>
+                <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">
+                    실시간으로 변경한 색상 테마는 브라우저 로컬 저장소에 영구 저장되며, 대시보드 메인 화면 및 터미널 화면에 즉시 동기화 적용됩니다.
+                </p>
+
+                <!-- Color Presets -->
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" data-i18n="theme_preset_label">색상 테마 프리셋</div>
+                <div class="preset-container">
+                    <button class="preset-btn" onclick="applyColorPreset('autodesk')" style="border-color: #0696D7; color: #0696D7; font-weight: bold;" data-i18n="theme_preset_autodesk">오토데스크 CAD 전문가 모드 (Autodesk CAD)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('monochrome')" data-i18n="theme_preset_monochrome">모노크롬 (기본 B&W)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('ocean')" data-i18n="theme_preset_ocean">오션 딥블루 (Ocean)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('cyberpunk')" data-i18n="theme_preset_cyberpunk">사이버 네온 (Cyberpunk)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('emerald')" data-i18n="theme_preset_emerald">에메랄드 포레스트 (Emerald)</button>
+                    <button class="preset-btn" onclick="resetColorTheme()" style="border-color: var(--accent); color: var(--accent);" data-i18n="theme_reset_btn">색상 초기화</button>
+                </div>
+
+                <!-- Custom Color Pickers -->
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-card-info">
+                            <label data-i18n="theme_primary_color">기본 강조 색상 (Primary)</label>
+                            <span id="label-primary-val">#ffffff</span>
+                        </div>
+                        <input type="color" id="picker-primary" class="color-picker-input">
+                    </div>
+
+                    <div class="color-card">
+                        <div class="color-card-info">
+                            <label data-i18n="theme_secondary_color">보조 강조 색상 (Secondary)</label>
+                            <span id="label-secondary-val">#94a3b8</span>
+                        </div>
+                        <input type="color" id="picker-secondary" class="color-picker-input">
+                    </div>
+
+                    <div class="color-card">
+                        <div class="color-card-info">
+                            <label data-i18n="theme_bg_color">배경 색상 (Background)</label>
+                            <span id="label-bg-val">#000000</span>
+                        </div>
+                        <input type="color" id="picker-bg" class="color-picker-input">
+                    </div>
+
+                    <div class="color-card">
+                        <div class="color-card-info">
+                            <label data-i18n="theme_card_bg">카드/패널 배경 (Card Surface)</label>
+                            <span id="label-card-val">#111111</span>
+                        </div>
+                        <input type="color" id="picker-card" class="color-picker-input">
+                    </div>
+                </div>
+
+                <!-- Live Preview Card -->
+                <div class="live-preview-box">
+                    <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--primary);">UI 컴포넌트 실시간 미리보기</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 12px;">
+                        선택된 색상이 버튼, 배지, 입력 필드 및 카드 스타일에 즉각적으로 어떻게 반영되는지 검토할 수 있습니다.
+                    </p>
+                    <div class="preview-elements-row">
+                        <button class="btn-primary" style="width: auto; padding: 6px 16px;">Primary Button</button>
+                        <button class="preset-btn" style="padding: 6px 16px;">Secondary Button</button>
+                        <span class="status-badge" style="background: rgba(255,255,255,0.08); border: 1px solid var(--primary); color: var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem;">Accent Badge</span>
+                        <input type="text" value="Text Field Sample" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;" readonly>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. STATS TAB -->
+        <section id="tab-stats" class="settings-view">
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;" data-i18n="stats_modal_title">시스템 통신 패킷 & API 동작 통계</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="tab-stats-refresh-btn" class="preset-btn" data-i18n="stats_refresh_btn">새로고침</button>
+                        <button id="tab-stats-reset-btn" class="preset-btn" style="border-color: var(--danger); color: var(--danger);" data-i18n="stats_reset_btn">통계 초기화</button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="stats-kpi-grid">
+                    <div class="stats-kpi-card">
+                        <div class="stats-kpi-label" data-i18n="stats_uptime">서버 가동 시간</div>
+                        <div class="stats-kpi-val" id="st-kpi-uptime">00:00:00</div>
+                        <div class="stats-kpi-sub" id="st-kpi-start-time">시작: -</div>
+                    </div>
+                    <div class="stats-kpi-card">
+                        <div class="stats-kpi-label" data-i18n="stats_total_packets">총 MCU 패킷</div>
+                        <div class="stats-kpi-val" id="st-kpi-mcu-total">0</div>
+                        <div class="stats-kpi-sub"><span data-i18n="stats_mcu_success_rate">MCU 성공률</span>: <span id="st-kpi-mcu-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                    </div>
+                    <div class="stats-kpi-card">
+                        <div class="stats-kpi-label" data-i18n="stats_total_api">총 API/MCP 호출</div>
+                        <div class="stats-kpi-val" id="st-kpi-api-total">0</div>
+                        <div class="stats-kpi-sub"><span data-i18n="stats_api_success_rate">API/MCP 성공률</span>: <span id="st-kpi-api-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                    </div>
+                </div>
+
+                <!-- MCU Table -->
+                <h3 style="font-size: 1rem; color: var(--primary); margin: 20px 0 10px 0;" data-i18n="stats_mcu_section">MCU별 패킷 통계</h3>
+                <div style="overflow-x: auto; margin-bottom: 25px;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_board">보드 / 모듈명</th>
+                                <th data-i18n="stats_th_heartbeat">하트비트</th>
+                                <th data-i18n="stats_th_control">제어신호</th>
+                                <th data-i18n="stats_th_sensor">센서신호</th>
+                                <th data-i18n="stats_th_total_packets">누적 패킷</th>
+                                <th data-i18n="stats_th_errors">오류/실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 통신 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="st-mcu-tbody"></tbody>
+                    </table>
+                </div>
+
+                <!-- API Table -->
+                <h3 style="font-size: 1rem; color: var(--secondary); margin: 0 0 10px 0;" data-i18n="stats_api_section">API 및 AI / MCP 동작 통계</h3>
+                <div style="overflow-x: auto;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_api">API / 엔진</th>
+                                <th data-i18n="stats_th_calls">호출 횟수</th>
+                                <th data-i18n="stats_th_success">성공</th>
+                                <th data-i18n="stats_th_fail">실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 호출 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="st-api-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. NETWORK & HARDWARE TAB -->
+        <section id="tab-network" class="settings-view">
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
+                    <button id="tab-hw-refresh-btn" class="preset-btn" data-i18n="stats_refresh_btn">새로고침</button>
+                </div>
+
+                <!-- HW KPI Grid -->
+                <div class="hw-kpi-grid">
+                    <div class="hw-kpi-card">
+                        <div class="hw-kpi-label" data-i18n="hw_cpu_usage">CPU 사용률</div>
+                        <div class="hw-kpi-val" id="tab-hw-cpu-val">0%</div>
+                        <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
+                    </div>
+                    <div class="hw-kpi-card" style="border-left: 3px solid #818cf8;">
+                        <div class="hw-kpi-label" data-i18n="hw_ram_usage">RAM 사용률</div>
+                        <div class="hw-kpi-val" id="tab-hw-ram-val">0%</div>
+                        <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
+                    </div>
+                    <div class="hw-kpi-card" style="border-left: 3px solid #34d399;">
+                        <div class="hw-kpi-label" data-i18n="hw_gpu_usage">GPU 사용률</div>
+                        <div class="hw-kpi-val" id="tab-hw-gpu-val">0%</div>
+                        <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
+                    </div>
+                    <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24;">
+                        <div class="hw-kpi-label" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
+                        <div class="hw-kpi-val" style="font-size: 1.15rem;" id="tab-hw-net-val">↑ 0 KB/s | ↓ 0 KB/s</div>
+                        <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+                    </div>
+                </div>
+
+                <!-- 2x2 Charts Grid -->
+                <h3 style="font-size: 0.95rem; color: var(--primary); margin: 20px 0 10px 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초)</h3>
+                <div class="hw-charts-grid">
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>CPU (<span id="tab-hw-cpu-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #38bdf8;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="tab-hw-chart-cpu"></canvas>
+                        </div>
+                    </div>
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>RAM (<span id="tab-hw-ram-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #818cf8;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="tab-hw-chart-ram"></canvas>
+                        </div>
+                    </div>
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>GPU (<span id="tab-hw-gpu-chart-pct">0%</span>)</span>
+                            <span class="hw-chart-badge" style="color: #34d399;">0 ~ 100%</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="tab-hw-chart-gpu"></canvas>
+                        </div>
+                    </div>
+                    <div class="hw-chart-box">
+                        <div class="hw-chart-header">
+                            <span>Network (KB/s)</span>
+                            <span class="hw-chart-badge" style="color: #fbbf24;">↑ Tx / ↓ Rx</span>
+                        </div>
+                        <div class="hw-canvas-container">
+                            <canvas id="tab-hw-chart-net"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info Details -->
+                <h3 style="font-size: 0.95rem; color: var(--secondary); margin: 25px 0 10px 0;" data-i18n="hw_section_spec">시스템 및 네트워크 인터페이스 상세 정보</h3>
+                <div class="hw-spec-grid">
+                    <div class="hw-spec-item">
+                        <div class="hw-spec-title" data-i18n="hw_spec_os">운영체제</div>
+                        <div class="hw-spec-desc" id="tab-hw-spec-os">-</div>
+                    </div>
+                    <div class="hw-spec-item">
+                        <div class="hw-spec-title" data-i18n="hw_spec_cpu">프로세서</div>
+                        <div class="hw-spec-desc" id="tab-hw-spec-cpu">-</div>
+                    </div>
+                    <div class="hw-spec-item">
+                        <div class="hw-spec-title" data-i18n="hw_spec_ram">전체 메모리</div>
+                        <div class="hw-spec-desc" id="tab-hw-spec-ram">-</div>
+                    </div>
+                    <div class="hw-spec-item">
+                        <div class="hw-spec-title" data-i18n="hw_spec_gpu">그래픽 장치</div>
+                        <div class="hw-spec-desc" id="tab-hw-spec-gpu">-</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. GENERAL CONFIG TAB -->
+        <section id="tab-general" class="settings-view">
+            <div class="card status-card">
+                <h2 data-i18n="settings_header" style="margin-bottom: 15px;">카메라 및 AI 전역 설정</h2>
+                <form id="general-config-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label for="cfg_api_key">Gemini API Key</label>
+                            <input type="password" id="cfg_api_key" value="{{ config.api_key }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_model_name">Model Name</label>
+                            <select id="cfg_model_name">
+                                <option value="gemini-2.5-flash">gemini-2.5-flash (Default)</option>
+                                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label for="cfg_camera_model">Camera Sensor</label>
+                            <select id="cfg_camera_model">
+                                <option value="OV5660" {% if config.imagesendermcu.camera_model == 'OV5660' %}selected{% endif %}>OV5660 (Primary)</option>
+                                <option value="OV2640" {% if config.imagesendermcu.camera_model == 'OV2640' %}selected{% endif %}>OV2640</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_resolution">Stream Resolution</label>
+                            <select id="cfg_resolution">
+                                <option value="SVGA" {% if config.imagesendermcu.resolution == 'SVGA' %}selected{% endif %}>SVGA (800x600)</option>
+                                <option value="VGA" {% if config.imagesendermcu.resolution == 'VGA' %}selected{% endif %}>VGA (640x480)</option>
+                                <option value="QVGA" {% if config.imagesendermcu.resolution == 'QVGA' %}selected{% endif %}>QVGA (320x240)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="input-group">
+                            <label for="cfg_img_ip">ImageSender IP</label>
+                            <input type="text" id="cfg_img_ip" value="{{ config.imagesendermcu_ip }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_drive_ip">DriveMCU IP</label>
+                            <input type="text" id="cfg_drive_ip" value="{{ config.drivemcu_ip }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_hmi_ip">HMI MCU IP</label>
+                            <input type="text" id="cfg_hmi_ip" value="{{ config.hmi_mcu_ip }}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 8px 24px;">설정 적용 및 서버 저장</button>
+                    <span id="cfg-save-msg" style="margin-left: 12px; font-size: 0.85rem; color: var(--success); display: none;">설정이 성공적으로 저장되었습니다.</span>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=1"></script>
+    <script>
+        // --- Tab Switching Logic ---
+        const tabBtns = document.querySelectorAll('.settings-tab-btn');
+        const tabViews = document.querySelectorAll('.settings-view');
+
+        let statsInterval = null;
+        let hwInterval = null;
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabViews.forEach(v => v.classList.remove('active'));
+
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                const targetView = document.getElementById(targetId);
+                if (targetView) targetView.classList.add('active');
+
+                // Interval management
+                if (targetId === 'tab-stats') {
+                    loadStats();
+                    if (!statsInterval) statsInterval = setInterval(loadStats, 2000);
+                } else if (statsInterval) {
+                    clearInterval(statsInterval);
+                    statsInterval = null;
+                }
+
+                if (targetId === 'tab-network') {
+                    loadHw();
+                    if (!hwInterval) hwInterval = setInterval(loadHw, 2000);
+                } else if (hwInterval) {
+                    clearInterval(hwInterval);
+                    hwInterval = null;
+                }
+            });
+        });
+
+        // --- Color Customizer Bindings ---
+        const pickerPrimary = document.getElementById('picker-primary');
+        const pickerSecondary = document.getElementById('picker-secondary');
+        const pickerBg = document.getElementById('picker-bg');
+        const pickerCard = document.getElementById('picker-card');
+
+        function syncColorPickersUI() {
+            const currentTheme = window.ThemeManager.loadTheme();
+            if (pickerPrimary) pickerPrimary.value = rgbToHex(currentTheme['--primary'] || '#ffffff');
+            if (pickerSecondary) pickerSecondary.value = rgbToHex(currentTheme['--secondary'] || '#94a3b8');
+            if (pickerBg) pickerBg.value = rgbToHex(currentTheme['--bg-color'] || '#000000');
+            if (pickerCard) pickerCard.value = rgbToHex(currentTheme['--card-bg'] || '#111111');
+
+            document.getElementById('label-primary-val').textContent = pickerPrimary.value;
+            document.getElementById('label-secondary-val').textContent = pickerSecondary.value;
+            document.getElementById('label-bg-val').textContent = pickerBg.value;
+            document.getElementById('label-card-val').textContent = pickerCard.value;
+        }
+
+        function rgbToHex(colorStr) {
+            if (!colorStr) return '#000000';
+            if (colorStr.startsWith('#')) return colorStr.length === 4 ? '#' + colorStr[1]+colorStr[1]+colorStr[2]+colorStr[2]+colorStr[3]+colorStr[3] : colorStr;
+            return '#ffffff';
+        }
+
+        function onColorChange() {
+            const newTheme = {
+                '--primary': pickerPrimary.value,
+                '--secondary': pickerSecondary.value,
+                '--bg-color': pickerBg.value,
+                '--card-bg': pickerCard.value,
+                '--text-main': '#ffffff',
+                '--text-dim': '#94a3b8'
+            };
+            window.ThemeManager.saveTheme(newTheme);
+            syncColorPickersUI();
+        }
+
+        [pickerPrimary, pickerSecondary, pickerBg, pickerCard].forEach(input => {
+            if (input) input.addEventListener('input', onColorChange);
+        });
+
+        function applyColorPreset(presetName) {
+            window.ThemeManager.applyPreset(presetName);
+            syncColorPickersUI();
+        }
+
+        function resetColorTheme() {
+            window.ThemeManager.resetTheme();
+            syncColorPickersUI();
+        }
+
+        // --- Stats Loader & Renderer ---
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderStats(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderStats(data) {
+            const kpi = data.kpi || {};
+            document.getElementById('st-kpi-uptime').textContent = kpi.uptime_formatted || '00:00:00';
+            document.getElementById('st-kpi-start-time').textContent = '시작: ' + (kpi.server_start_time || '-');
+            document.getElementById('st-kpi-mcu-total').textContent = (kpi.total_mcu_packets || 0).toLocaleString();
+            document.getElementById('st-kpi-mcu-rate').textContent = (kpi.mcu_success_rate || 100) + '%';
+            document.getElementById('st-kpi-api-total').textContent = (kpi.total_api_calls || 0).toLocaleString();
+            document.getElementById('st-kpi-api-rate').textContent = (kpi.api_success_rate || 100) + '%';
+
+            // MCU Table
+            const mcuTbody = document.getElementById('st-mcu-tbody');
+            if (mcuTbody && data.mcu) {
+                let html = '';
+                for (const [key, item] of Object.entries(data.mcu)) {
+                    const total = (item.heartbeat_count || 0) + (item.control_cmd_count || 0) + (item.sensor_data_count || 0);
+                    const rate = total > 0 ? (((total - (item.error_count || 0)) / total) * 100).toFixed(1) : '100.0';
+                    html += `
+                        <tr>
+                            <td><strong>${item.name || key}</strong></td>
+                            <td>${(item.heartbeat_count || 0).toLocaleString()}</td>
+                            <td>${(item.control_cmd_count || 0).toLocaleString()}</td>
+                            <td>${(item.sensor_data_count || 0).toLocaleString()}</td>
+                            <td><strong>${total.toLocaleString()}</strong></td>
+                            <td style="color: ${item.error_count > 0 ? 'var(--danger)' : 'inherit'}">${(item.error_count || 0).toLocaleString()}</td>
+                            <td><span style="color: var(--success); font-weight: bold;">${rate}%</span></td>
+                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_packet_timestamp || '-'}</td>
+                        </tr>
+                    `;
+                }
+                mcuTbody.innerHTML = html;
+            }
+
+            // API Table
+            const apiTbody = document.getElementById('st-api-tbody');
+            if (apiTbody && data.api) {
+                let html = '';
+                for (const [key, item] of Object.entries(data.api)) {
+                    const total = (item.success_count || 0) + (item.fail_count || 0);
+                    const rate = total > 0 ? ((item.success_count / total) * 100).toFixed(1) : '100.0';
+                    html += `
+                        <tr>
+                            <td><strong>${item.name || key}</strong></td>
+                            <td>${total.toLocaleString()}</td>
+                            <td style="color: var(--success);">${(item.success_count || 0).toLocaleString()}</td>
+                            <td style="color: ${item.fail_count > 0 ? 'var(--danger)' : 'inherit'}">${(item.fail_count || 0).toLocaleString()}</td>
+                            <td><span style="color: var(--success); font-weight: bold;">${rate}%</span></td>
+                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_timestamp || '-'}</td>
+                        </tr>
+                    `;
+                }
+                apiTbody.innerHTML = html;
+            }
+        }
+
+        document.getElementById('tab-stats-refresh-btn')?.addEventListener('click', loadStats);
+        document.getElementById('tab-stats-reset-btn')?.addEventListener('click', async () => {
+            if (!confirm('누적 통계를 초기화하시겠습니까?')) return;
+            try {
+                const res = await fetch('/api/stats/reset', { method: 'POST' });
+                if (res.ok) {
+                    const d = await res.json();
+                    renderStats(d.stats);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        // --- Hardware & Network Loader & Charts ---
+        let cCpu = null, cRam = null, cGpu = null, cNet = null;
+
+        function initCharts() {
+            if (cCpu) return;
+            const opts = (unit = '%', max = 100) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: { display: false },
+                    y: {
+                        min: 0,
+                        max: max,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8', font: { size: 9 }, callback: (v) => v + unit }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            });
+
+            const ctxCpu = document.getElementById('tab-hw-chart-cpu')?.getContext('2d');
+            if (ctxCpu) {
+                cCpu = new Chart(ctxCpu, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'CPU', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxRam = document.getElementById('tab-hw-chart-ram')?.getContext('2d');
+            if (ctxRam) {
+                cRam = new Chart(ctxRam, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'RAM', data: [], borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxGpu = document.getElementById('tab-hw-chart-gpu')?.getContext('2d');
+            if (ctxGpu) {
+                cGpu = new Chart(ctxGpu, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'GPU', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxNet = document.getElementById('tab-hw-chart-net')?.getContext('2d');
+            if (ctxNet) {
+                cNet = new Chart(ctxNet, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: 'Tx', data: [], borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 },
+                            { label: 'Rx', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: { display: false },
+                            y: { min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: (v) => v + 'K' } }
+                        },
+                        plugins: { legend: { display: true, position: 'top', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } } }
+                    }
+                });
+            }
+        }
+
+        async function loadHw() {
+            try {
+                const res = await fetch('/api/hardware/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderHw(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderHw(data) {
+            initCharts();
+            const latest = data.latest || {};
+            const info = data.hardware_info || {};
+            const hist = data.history || {};
+
+            // Top KPI Cards
+            document.getElementById('tab-hw-cpu-val').textContent = (latest.cpu_percent || 0) + '%';
+            document.getElementById('tab-hw-cpu-sub').textContent = `${latest.cpu_freq_ghz || 0} GHz | ${info.cpu_physical_cores || 0}C/${info.cpu_logical_cores || 0}T`;
+            document.getElementById('tab-hw-ram-val').textContent = (latest.ram_percent || 0) + '%';
+            document.getElementById('tab-hw-ram-sub').textContent = `${latest.ram_used_gb || 0} / ${latest.ram_total_gb || 0} GB`;
+            document.getElementById('tab-hw-gpu-val').textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+            document.getElementById('tab-hw-gpu-sub').textContent = info.gpu_name || 'Generic GPU';
+            document.getElementById('tab-hw-net-val').textContent = `↑ ${latest.net_sent_speed_kb || 0} KB/s | ↓ ${latest.net_recv_speed_kb || 0} KB/s`;
+            document.getElementById('tab-hw-net-sub').textContent = `누적: ↑ ${latest.net_sent_total_mb || 0} MB | ↓ ${latest.net_recv_total_mb || 0} MB`;
+
+            // Specs
+            document.getElementById('tab-hw-spec-os').textContent = info.os_name || '-';
+            document.getElementById('tab-hw-spec-cpu').textContent = info.cpu_name || '-';
+            document.getElementById('tab-hw-spec-ram').textContent = `${latest.ram_total_gb || 0} GB`;
+            document.getElementById('tab-hw-spec-gpu').textContent = info.gpu_name || 'None';
+
+            // Chart Data Update
+            const labels = hist.timestamps || [];
+            if (cCpu) {
+                cCpu.data.labels = labels;
+                cCpu.data.datasets[0].data = hist.cpu || [];
+                cCpu.update();
+                document.getElementById('tab-hw-cpu-chart-pct').textContent = (latest.cpu_percent || 0) + '%';
+            }
+            if (cRam) {
+                cRam.data.labels = labels;
+                cRam.data.datasets[0].data = hist.ram || [];
+                cRam.update();
+                document.getElementById('tab-hw-ram-chart-pct').textContent = (latest.ram_percent || 0) + '%';
+            }
+            if (cGpu) {
+                cGpu.data.labels = labels;
+                cGpu.data.datasets[0].data = hist.gpu || [];
+                cGpu.update();
+                document.getElementById('tab-hw-gpu-chart-pct').textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+            }
+            if (cNet) {
+                cNet.data.labels = labels;
+                cNet.data.datasets[0].data = hist.net_sent_speed || [];
+                cNet.data.datasets[1].data = hist.net_recv_speed || [];
+                cNet.update();
+            }
+        }
+
+        document.getElementById('tab-hw-refresh-btn')?.addEventListener('click', loadHw);
+
+        // --- General Config Save ---
+        document.getElementById('general-config-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                api_key: document.getElementById('cfg_api_key').value,
+                model_name: document.getElementById('cfg_model_name').value,
+                camera_model: document.getElementById('cfg_camera_model').value,
+                resolution: document.getElementById('cfg_resolution').value,
+                imagesendermcu_ip: document.getElementById('cfg_img_ip').value,
+                drivemcu_ip: document.getElementById('cfg_drive_ip').value,
+                hmi_mcu_ip: document.getElementById('cfg_hmi_ip').value
+            };
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    const msg = document.getElementById('cfg-save-msg');
+                    msg.style.display = 'inline';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                }
+            } catch (err) {
+                alert('설정 저장 중 오류: ' + err.message);
+            }
+        });
+
+        // --- Multi-language (i18n) Logic ---
+        let currentLang = localStorage.getItem('ard_lang') || 'ko';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('ard_lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (window.translations && window.translations[lang] && window.translations[lang][key]) {
+                    el.textContent = window.translations[lang][key];
+                }
+            });
+
+            const langBtn = document.getElementById('lang-btn-settings');
+            if (langBtn) {
+                langBtn.textContent = lang === 'ko' ? 'ENGLISH UI' : '한국어 UI';
+            }
+        }
+
+        document.getElementById('lang-btn-settings')?.addEventListener('click', () => {
+            updateLanguage(currentLang === 'ko' ? 'en' : 'ko');
+        });
+
+        // Initialize pickers and language on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            syncColorPickersUI();
+            updateLanguage(currentLang);
+        });
+    </script>
+</body>
+</html>

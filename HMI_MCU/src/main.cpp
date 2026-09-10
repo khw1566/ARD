@@ -38,10 +38,10 @@ const char* WIFI_PASS_1 = "0522300751";
 const char* WIFI_SERVER_1 = "192.168.0.41";
 const char* WIFI_SSID_2 = "A35_m";
 const char* WIFI_PASS_2 = "00000000";
-const char* WIFI_SERVER_2 = "10.37.227.12";
+const char* WIFI_SERVER_2 = "10.115.5.12";
 const char* WIFI_SSID_3 = "YOUR_WIFI_SSID";
 const char* WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char* WIFI_SERVER_3 = "192.168.0.13";
+const char* WIFI_SERVER_3 = "192.168.0.29";
 
 String ssid_active = "";
 String pass_active = "";

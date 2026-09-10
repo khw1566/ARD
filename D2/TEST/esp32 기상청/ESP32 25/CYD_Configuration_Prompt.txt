@@ -1,0 +1,67 @@
+[ESP32-2432S028 (CYD) 2.8" Display & Touch Configuration Guide for LLM]
+
+This document contains the proven configuration and calibration settings for the ESP32-2432S028 board (Cheap Yellow Display). Use this as a context prompt for any coding assistant to ensure the display and touch functionality work correctly out of the box.
+
+### 1. Project Environment (platformio.ini)
+To initialize the board correctly, use the following build flags in PlatformIO. These flags override the default User_Setup.h in the TFT_eSPI library.
+
+```ini
+build_flags =
+    -D USER_SETUP_LOADED=1
+    -D ILI9341_2_DRIVER=1  ; Use _2_ version for correct orientation logic
+    -D TFT_WIDTH=240
+    -D TFT_HEIGHT=320
+    -D TFT_MISO=12
+    -D TFT_MOSI=13
+    -D TFT_SCLK=14
+    -D TFT_CS=15
+    -D TFT_DC=2
+    -D TFT_RST=-1
+    -D TFT_BL=21
+    -D TFT_BACKLIGHT_ON=HIGH
+    -D TOUCH_CS=33
+    -D SPI_FREQUENCY=55000000
+    -D SPI_READ_FREQUENCY=20000000
+    -D SPI_TOUCH_FREQUENCY=2500000
+    -D USE_HSPI_PORT=1      ; Essential for this board's wiring
+```
+
+### 2. Display Rotation
+For Landscape mode, use:
+`tft.setRotation(3);`
+Resulting resolution: 320 (Width) x 240 (Height).
+
+### 3. Touch Screen Calibration (XPT2046)
+The touch controller on this board is oriented uniquely. For Rotation 3 (Landscape), use the following mapping values to ensure touch coordinates align perfectly with the screen pixels (including horizontal/vertical mirroring correction):
+
+```cpp
+// Rotation 3 Touch Mapping Logic
+int w = 320;
+int h = 240;
+TS_Point p = touch.getPoint();
+
+// Calibration range derived from verified example projects:
+// X: 185 (Right) to 3700 (Left) -> 0 to 320
+// Y: 280 (Bottom) to 3850 (Top) -> 0 to 240
+int screen_x = map(p.x, 3700, 185, 0, w);
+int screen_y = map(p.y, 3850, 280, 0, h);
+
+// Keep within bounds
+screen_x = constrain(screen_x, 0, w - 1);
+screen_y = constrain(screen_y, 0, h - 1);
+```
+
+### 4. Hardware ID & Memory Access
+- Flash size: `ESP.getFlashChipSize()` (Usually 4MB)
+- PSRAM: `ESP.getPsramSize()` (Check if > 0, as not all CYD boards have PSRAM)
+- CPU Clock: `getCpuFrequencyMhz()`
+- Chip ID: Derived from Efuse MAC:
+```cpp
+uint32_t chipId = 0;
+for(int i=0; i<17; i=i+8) {
+  chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+}
+```
+
+### LLM Instruction Prompt Snippet:
+"I am working with an ESP32-2432S028 (CYD) 2.8" board. Please use ILI9341_2_DRIVER with rotation 3 (320x240). Note that USE_HSPI_PORT must be enabled. For touch (XPT2046), p.x maps to screen_x (3700->185) and p.y maps to screen_y (3850->280) when setRotation(3) is used. Refer to the specific calibration limits X:185~3700 and Y:280~3850."

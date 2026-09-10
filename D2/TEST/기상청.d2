@@ -1,0 +1,95 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  microcontroller: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  hardware: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  network: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Hardware_Interfaces: "HMI 하드웨어 환경" {
+  class: hardware
+  direction: right
+  
+  Touch_Panel: "터치 패널\n(CYD28_TouchR)"
+  TFT_Display: "TFT 디스플레이\n(TFT_eSPI)"
+}
+
+ESP32_Weather_System: "ESP32 날씨 디스플레이 시스템" {
+  class: microcontroller
+
+  Main_Loop: "메인 제어 루프\n(main.cpp)" { class: module }
+
+  UI_Subsystem: "UI 및 렌더링 엔진 (DisplayManager)" {
+    direction: right
+    class: module
+    
+    Touch_Router: "터치 영역 판별\n(지역 및 예보 탭 인식)"
+    Render_Engine: "UI 렌더링 및 애니메이션\n(아이콘 프레임 갱신)"
+    Font_Engine: "커스텀 폰트 디코더\n(UTF-8 한글 비트맵 변환)"
+  }
+
+  Network_Subsystem: "네트워크 모듈 (WeatherAPI)" {
+    direction: right
+    class: module
+    
+    API_Client: "HTTP 클라이언트\n(초단기/단기 예보 GET)"
+    JSON_Parser: "JSON 파서\n(ArduinoJson)"
+    Data_Store: "날씨 데이터 구조체\n(WeatherData/ForecastData)"
+  }
+}
+
+External_Services: "외부 클라우드 서비스" {
+  class: network
+  direction: right
+  
+  NTP_Server: "NTP 시간 서버"
+  KMA_API: "기상청 오픈 API\n(공공데이터포털)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 사용자 입력 (터치 처리)
+Hardware_Interfaces.Touch_Panel -> ESP32_Weather_System.Main_Loop: "터치 좌표 판독"
+ESP32_Weather_System.Main_Loop -> ESP32_Weather_System.UI_Subsystem.Touch_Router: "좌표 전달 및 액션 ID 반환"
+
+# 2. 네트워크 요청 및 데이터 파싱
+ESP32_Weather_System.Main_Loop -> External_Services.NTP_Server: "로컬 타임(RTC) 동기화"
+ESP32_Weather_System.Main_Loop -> ESP32_Weather_System.Network_Subsystem.API_Client: "지역 변경/새로고침 시 데이터 요청"
+ESP32_Weather_System.Network_Subsystem.API_Client <-> External_Services.KMA_API: "HTTP GET 및 JSON 응답 수신"
+ESP32_Weather_System.Network_Subsystem.API_Client -> ESP32_Weather_System.Network_Subsystem.JSON_Parser: "초단기/단기 데이터 분류 파싱"
+ESP32_Weather_System.Network_Subsystem.JSON_Parser -> ESP32_Weather_System.Network_Subsystem.Data_Store: "구조체에 정형화 데이터 저장"
+
+# 3. 화면 렌더링 및 애니메이션 루프
+ESP32_Weather_System.Main_Loop -> ESP32_Weather_System.UI_Subsystem.Render_Engine: "매 루프 갱신 (시간/애니메이션)"
+ESP32_Weather_System.Network_Subsystem.Data_Store -> ESP32_Weather_System.UI_Subsystem.Render_Engine: "날씨 정보 동기화"
+ESP32_Weather_System.UI_Subsystem.Render_Engine <-> ESP32_Weather_System.UI_Subsystem.Font_Engine: "한글 텍스트(HancomSans) 디코딩"
+ESP32_Weather_System.UI_Subsystem.Render_Engine -> Hardware_Interfaces.TFT_Display: "그래픽 출력 (SPI)"

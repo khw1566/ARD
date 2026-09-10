@@ -34,21 +34,21 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 Preferences prefs;
 const char *WIFI_SSID_1 = "1-309";
 const char *WIFI_PASS_1 = "0522300751";
-const char *WIFI_SERVER_1 = "192.168.0.35";
+const char *WIFI_SERVER_1 = "10.115.5.12";
 
 const char *WIFI_SSID_2 = "A35_m";
 const char *WIFI_PASS_2 = "00000000";
-const char *WIFI_SERVER_2 = "192.168.0.35";
+const char *WIFI_SERVER_2 = "10.115.5.12";
 
 const char *WIFI_SSID_3 = "YOUR_WIFI_SSID";
 const char *WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char *WIFI_SERVER_3 = "192.168.0.35";
+const char *WIFI_SERVER_3 = "10.115.5.12";
 
 String ssid_active = "";
 String pass_active = "";
 String server_ip_pref = "";
-String server_ip = "192.168.0.35";
-String serverUrl = "http://192.168.0.35:5000";
+String server_ip = "10.115.5.12";
+String serverUrl = "http://10.115.5.12:5000";
 
 // --- Global States ---
 volatile char currentMode = 'N'; // 'A', 'N'(Neutral), 'B'
@@ -299,12 +299,12 @@ void setupWifi() {
   Serial.flush();
 
   prefs.begin("wifi-config", false);
+  // 이전 환경에서 저장된 오래된 서버 IP 강제 삭제 (노트북 환경 전환 대응)
+  prefs.remove("server_ip");
   if (prefs.isKey("ssid"))
     ssid_active = prefs.getString("ssid");
   if (prefs.isKey("password"))
     pass_active = prefs.getString("password");
-  if (prefs.isKey("server_ip"))
-    server_ip_pref = prefs.getString("server_ip");
 
   const char *ssids[] = {ssid_active.c_str(), WIFI_SSID_1, WIFI_SSID_2,
                          WIFI_SSID_3};

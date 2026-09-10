@@ -1,0 +1,116 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  core_system: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  database: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  external_server: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  user_interface: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+User_Environment: "사용자 제어 환경" {
+  class: user_interface
+  direction: right
+
+  Serial_Port: "시리얼 통신\n(명령어/설정)"
+  Bluetooth: "블루투스\n(ARD_Cam)"
+}
+
+ESP32_Transmitter: "ESP32 이미지 송신기\n(Main System)" {
+  class: core_system
+
+  Preferences: "비휘발성 저장소 (NVS)" {
+    class: database
+  }
+
+  Setup_Phase: "초기화 모듈 (setup)" {
+    class: module
+  }
+
+  WiFi_Manager: "네트워크 관리자" {
+    class: module
+  }
+
+  Camera_Manager: "카메라 제어부" {
+    class: module
+  }
+
+  Loop_Task: "메인 스케줄러 (loop)" {
+    class: module
+  }
+
+  Transport_Logic: "데이터 전송 로직" {
+    class: module
+  }
+}
+
+Remote_Server: "원격 서버 환경" {
+  class: external_server
+
+  HTTP_API: "HTTP REST API\n(포트 5000)" {
+    direction: right
+    
+    Upload_Endpoint: "/upload\n(TCP 수신)"
+    Config_Endpoint: "/api/config\n(원격 설정)"
+    Monitor_Endpoint: "/api/log\n(상태 모니터링)"
+  }
+
+  UDP_Receiver: "UDP 수신기\n(포트 5001)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 설정 및 초기화 흐름
+ESP32_Transmitter.Setup_Phase -> ESP32_Transmitter.Preferences: "정보 로드"
+ESP32_Transmitter.Setup_Phase -> ESP32_Transmitter.WiFi_Manager: "연결 시도"
+ESP32_Transmitter.Setup_Phase -> ESP32_Transmitter.Camera_Manager: "하드웨어 초기화"
+
+# 2. 사용자 제어 및 설정 모드 흐름
+User_Environment.Serial_Port -> ESP32_Transmitter.Loop_Task: "'c' 입력 (캡처)"
+User_Environment.Serial_Port -> ESP32_Transmitter.Setup_Phase: "'w' 입력 (설정)"
+User_Environment.Bluetooth -> ESP32_Transmitter.Preferences: "네트워크 정보 갱신"
+
+# 3. 주기적 메인 루프 처리
+ESP32_Transmitter.Loop_Task -> Remote_Server.HTTP_API.Monitor_Endpoint: "상태 보고"
+ESP32_Transmitter.Loop_Task <-> Remote_Server.HTTP_API.Config_Endpoint: "설정 동기화 및 명령"
+
+# 4. 이미지 캡처 및 업로드 흐름
+ESP32_Transmitter.Loop_Task -> ESP32_Transmitter.Transport_Logic: "캡처 트리거"
+ESP32_Transmitter.Transport_Logic <-> ESP32_Transmitter.Camera_Manager: "프레임 획득/반환"
+
+ESP32_Transmitter.Transport_Logic -> Remote_Server.HTTP_API.Upload_Endpoint: "TCP 전송"
+ESP32_Transmitter.Transport_Logic -> Remote_Server.UDP_Receiver: "UDP 전송"

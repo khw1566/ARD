@@ -20,14 +20,14 @@ const char *WIFI_SERVER_2 = "192.168.0.35";
 
 const char *WIFI_SSID_3 = "A35_m";
 const char *WIFI_PASS_3 = "00000000";
-const char *WIFI_SERVER_3 = "10.37.227.12";
+const char *WIFI_SERVER_3 = "10.115.5.12";
 
 uint32_t WIFI_TIMEOUT_MS = 5000; // 5 seconds per attempt
 
 String ssid_active = "";
 String pass_active = "";
 String server_ip_pref = "";
-String server_ip = "10.37.227.12"; // Active server IP
+String server_ip = "10.115.5.12"; // Active server IP
 int udp_port = 5001;
 
 // --- 스마트 고정 IP 설정 (사용자 요청 사항: 뒷자리만 고정) ---
@@ -133,12 +133,11 @@ void setup() {
 
   // 1. 설정 및 WiFi 정보 로드
   prefs.begin("wifi-config", false);
+  prefs.remove("server_ip"); // 노트북 환경 전환을 위해 이전 IP 삭제
   if (prefs.isKey("ssid"))
     ssid_active = prefs.getString("ssid");
   if (prefs.isKey("password"))
     pass_active = prefs.getString("password");
-  if (prefs.isKey("server_ip"))
-    server_ip_pref = prefs.getString("server_ip");
 
   updateUrls();
 

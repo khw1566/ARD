@@ -1,0 +1,98 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  microcontroller: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  task: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  hardware: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  network: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  state: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Hardware_Interfaces: "로봇 구동 하드웨어" {
+  class: hardware
+  direction: right
+
+  Steppers: "3축 스텝 모터\n(X, Y, Z축)"
+  Pneumatic_Gripper: "공압 그리퍼\n(릴레이 1, 2)"
+  DC_Motor: "DC 구동부\n(L298N)"
+}
+
+ESP32_RobotMCU: "ESP32-S3 로봇 제어기 (FreeRTOS)" {
+  class: microcontroller
+
+  Shared_State: "모터 상태 객체\n(AccelStepper 전역 인스턴스)" {
+    class: state
+  }
+
+  Core0: "Core 0 (네트워크 및 명령 파싱)" {
+    direction: right
+
+    Network_Task: "네트워크 태스크\n(포트 5002 수신)" { class: task }
+    Command_Parser: "명령 처리부\n(processCommand)" { class: task }
+  }
+
+  Core1: "Core 1 (실시간 하드웨어 제어)" {
+    direction: right
+
+    Motor_Task: "모터 구동 태스크\n(우선순위 3, 비동기 폴링)" { class: task }
+  }
+}
+
+External_System: "원격 서버 환경" {
+  class: network
+  direction: right
+
+  TCP_Client: "TCP 명령 클라이언트\n(명령어 하달)"
+  HTTP_API: "HTTP API 서버\n(/api/heartbeat)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 네트워크 명령 수신 및 상태 보고
+External_System.TCP_Client -> ESP32_RobotMCU.Core0.Network_Task: "TCP 스트림 수신 (논블로킹)"
+ESP32_RobotMCU.Core0.Network_Task -> External_System.HTTP_API: "하트비트 POST (10초 주기)"
+
+# 2. 명령 파싱 및 장치 상태 제어
+ESP32_RobotMCU.Core0.Network_Task -> ESP32_RobotMCU.Core0.Command_Parser: "개행 단위 문자열 파싱"
+ESP32_RobotMCU.Core0.Command_Parser -> ESP32_RobotMCU.Shared_State: "목표 위치(move)/속도 설정"
+ESP32_RobotMCU.Core0.Command_Parser -> Hardware_Interfaces.Pneumatic_Gripper: "Active-LOW 밸브 개폐"
+ESP32_RobotMCU.Core0.Command_Parser -> Hardware_Interfaces.DC_Motor: "정/역방향 GPIO 제어"
+
+# 3. 실시간 모터 펄스 출력
+ESP32_RobotMCU.Shared_State -> ESP32_RobotMCU.Core1.Motor_Task: "현재 상태 참조"
+ESP32_RobotMCU.Core1.Motor_Task -> Hardware_Interfaces.Steppers: "고속 펄스 출력 (STEP/DIR)"

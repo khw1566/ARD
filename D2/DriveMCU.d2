@@ -1,0 +1,112 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  microcontroller: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  task: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  hardware: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  network: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  queue: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Hardware_Interfaces: "하드웨어 및 센서 환경" {
+  class: hardware
+  direction: right
+  
+  Sensors: "환경/위치 센서\n(ToF, GPS, 온습도)"
+  Manual_Input: "사용자 입력부\n(버튼, 포텐쇼미터)"
+  Outputs: "시각/청각 출력\n(OLED, 버저)"
+  Motors: "구동부\n(X, Y, Z축 스텝모터)"
+}
+
+ESP32_DriveMCU: "ESP32 메인 컨트롤러 (FreeRTOS)" {
+  class: microcontroller
+
+  Core0: "Core 0 (통신 및 백그라운드)" {
+    direction: right
+    
+    Network_Task: "네트워크 태스크\n(명령 수신 및 파싱)" { class: task }
+    Heartbeat_Task: "하트비트 태스크\n(주기적 상태 보고)" { class: task }
+    Log_Buzzer_Task: "로그 및 버저 태스크" { class: task }
+  }
+  
+  Queues: "시스템 큐 (IPC)" {
+    direction: right
+    
+    Cmd_Queue: "명령 큐\n(Command Queue)" { class: queue }
+    Log_Queue: "로그/버저 큐\n(Event Queue)" { class: queue }
+  }
+
+  Core1: "Core 1 (실시간 제어 및 UI)" {
+    direction: right
+    
+    Input_Task: "입력 처리 태스크\n(100Hz 샘플링)" { class: task }
+    Motor_Task: "모터 제어 태스크\n(실시간 PID 및 스텝)" { class: task }
+    Main_Loop: "메인 루프\n(수동 제어 및 상태 갱신)" { class: task }
+  }
+}
+
+Remote_Server: "원격 서버 환경" {
+  class: network
+  direction: right
+  
+  API_Endpoints: "HTTP API\n(/api/heartbeat, /api/log 등)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 하드웨어 입력 및 통신 흐름
+Hardware_Interfaces.Manual_Input -> ESP32_DriveMCU.Core1.Input_Task: "물리적 입력 판독"
+ESP32_DriveMCU.Core0.Network_Task <-> Remote_Server.API_Endpoints: "TCP 명령 수신 및 동기화"
+
+# 2. 큐를 통한 비동기 데이터 전달 (태스크 분리)
+ESP32_DriveMCU.Core0.Network_Task -> ESP32_DriveMCU.Queues.Cmd_Queue: "원격 모터 제어 명령"
+ESP32_DriveMCU.Core1.Main_Loop -> ESP32_DriveMCU.Queues.Cmd_Queue: "수동 모터 제어 명령"
+ESP32_DriveMCU.Core0.Network_Task -> ESP32_DriveMCU.Queues.Log_Queue: "이벤트 발생"
+
+# 3. 실시간 제어 및 출력 흐름
+ESP32_DriveMCU.Queues.Cmd_Queue -> ESP32_DriveMCU.Core1.Motor_Task: "제어 명령 인출"
+ESP32_DriveMCU.Core1.Motor_Task -> Hardware_Interfaces.Motors: "모터 펄스 출력"
+ESP32_DriveMCU.Core1.Input_Task -> ESP32_DriveMCU.Core1.Main_Loop: "제어 상태 변경 트리거"
+ESP32_DriveMCU.Core1.Main_Loop -> Hardware_Interfaces.Outputs: "OLED UI 렌더링"
+ESP32_DriveMCU.Queues.Log_Queue -> ESP32_DriveMCU.Core0.Log_Buzzer_Task: "버저 구동 및 로그 발송"
+
+# 4. 센서 데이터 처리 및 보고 흐름
+Hardware_Interfaces.Sensors -> ESP32_DriveMCU.Core0.Heartbeat_Task: "주기적 환경 데이터 수집"
+Hardware_Interfaces.Sensors -> ESP32_DriveMCU.Core1.Motor_Task: "ToF 거리 피드백 (Z축 PID)"
+ESP32_DriveMCU.Core0.Heartbeat_Task -> Remote_Server.API_Endpoints: "JSON 상태 POST"
+ESP32_DriveMCU.Core0.Log_Buzzer_Task -> Remote_Server.API_Endpoints: "비동기 로그 전송"

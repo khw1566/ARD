@@ -1,0 +1,120 @@
+direction: down
+
+classes: {
+  block: {
+    style: {
+      font-size: 26
+      border-radius: 8
+      stroke-width: 3
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      shadow: true
+    }
+  }
+  sum: {
+    shape: circle
+    style: {
+      font-size: 30
+      stroke-width: 3
+      fill: "#e2e8f0"
+      stroke: "#94a3b8"
+      shadow: true
+    }
+  }
+  main_node: {
+    style: {
+      font-size: 26
+      border-radius: 8
+      stroke-width: 4
+      shadow: true
+    }
+  }
+}
+
+# --- Blocks ---
+target: "목표 거리\n(targetRailDist)" {
+  class: main_node
+  style.fill: "#eff6ff"
+  style.stroke: "#3b82f6"
+}
+
+comparator: "+ / -" {
+  class: sum
+}
+
+deadzone: "데드존 검사\n(|오차| <= 2mm)" {
+  class: main_node
+  style.fill: "#fffbeb"
+  style.stroke: "#d97706"
+}
+
+pid: "PID 제어 알고리즘 (50ms 주기)" {
+  style: {
+    fill: "#f0fdf4"
+    stroke: "#16a34a"
+    stroke-width: 4
+    font-size: 28
+  }
+  direction: right
+
+  p_term: "비례 (P)\nKp = 0.3\n(Soft Landing)" { class: block }
+  i_term: "적분 (I)\nKi = 0.01\n(Anti-Windup)" { class: block }
+  d_term: "미분 (D)\nKd = 5.0" { class: block }
+}
+
+sum_pid: "+" {
+  class: sum
+}
+
+scale: "단위 변환\n(Steps/mm = 43.48)" {
+  class: main_node
+  style.fill: "#faf5ff"
+  style.stroke: "#8b5cf6"
+}
+
+motor: "Z축 스텝 모터\n(AccelStepper)" {
+  class: main_node
+  style.fill: "#fff1f2"
+  style.stroke: "#f43f5e"
+}
+
+tof: "ToF 거리 센서\n(VL53L0X)" {
+  class: main_node
+  style.fill: "#f0fdfa"
+  style.stroke: "#0d9488"
+}
+
+filter: "이동 평균 필터\n(5-Sample SMA)" {
+  class: main_node
+  style.fill: "#fdf2f8"
+  style.stroke: "#db2777"
+}
+
+# --- Connections ---
+target -> comparator: "목표값 (mm)" { style.stroke-width: 4; style.font-size: 22 }
+filter -> comparator: "피드백 (mm)" { style.stroke-width: 4; style.font-size: 22 }
+
+comparator -> deadzone: "오차 (Error)" { style.stroke-width: 4; style.font-size: 22 }
+
+deadzone -> pid.p_term: "오차 > 2mm" { style.stroke-width: 4; style.font-size: 22 }
+deadzone -> pid.i_term { style.stroke-width: 4 }
+deadzone -> pid.d_term { style.stroke-width: 4 }
+
+deadzone -> motor: "오차 <= 2mm\n(모터 정지)" {
+  style: {
+    stroke-dash: 5
+    stroke-width: 4
+    stroke: "#dc2626"
+    font-size: 22
+  }
+}
+
+pid.p_term -> sum_pid { style.stroke-width: 4 }
+pid.i_term -> sum_pid { style.stroke-width: 4 }
+pid.d_term -> sum_pid { style.stroke-width: 4 }
+
+sum_pid -> scale: "제어 출력" { style.stroke-width: 4; style.font-size: 22 }
+scale -> motor: "이동 스텝 (moveDelta)" { style.stroke-width: 4; style.font-size: 22 }
+
+motor -> tof: "위치 변화" { style.stroke-dash: 5; style.stroke-width: 3 }
+tof -> filter: "Raw 거리" { style.stroke-width: 4; style.font-size: 22 }

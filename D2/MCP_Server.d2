@@ -1,0 +1,110 @@
+direction: right
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  ai_client: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+      stroke-width: 2
+    }
+  }
+  mcp_server: {
+    style: {
+      border-radius: 8
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-width: 2
+    }
+  }
+  core_server: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  mcu: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+External_AI: "외부 AI 클라이언트\n(Cursor IDE / Claude Desktop)" {
+  class: ai_client
+}
+
+MCP_Proxy_Server: "FastMCP 프록시 서버\n(mcp_server.py)" {
+  class: mcp_server
+  direction: down
+
+  Resources: "리소스 (Resources)" {
+    class: module
+    Status_Resource: "ard://system/status\n(시스템 상태)"
+  }
+
+  Tools: "제어 도구 (Tools)" {
+    class: module
+    direction: right
+    Tool_Status: "get_robot_status\n(상태 조회)"
+    Tool_Drive: "control_drive_motor\n(주행 제어)"
+    Tool_Arm: "move_3axis_robot\n(로봇팔 제어)"
+    Tool_Pneumatic: "control_pneumatic_gripper\n(공압 제어)"
+    Tool_Vision: "trigger_image_sensor\n(비전 제어)"
+    Tool_Homing: "homing_all_robots\n(원점 복귀)"
+    Tool_Media: "play_youtube_music\n(유튜브 음악 재생)"
+  }
+}
+
+PC_Center_App: "PC Center 코어 서버\n(app.py / 포트 5000)" {
+  class: core_server
+  
+  REST_API: "HTTP REST API" { class: module }
+  HMI_Approval: "HMI 승인 로직\n(명령어 검증 및 사용자 인가)" { class: module }
+  Media_Player: "미디어 플레이어\n(yt-dlp / 백그라운드 재생)" { class: module }
+}
+
+Robot_Hardware: "로봇 하드웨어 (MCUs)" {
+  class: mcu
+  direction: down
+  
+  DriveMCU: "주행 제어부\n(DriveMCU)"
+  Robot3AxisMCU: "다관절/공압부\n(Robot3AxisMCU)"
+  ImageSenderMCU: "비전 센서부\n(ImageSenderMCU)"
+  HMI_MCU: "인가 및 디스플레이\n(HMI_MCU)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. AI 클라이언트와 MCP 서버 통신 (Model Context Protocol)
+External_AI -> MCP_Proxy_Server.Tools: "Tool 호출\n(자연어 명령 해석)"
+External_AI -> MCP_Proxy_Server.Resources: "데이터 조회\n(컨텍스트 제공)"
+
+# 2. MCP 서버와 PC Center 통신 (HTTP REST)
+MCP_Proxy_Server.Tools -> PC_Center_App.REST_API: "HTTP 요청\n(명령 전달)"
+MCP_Proxy_Server.Resources -> PC_Center_App.REST_API: "HTTP GET\n(상태 업데이트)"
+
+# 3. PC Center 내부 승인 및 미디어 처리
+PC_Center_App.REST_API -> PC_Center_App.HMI_Approval: "위험 구동 명령 전달"
+PC_Center_App.REST_API -> PC_Center_App.Media_Player: "유튜브 스트리밍 명령"
+PC_Center_App.HMI_Approval <-> Robot_Hardware.HMI_MCU: "HMI 승인과정\n(물리적 버튼/터치 인가)"
+
+# 4. PC Center 코어와 로봇 하드웨어 통신 (승인 완료 후)
+PC_Center_App.HMI_Approval -> Robot_Hardware.DriveMCU: "TCP/UDP\n(이동 명령)"
+PC_Center_App.HMI_Approval -> Robot_Hardware.Robot3AxisMCU: "TCP/UDP\n(좌표 및 릴레이 제어)"
+PC_Center_App.REST_API -> Robot_Hardware.ImageSenderMCU: "TCP명령\n(영상 캡쳐 - 승인 불필요)"
+Robot_Hardware -> PC_Center_App.REST_API: "피드백\n(센서 데이터 반환)"

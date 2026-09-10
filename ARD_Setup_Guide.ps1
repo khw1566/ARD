@@ -1,4 +1,4 @@
-﻿#Requires -Version 3.0
+#Requires -Version 3.0
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "SilentlyContinue"
 
@@ -55,10 +55,38 @@ $ffmpegCheck = Get-Command ffmpeg -ErrorAction SilentlyContinue
 if ($ffmpegCheck) {
     Write-Color "  -> FFmpeg가 이미 설치되어 있습니다." Green
 } else {
-    Write-Color "  -> FFmpeg가 설치되어 있지 않습니다. (Whisper STT 구동 시 필수)" Red
-    Write-Color "  -> Github 릴리즈 페이지로 이동합니다. Windows용 최신 빌드를 다운로드 받으세요." Yellow
-    Start-Process "https://github.com/BtbN/FFmpeg-Builds/releases"
-    Write-Color "  -> [중요 안내] 다운로드한 압축 파일을 풀고, 내부의 'bin' 폴더 경로를 윈도우 환경 변수 PATH에 수동으로 추가해야 합니다." Magenta
+    Write-Color "  -> FFmpeg가 설치되어 있지 않습니다. 자동 설치를 시작합니다..." Cyan
+    $wingetCheck = Get-Command winget -ErrorAction SilentlyContinue
+    if ($wingetCheck) {
+        Write-Color "  -> Winget을 이용하여 FFmpeg를 설치 중입니다. (권한 확인 창이 뜨면 예(Y)를 눌러주세요)" Yellow
+        & winget install Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
+        Write-Color "  -> 설치 완료! 열려 있는 모든 CMD/PowerShell 창을 닫고 다시 열면 적용됩니다." Green
+    } else {
+        Write-Color "  -> Winget을 찾을 수 없어 백그라운드에서 직접 다운로드 및 압축 해제를 진행합니다..." Yellow
+        $ffmpegZip = "$env:TEMP\ffmpeg.zip"
+        $ffmpegDest = "C:\ffmpeg"
+        try {
+            Write-Color "     - FFmpeg 다운로드 중... (약 80MB)" Cyan
+            Invoke-WebRequest -Uri "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -OutFile $ffmpegZip -UseBasicParsing
+            Write-Color "     - 압축 해제 및 C:\ffmpeg 에 복사 중..." Cyan
+            Expand-Archive -Path $ffmpegZip -DestinationPath "$env:TEMP\ffmpeg_temp" -Force
+            $extractedFolder = Get-ChildItem -Path "$env:TEMP\ffmpeg_temp" -Directory | Select-Object -First 1
+            if (Test-Path $ffmpegDest) { Remove-Item -Recurse -Force $ffmpegDest }
+            Move-Item -Path $extractedFolder.FullName -Destination $ffmpegDest -Force
+            Remove-Item -Recurse -Force "$env:TEMP\ffmpeg_temp"
+            
+            Write-Color "     - 환경 변수(PATH) 등록 중..." Cyan
+            $oldPath = [Environment]::GetEnvironmentVariable("Path", "User")
+            if ($oldPath -notmatch "C:\\ffmpeg\\bin") {
+                [Environment]::SetEnvironmentVariable("Path", "$oldPath;C:\ffmpeg\bin", "User")
+                $env:Path = "$env:Path;C:\ffmpeg\bin"
+            }
+            Write-Color "  -> FFmpeg 자동 다운로드 및 설치 완료! (C:\ffmpeg)" Green
+        } catch {
+            Write-Color "  -> 자동 설치에 실패했습니다. 수동 설치 사이트로 이동합니다." Red
+            Start-Process "https://www.gyan.dev/ffmpeg/builds/"
+        }
+    }
 }
 
 # 4. Python Packages Install

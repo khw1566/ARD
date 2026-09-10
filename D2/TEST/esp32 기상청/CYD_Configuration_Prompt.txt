@@ -1,0 +1,95 @@
+[ESP32-2432S028 (CYD) 2.8" Display & Touch Configuration Guide for LLM]
+
+This document contains the proven configuration and calibration settings for the ESP32-2432S028 board (Cheap Yellow Display). Use this as a context prompt for any coding assistant to ensure the display and touch functionality work correctly out of the box.
+
+### 1. Project Environment (platformio.ini)
+To initialize the board correctly, use the following build flags in PlatformIO. These flags override the default User_Setup.h in the TFT_eSPI library.
+
+```ini
+build_flags =
+    -D USER_SETUP_LOADED=1
+    -D ILI9341_2_DRIVER=1  ; Use _2_ version for correct orientation logic
+    -D TFT_WIDTH=240
+    -D TFT_HEIGHT=320
+    -D TFT_MISO=12
+    -D TFT_MOSI=13
+    -D TFT_SCLK=14
+    -D TFT_CS=15
+    -D TFT_DC=2
+    -D TFT_RST=-1
+    -D TFT_BL=21
+    -D TFT_BACKLIGHT_ON=HIGH
+    -D TOUCH_CS=33
+    -D SPI_FREQUENCY=55000000
+    -D SPI_READ_FREQUENCY=20000000
+    -D SPI_TOUCH_FREQUENCY=2500000
+    -D USE_HSPI_PORT=1      ; Essential for this board's wiring
+```
+
+### 2. Display Rotation
+For Landscape mode, use:
+`tft.setRotation(3);`
+Resulting resolution: 320 (Width) x 240 (Height).
+
+### 3. Touch Screen Calibration (XPT2046)
+The touch controller on this board is oriented uniquely. For Rotation 3 (Landscape), use the following mapping values to ensure touch coordinates align perfectly with the screen pixels (including horizontal/vertical mirroring correction):
+
+```cpp
+// Rotation 3 Touch Mapping Logic
+int w = 320;
+int h = 240;
+TS_Point p = touch.getPoint();
+
+// Calibration range derived from verified example projects:
+// X: 185 (Right) to 3700 (Left) -> 0 to 320
+// Y: 280 (Bottom) to 3850 (Top) -> 0 to 240
+int screen_x = map(p.x, 3700, 185, 0, w);
+int screen_y = map(p.y, 3850, 280, 0, h);
+
+// Keep within bounds
+screen_x = constrain(screen_x, 0, w - 1);
+screen_y = constrain(screen_y, 0, h - 1);
+```
+
+### 4. Hardware ID & Memory Access
+- Flash size: `ESP.getFlashChipSize()` (Usually 4MB)
+- PSRAM: `ESP.getPsramSize()` (Check if > 0, as not all CYD boards have PSRAM)
+- CPU Clock: `getCpuFrequencyMhz()`
+- Chip ID: Derived from Efuse MAC:
+```cpp
+uint32_t chipId = 0;
+for(int i=0; i<17; i=i+8) {
+  chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+}
+```
+
+### 5. Display Color Inversion (CRITICAL)
+If the colors appear "inverted" (e.g., a yellow sun appearing blue, or black text appearing as light grey on a dark background), you must call:
+`tft.invertDisplay(true);`
+This is common in some CYD board revisions using specific ILI9341 modules where the color interpretation is flipped.
+
+### 6. Korean Font Implementation (Custom Bitmaps)
+Standard libraries have poor support for Korean (Hangul). A proven workaround:
+1. Use a Python script with Pillow (PIL) to convert `.ttf` fonts into C++ bitmap arrays.
+2. Use an `Adafruit_GFX` compatible custom renderer.
+3. **Guard your structs**: If using multiple font headers, ensure your `CustomGFXGlyph` struct is guarded with `#ifndef CUSTOM_GFX_GLYPH_DEFINED` to avoid redefinition errors during compilation.
+4. **Subsetting**: Only include required characters to save Flash memory (Flash usage for this board is ~1.2MB, but fonts can grow quickly).
+
+### 7. JSON Response & Memory (KMA API)
+When parsing complex JSON (e.g., from the Korean Meteorological Administration):
+- **DynamicJsonDocument Size**: 초단기예보(UltraSrt)는 16KB로 충분하나, **단기예보(VilageFcst)**는 데이터 양이 매우 많아 최소 **48KB (`49152`)** 이상의 버퍼가 필요함.
+- **HTTP Timeout**: 대용량 JSON 수신 시 네트워크 속도에 따라 수 초가 걸릴 수 있으므로 `http.setTimeout(15000)` (15초) 정도로 넉넉하게 설정해야 수신 실패를 막을 수 있음.
+- **NTP Timing**: Ensure `getLocalTime()` succeeds before constructing API URLs that require a dynamic date/time string.
+
+### 8. Touch UI Best Practices
+Avoid full-screen touch triggers as they lead to accidental refreshes or unintended interactions.
+- **Region-based buttons**: Define `TAB_W`, `TAB_H`, `BTN_X` etc., and check if the scaled point `p.x`, `p.y` falls within these bounds.
+- **Debouncing**: Add a `lastTouchTime` check (e.g., 1000ms delay) to prevent repeated triggers during a single physical press.
+- **Flicker Reduction**: 애니메이션 시 화면 전체를 지우지 말고, 아이콘이 그려지는 최소 영역만 `fillRect`로 지우고 다시 그릴 것. 이때 배경색은 다른 UI 요소와 일치시키기 위해 전역 상태로 관리하거나 `updateInternalState`에서 한 번에 칠하는 것이 안전함.
+
+### Updated LLM Context Snippet:
+"I am working with an ESP32-2432S028 (CYD) 2.8" board. 
+- **Display**: Use ILI9341_2_DRIVER, setRotation(3), and call `tft.invertDisplay(true)` to fix color inversion if red/blue are swapped.
+- **Touch**: Use mapping X:3700->185, Y:3850->280 for scaled coords. 
+- **JSON**: Set ArduinoJson buffer to 16KB for heavy payloads. 
+- **Fonts**: Use bitmap-based custom font headers for Korean, ensuring struct guards for multi-font projects."

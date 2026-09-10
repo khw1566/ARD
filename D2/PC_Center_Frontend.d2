@@ -1,0 +1,218 @@
+direction: down
+
+title: |md
+  ## PC Center Frontend Architecture
+  SPA (Single Page Application) 동작 구조도
+| {
+  near: top-center
+  style: {
+    font-size: 32
+    bold: true
+  }
+}
+
+classes: {
+  main_node: {
+    style: {
+      font-size: 24
+      border-radius: 8
+      stroke-width: 4
+      shadow: true
+    }
+  }
+  container: {
+    style: {
+      font-size: 26
+      stroke-width: 4
+      border-radius: 12
+    }
+  }
+  link: {
+    style: {
+      font-size: 20
+      stroke-width: 4
+    }
+  }
+  small_node: {
+    style: {
+      font-size: 20
+      border-radius: 6
+      stroke-width: 3
+      shadow: true
+    }
+  }
+}
+
+# ============================================
+# 1단: 브라우저 레이어
+# ============================================
+browser: "Web Browser (Chrome)" {
+  shape: cloud
+  style: {
+    font-size: 28
+    stroke-width: 4
+    shadow: true
+    fill: "#eff6ff"
+    stroke: "#3b82f6"
+  }
+}
+
+# ============================================
+# 2단: 프론트엔드 코어 파일 구조
+# ============================================
+core_files: "Frontend Core (프론트엔드 코어)" {
+  class: container
+  style.fill: "#f0f9ff"
+  style.stroke: "#0284c7"
+  direction: right
+
+  html: "index.html\n(1,676줄)\n레이아웃 / DOM 구조" {
+    class: main_node
+    style.fill: "#dbeafe"
+    style.stroke: "#2563eb"
+  }
+  js: "main.js\n(3,857줄)\n동적 로직 / 상태 관리" {
+    class: main_node
+    style.fill: "#fef9c3"
+    style.stroke: "#ca8a04"
+  }
+  css: "style.css\nCSS3 다크 테마\n애니메이션 시스템" {
+    class: main_node
+    style.fill: "#fce7f3"
+    style.stroke: "#db2777"
+  }
+  i18n: "translations.js\n다국어 (KO/EN)\ndata-i18n 바인딩" {
+    class: main_node
+    style.fill: "#f0fdf4"
+    style.stroke: "#16a34a"
+  }
+}
+
+# ============================================
+# 3단: 외부 라이브러리 계층
+# ============================================
+libs: "External Libraries (외부 라이브러리)" {
+  class: container
+  style.fill: "#faf5ff"
+  style.stroke: "#a855f7"
+  direction: right
+
+  threejs: "Three.js\n3D 시뮬레이션\n(모터/로봇 렌더링)" {
+    class: small_node
+    style.fill: "#f5f3ff"
+    style.stroke: "#7c3aed"
+  }
+  chartjs: "Chart.js\n실시간 센서\n데이터 그래프" {
+    class: small_node
+    style.fill: "#fdf4ff"
+    style.stroke: "#a21caf"
+  }
+  webaudio: "Web Audio API\nPC 마이크 캡처\n오디오 Loopback" {
+    class: small_node
+    style.fill: "#fff7ed"
+    style.stroke: "#c2410c"
+  }
+}
+
+# ============================================
+# 4단: 탭 기반 라우팅 (UI View 전환)
+# ============================================
+tab_router: "Tab-based SPA Router (탭 뷰 라우팅)" {
+  class: container
+  style.fill: "#f0fdfa"
+  style.stroke: "#0d9488"
+  direction: right
+
+  tab1: "ImageSenderMCU\n(카메라 피드)" {
+    class: small_node
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+  }
+  tab2: "DriveMCU\n(3D 모터 시뮬레이션)" {
+    class: small_node
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+  }
+  tab3: "ControlMCU\n(음성/미디어 센터)" {
+    class: small_node
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+  }
+  tab4: "Robot3AxisMCU\n(PTP 좌표 제어)" {
+    class: small_node
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+  }
+  tab5: "HMI MCU\n(터치 UI 보드)" {
+    class: small_node
+    style.fill: "#ccfbf1"
+    style.stroke: "#14b8a6"
+  }
+}
+
+# ============================================
+# 5단: 기능 모듈 계층
+# ============================================
+features: "Functional Modules (주요 기능 모듈)" {
+  class: container
+  style.fill: "#fffbeb"
+  style.stroke: "#d97706"
+  direction: right
+
+  polling: "실시간 폴링\n/api/status (3초)\n/api/heartbeat (10초)" {
+    class: small_node
+    style.fill: "#fef3c7"
+    style.stroke: "#b45309"
+  }
+  media: "미디어 스트리밍\nMP3 / 라디오\nYouTube / 미러링" {
+    class: small_node
+    style.fill: "#fef3c7"
+    style.stroke: "#b45309"
+  }
+  ai: "AI 비전 제어\n객체 인식 결과\nHUD 디스플레이" {
+    class: small_node
+    style.fill: "#fef3c7"
+    style.stroke: "#b45309"
+  }
+  settings: "설정 관리\n카메라/해상도/EQ\nlocalStorage 캐시" {
+    class: small_node
+    style.fill: "#fef3c7"
+    style.stroke: "#b45309"
+  }
+}
+
+# ============================================
+# 6단: 백엔드 서버
+# ============================================
+backend: "PC Center Backend\n(Python Flask Server)" {
+  shape: cloud
+  style: {
+    font-size: 28
+    stroke-width: 4
+    shadow: true
+    fill: "#fff1f2"
+    stroke: "#f43f5e"
+  }
+}
+
+# ============================================
+# Connections
+# ============================================
+browser -> core_files: "HTTP GET / Jinja2 렌더링" { class: link }
+
+core_files.html -> libs.threejs: "Canvas 컨테이너" { class: link; style.stroke-dash: 5 }
+core_files.html -> libs.chartjs: "Canvas 요소" { class: link; style.stroke-dash: 5 }
+core_files.js -> libs.webaudio: "AudioContext 호출" { class: link; style.stroke-dash: 5 }
+core_files.js -> core_files.i18n: "번역 키 참조" { class: link; style.stroke-dash: 5 }
+
+core_files.js -> tab_router: "switchTab() 호출\nDOM display 제어" { class: link }
+
+tab_router.tab1 -> features.ai { class: link; style.stroke-dash: 5 }
+tab_router.tab2 -> features.polling { class: link; style.stroke-dash: 5 }
+tab_router.tab3 -> features.media { class: link; style.stroke-dash: 5 }
+tab_router.tab4 -> features.settings { class: link; style.stroke-dash: 5 }
+
+features.polling -> backend: "fetch() JSON\n상태 데이터 수신" { class: link; style.stroke: "#3b82f6" }
+features.media -> backend: "POST /api/soundmcu\n오디오 명령 전송" { class: link; style.stroke: "#16a34a" }
+features.ai -> backend: "POST /api/transmitter\nAI 분석 요청" { class: link; style.stroke: "#a855f7" }
+features.settings -> backend: "POST /api/config\n설정 동기화" { class: link; style.stroke: "#d97706" }

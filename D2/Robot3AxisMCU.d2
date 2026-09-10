@@ -1,0 +1,111 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  pc_server: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  mcu_node: {
+    style: {
+      border-radius: 8
+      fill: "#fef08a"
+      stroke: "#fde047"
+      stroke-width: 2
+    }
+  }
+  sub_module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  calc_engine: {
+    style: {
+      border-radius: 4
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  queue_node: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+PC_Control_Center: "PC 제어 시스템 (통합 관제 센터)" {
+  class: pc_server
+  
+  UI_Interface: "사용자 인터페이스 레이어 (main.js)" {
+    direction: right
+    class: sub_module
+    PTP_Controller: "PTP 관제 패널\n(절대 좌표 입력)"
+    Sequence_Editor: "연속 시퀀스 편집기\n(태스크 타임라인 구성)"
+  }
+
+  Internal_Calculator: "내부 연산 엔진 (app.py)" {
+    direction: right
+    class: calc_engine
+    Coord_Transformer: "좌표 변환기\n(Deg/Mm -> 물리 스텝 변환)"
+    Time_Predictor: "궤적 시간 예측기\n(calculateR3Time)"
+  }
+
+  Automation_Engine: "자동화 및 스케줄러 메커니즘" {
+    class: sub_module
+    direction: right
+    Sequence_Manager: "시퀀스 제어기\n(executeNextStep)"
+    Command_Queue: "명령 직렬화 큐\n(r3CommandQueue)" { class: queue_node }
+  }
+}
+
+Robot3Axis_MCU: "3축 로봇 구동 시스템 (ESP32-S3)" {
+  class: mcu_node
+  
+  Core0_Network: "Core 0 (통신 및 버퍼링)" {
+    direction: right
+    class: sub_module
+    TCP_Receiver: "TCP 비동기 서버\n(포트 5002)"
+    Cmd_Parser: "명령 처리부\n(processCommand)"
+  }
+
+  Core1_Control: "Core 1 (실시간 다축 제어)" {
+    direction: right
+    class: sub_module
+    Stepper_Executor: "펄스 발생기\n(AccelStepper.run)"
+    Actuators: "구동 액추에이터\n(3축 스텝 모터 & 그리퍼)"
+  }
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 시퀀스 제어 (Sequence Control) 흐름
+PC_Control_Center.UI_Interface.Sequence_Editor -> PC_Control_Center.Automation_Engine.Sequence_Manager: "연속 동작 데이터셋 주입"
+PC_Control_Center.Automation_Engine.Sequence_Manager -> PC_Control_Center.Internal_Calculator.Coord_Transformer: "현재 스텝의 목표 절대 좌표 전달"
+
+# 2. PC측 내부 계산 (Internal Calculation) 및 PTP 제어 흐름
+PC_Control_Center.UI_Interface.PTP_Controller -> PC_Control_Center.Internal_Calculator.Coord_Transformer: "PTP 목표 위치 설정 요청"
+PC_Control_Center.Internal_Calculator.Coord_Transformer -> PC_Control_Center.Internal_Calculator.Time_Predictor: "축별 델타 스텝 산출\n(X*2.0, Y/-23.25, Z/-4.37)"
+PC_Control_Center.Internal_Calculator.Time_Predictor -> PC_Control_Center.Automation_Engine.Command_Queue: "최장 가동 시간 연산 및\n다축 동기화 명령(aX,Y,Z) 패키징"
+
+# 3. 명령 전달 및 분할 파싱 흐름
+PC_Control_Center.Automation_Engine.Command_Queue -> Robot3Axis_MCU.Core0_Network.TCP_Receiver: "비동기 TCP 스트림 송신"
+Robot3Axis_MCU.Core0_Network.TCP_Receiver -> Robot3Axis_MCU.Core0_Network.Cmd_Parser: "논블로킹 라인 버퍼링\n(개행 문자 단위 분리)"
+
+# 4. 실시간 제어 및 폐루프 시뮬레이션
+Robot3Axis_MCU.Core0_Network.Cmd_Parser -> Robot3Axis_MCU.Core1_Control.Stepper_Executor: "스텝 및 가속도 파라미터 갱신"
+Robot3Axis_MCU.Core1_Control.Stepper_Executor <-> Robot3Axis_MCU.Core1_Control.Actuators: "실시간 테스크 오버랩\n(고속 타임 인터벌 펄스 출력)"
+
+# 5. 시퀀스 대기 및 피드백 루프 (동기화 메커니즘)
+PC_Control_Center.Internal_Calculator.Time_Predictor -> PC_Control_Center.Automation_Engine.Sequence_Manager: "연산된 이동 소요 시간(estTime) 반환"
+PC_Control_Center.Automation_Engine.Sequence_Manager -> PC_Control_Center.Automation_Engine.Sequence_Manager: "이동 시간(estTime) + 설정 대기 시간(wait)\n타임아웃 후 차상위 인덱스 호출"

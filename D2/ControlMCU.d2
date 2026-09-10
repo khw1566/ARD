@@ -1,0 +1,112 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  microcontroller: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  task: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  hardware: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  network: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  memory: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Hardware_Interfaces: "하드웨어 입출력 환경" {
+  class: hardware
+  direction: right
+  
+  Inputs: "입력부\n(조이스틱/토글/버튼)"
+  Outputs: "출력부\n(NeoPixel/I2S 앰프)"
+}
+
+ESP32_Controller: "ESP32 제어 시스템 (FreeRTOS)" {
+  class: microcontroller
+
+  Shared_Memory: "전역 상태 및 NVS" {
+    class: memory
+    direction: right
+    
+    Global_Variables: "상태 변수\n(Mode, JoyState)"
+    Preferences: "NVS 저장소\n(자격 증명 및 IP)"
+  }
+
+  Core0: "Core 0 (네트워크 처리)" {
+    direction: right
+    Network_Task: "네트워크 태스크\n(API 통신 및 제어)" { class: task }
+  }
+
+  Core1: "Core 1 (UI 및 오디오 처리)" {
+    direction: right
+    Control_Task: "제어 태스크\n(입력 판독 및 LED)" { class: task }
+    Audio_Task: "오디오 태스크\n(인터넷 라디오)" { class: task }
+    Audio_Receiver_Task: "AI 오디오 수신\n(UDP 스트림)" { class: task }
+  }
+}
+
+External_Network: "외부 네트워크 환경" {
+  class: network
+  direction: right
+
+  Remote_Server: "원격 제어 서버" {
+    direction: down
+    
+    HTTP_API: "HTTP API\n(상태 및 하트비트)"
+    UDP_Discovery: "UDP 디스커버리\n(포트 5010)"
+    AI_Voice: "AI 음성 송출\n(포트 5005)"
+  }
+
+  Radio_Servers: "인터넷 라디오 서버\n(MP3/AAC 스트림)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 하드웨어 입력 및 상태 갱신
+Hardware_Interfaces.Inputs -> ESP32_Controller.Core1.Control_Task: "신호 판독 (100Hz)"
+ESP32_Controller.Core1.Control_Task -> ESP32_Controller.Shared_Memory.Global_Variables: "상태 갱신"
+ESP32_Controller.Core1.Control_Task -> Hardware_Interfaces.Outputs: "LED 제어"
+
+# 2. 네트워크 및 서버 통신
+ESP32_Controller.Core0.Network_Task <-> ESP32_Controller.Shared_Memory.Preferences: "설정 로드/저장"
+ESP32_Controller.Shared_Memory.Global_Variables -> ESP32_Controller.Core0.Network_Task: "상태 참조"
+ESP32_Controller.Core0.Network_Task <-> External_Network.Remote_Server.UDP_Discovery: "서버 IP 자동 탐색"
+ESP32_Controller.Core0.Network_Task -> External_Network.Remote_Server.HTTP_API: "JSON 데이터 POST"
+
+# 3. 오디오 스트리밍 및 다중화 제어
+External_Network.Radio_Servers -> ESP32_Controller.Core1.Audio_Task: "스트리밍 수신"
+External_Network.Remote_Server.AI_Voice -> ESP32_Controller.Core1.Audio_Receiver_Task: "데이터 수신"
+
+ESP32_Controller.Core1.Audio_Receiver_Task -> ESP32_Controller.Core1.Audio_Task: "라디오 강제 정지 (선점)"
+ESP32_Controller.Core1.Audio_Task -> Hardware_Interfaces.Outputs: "I2S 출력"
+ESP32_Controller.Core1.Audio_Receiver_Task -> Hardware_Interfaces.Outputs: "I2S 출력 (스테레오 확장)"

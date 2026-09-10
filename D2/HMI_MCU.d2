@@ -1,0 +1,115 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  microcontroller: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  task: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  hardware: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+  network: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  memory: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Hardware_Interfaces: "CYD28 하드웨어 환경" {
+  class: hardware
+  direction: right
+  
+  Touch_Panel: "터치 패널\n(XPT2046)"
+  TFT_Display: "TFT 디스플레이\n(ILI9341 240x320)"
+}
+
+ESP32_HMI_System: "ESP32 HMI 시스템 (FreeRTOS)" {
+  class: microcontroller
+
+  Shared_Resources: "공유 자원 및 비휘발성 메모리" {
+    class: memory
+    direction: right
+    
+    Preferences: "NVS 저장소\n(SSID, 암호, 서버 IP)"
+    Global_State: "전역 시스템 상태\n(Mutex 보호: ds, pdata)"
+  }
+
+  Core1: "Core 1 (UI 및 사용자 인터랙션)" {
+    direction: right
+    
+    Touch_Proc: "터치 입력 처리\n(procTouch)" { class: task }
+    UI_Render: "UI 렌더링\n(TFT_eSPI / TJpgDec)" { class: task }
+    BT_Config: "블루투스 설정 폴백\n(네트워크 실패 시)" { class: task }
+  }
+
+  Core0: "Core 0 (네트워크 및 백그라운드)" {
+    direction: right
+    
+    Network_Task: "네트워크 태스크\n(상태 폴링 및 하트비트)" { class: task }
+    Command_Sender: "명령 전송부\n(비동기 HTTP POST)" { class: task }
+  }
+}
+
+External_System: "원격 서버 및 종단 노드" {
+  class: network
+  direction: right
+  
+  Main_Server: "중앙 통합 HTTP API\n(포트 5000)"
+  
+  Target_MCUs: "서브 제어 대상 MCU" {
+    direction: right
+    Drive: "DriveMCU"
+    Robot: "Robot3Axis"
+    Cam: "CamMCU"
+    Sound: "SoundMCU"
+  }
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 하드웨어 입력 및 화면 렌더링
+Hardware_Interfaces.Touch_Panel -> ESP32_HMI_System.Core1.Touch_Proc: "터치 좌표 판독 (SPI)"
+ESP32_HMI_System.Core1.UI_Render -> Hardware_Interfaces.TFT_Display: "화면 출력 및 이미지 디코딩"
+
+# 2. 로컬 상태 변경 및 설정 흐름
+ESP32_HMI_System.Core1.Touch_Proc -> ESP32_HMI_System.Shared_Resources.Global_State: "UI 페이지 갱신"
+ESP32_HMI_System.Core1.BT_Config -> ESP32_HMI_System.Shared_Resources.Preferences: "새로운 무선 자격증명 수신"
+ESP32_HMI_System.Shared_Resources.Preferences -> ESP32_HMI_System.Core0.Network_Task: "네트워크 초기화 시 참조"
+
+# 3. 네트워크 통신 및 데이터 동기화 (Core 0 중심)
+ESP32_HMI_System.Core1.Touch_Proc -> ESP32_HMI_System.Core0.Command_Sender: "사용자 입력에 따른 명령 트리거"
+ESP32_HMI_System.Core0.Command_Sender -> External_System.Main_Server: "상태 제어 요청"
+ESP32_HMI_System.Core0.Network_Task <-> External_System.Main_Server: "JSON 상태 주기적 폴링"
+ESP32_HMI_System.Core0.Network_Task -> ESP32_HMI_System.Shared_Resources.Global_State: "파싱된 데이터 안전 기록"
+
+# 4. 렌더링 피드백 및 외부 시스템 연결
+ESP32_HMI_System.Shared_Resources.Global_State -> ESP32_HMI_System.Core1.UI_Render: "UI 갱신을 위한 데이터 읽기"
+External_System.Main_Server <-> External_System.Target_MCUs: "명령 하달 및 센서값 수집"

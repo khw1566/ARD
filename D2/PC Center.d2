@@ -1,0 +1,114 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  server: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  web_client: {
+    style: {
+      border-radius: 8
+      fill: "#dcfce7"
+      stroke: "#86efac"
+    }
+  }
+  cloud: {
+    style: {
+      border-radius: 4
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+    }
+  }
+  mcu: {
+    style: {
+      border-radius: 4
+      fill: "#fef08a"
+      stroke: "#fde047"
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+Web_Dashboard: "웹 클라이언트 UI\n(index.html / main.js)" {
+  class: web_client
+  direction: right
+
+  User_Input: "사용자 제어부\n(조이스틱, 버튼, 설정)"
+  Renderer: "렌더링부\n(Three.js 3D / Chart.js)"
+  SSE_Client: "SSE 수신기\n(EventSource)"
+}
+
+ARD_Central_Server: "ARD 중앙 제어 서버\n(Python Flask - app.py)" {
+  class: server
+
+  HTTP_API: "HTTP/REST API\n(포트 5000)" { class: module }
+  
+  Async_Threads: "비동기 통신 스레드" {
+    class: module
+    direction: right
+    
+    UDP_Video: "영상 수신기\n(UDP 5001)"
+    UDP_Audio: "오디오 수신기\n(UDP 5005)"
+  }
+
+  AI_Pipeline: "AI 프로세싱 엔진" {
+    class: module
+    direction: right
+    
+    Vision_Proc: "Vision 로직\n(이미지 전처리)"
+    Voice_Proc: "음성 로직\n(STT / VAD 처리)"
+  }
+}
+
+External_Cloud: "외부 클라우드 서비스" {
+  class: cloud
+  direction: right
+  
+  Gemini_API: "Google Gemini\n(멀티모달 비전/언어)"
+  TTS_API: "TTS/STT 엔드포인트\n(OpenAI / Edge-TTS)"
+}
+
+Edge_Devices: "종단 장치 (ESP32 MCUs)" {
+  class: mcu
+  direction: right
+  
+  ImageSender: "영상 송신기\n(ImageSenderMCU)"
+  Sound_Control: "제어 및 오디오기기\n(Control & SoundMCU)"
+  Actuators: "구동기기\n(Drive & Robot3AxisMCU)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. UI 및 서버 간의 실시간 통신
+Web_Dashboard.User_Input -> ARD_Central_Server.HTTP_API: "REST 설정 및 모터 명령 전송"
+ARD_Central_Server.HTTP_API -> Web_Dashboard.SSE_Client: "SSE (Server-Sent Events) 상태 브로드캐스트"
+Web_Dashboard.SSE_Client -> Web_Dashboard.Renderer: "로봇 상태 3D 동기화 및 렌더링"
+
+# 2. MCU와 서버 간의 백그라운드 데이터 수집
+Edge_Devices.ImageSender -> ARD_Central_Server.Async_Threads.UDP_Video: "JPEG 영상 프레임 수신 (분할 패킷)"
+Edge_Devices.Sound_Control <-> ARD_Central_Server.Async_Threads.UDP_Audio: "PCM 16kHz 오디오 스트림 송수신"
+Edge_Devices.Actuators -> ARD_Central_Server.HTTP_API: "주기적 하트비트 및 로그 POST"
+
+# 3. AI 파이프라인 및 클라우드 연동
+ARD_Central_Server.Async_Threads.UDP_Video -> ARD_Central_Server.AI_Pipeline.Vision_Proc: "분석용 프레임 트리거"
+ARD_Central_Server.Async_Threads.UDP_Audio -> ARD_Central_Server.AI_Pipeline.Voice_Proc: "발화 감지(VAD) 완료 시 전달"
+
+ARD_Central_Server.AI_Pipeline.Vision_Proc <-> External_Cloud.Gemini_API: "이미지 및 프롬프트 전송/결과 수신"
+ARD_Central_Server.AI_Pipeline.Voice_Proc <-> External_Cloud.TTS_API: "STT 변환 및 TTS 오디오 파일 생성"
+ARD_Central_Server.AI_Pipeline.Voice_Proc <-> External_Cloud.Gemini_API: "음성 대화 컨텍스트 처리"
+
+# 4. 분석 완료 및 장치 제어 하달
+ARD_Central_Server.HTTP_API -> Edge_Devices.Actuators: "비동기 TCP 명령 하달 (포트 5002)"

@@ -1,0 +1,43 @@
+direction: right
+
+classes: {
+  mcu: {
+    style: {
+      font-size: 24
+      border-radius: 8
+      stroke-width: 3
+      fill: "#f8fafc"
+      stroke: "#64748b"
+      shadow: true
+    }
+  }
+  pc: {
+    style: {
+      font-size: 28
+      border-radius: 12
+      stroke-width: 4
+      fill: "#bfdbfe"
+      stroke: "#2563eb"
+      shadow: true
+    }
+  }
+  link: {
+    style: {
+      font-size: 20
+      stroke-width: 3
+    }
+  }
+}
+
+ImageSender: "ImageSenderMCU\n(카메라)" { class: mcu }
+SoundMCU: "SoundMCU\n(음성 AI)" { class: mcu }
+
+PC_Center: "PC Center\n(AI 서버 & 제어)" { class: pc }
+
+DriveMCU: "DriveMCU\n(모터 제어)" { class: mcu }
+HMI_MCU: "HMI_MCU\n(디스플레이)" { class: mcu }
+
+ImageSender -> PC_Center: "이미지 전송" { class: link }
+SoundMCU <-> PC_Center: "음성 스트리밍" { class: link }
+PC_Center -> DriveMCU: "이동 명령" { class: link }
+PC_Center -> HMI_MCU: "상태 동기화" { class: link }

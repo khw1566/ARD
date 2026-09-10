@@ -1,0 +1,103 @@
+direction: down
+
+classes: {
+  main_node: {
+    style: {
+      font-size: 26
+      border-radius: 8
+      stroke-width: 4
+      shadow: true
+    }
+  }
+  cloud_node: {
+    shape: cloud
+    style: {
+      font-size: 28
+      stroke-width: 4
+      shadow: true
+      fill: "#eff6ff"
+      stroke: "#3b82f6"
+    }
+  }
+  container: {
+    style: {
+      font-size: 28
+      stroke-width: 4
+      border-radius: 12
+    }
+  }
+  link: {
+    style: {
+      font-size: 22
+      stroke-width: 4
+    }
+  }
+}
+
+# --- Nodes ---
+Server_Control: "PC Center\n(제어 및 모니터링 서버)" { class: cloud_node }
+
+HTTP_Tasks: "제어 및 상태 관리" {
+  class: container
+  style.fill: "#f0fdfa"
+  style.stroke: "#14b8a6"
+  direction: right
+  
+  Config: "원격 설정 폴링 (3초)\n[해상도/품질/모드 갱신]" { 
+    class: main_node; style.fill: "#fffbeb"; style.stroke: "#d97706" 
+  }
+  Heartbeat: "Heartbeat (5초)\n[RSSI/온도/IP 보고]" { 
+    class: main_node; style.fill: "#fdf2f8"; style.stroke: "#db2777" 
+  }
+}
+
+Camera: "이미지 센서 (OV5640 등)\nPSRAM 버퍼 할당 및 고속 캡처" { 
+  class: main_node
+  style.fill: "#fef08a"
+  style.stroke: "#ca8a04"
+}
+
+Mode_Split: "네트워크\n전송 모드" {
+  shape: hexagon
+  style: {
+    font-size: 26
+    stroke-width: 4
+    fill: "#faf5ff"
+    stroke: "#a855f7"
+    shadow: true
+  }
+}
+
+Network: "데이터 전송 계층" {
+  class: container
+  style.fill: "#f8fafc"
+  style.stroke: "#94a3b8"
+  direction: right
+  
+  UDP: "UDP 고속 전송\nMTU 1436 분할 및\n재전송 마커 처리" { 
+    class: main_node; style.fill: "#e0f2fe"; style.stroke: "#0ea5e9" 
+  }
+  TCP: "TCP 안정 전송\nHTTP POST (/upload)\n단일 페이로드 전송" { 
+    class: main_node; style.fill: "#e0f2fe"; style.stroke: "#0ea5e9" 
+  }
+}
+
+Server_Receiver: "PC Center\n(이미지 수신 및 AI 분석)" { class: cloud_node }
+
+# --- Connections ---
+Server_Control <-> HTTP_Tasks.Config: "JSON 동기화" { class: link }
+HTTP_Tasks.Heartbeat -> Server_Control: "상태 패킷" { class: link }
+
+HTTP_Tasks.Config -> Camera: "CAPTURE 명령\n(pendingCapture 플래그)" { 
+  class: link
+  style.stroke-dash: 5
+  style.stroke: "#ef4444"
+}
+
+Camera -> Mode_Split: "JPEG 프레임 획득" { class: link }
+
+Mode_Split -> Network.UDP: "Mode: UDP" { class: link }
+Mode_Split -> Network.TCP: "Mode: TCP" { class: link }
+
+Network.UDP -> Server_Receiver: "바이너리 패킷 스트림\n(Port 5001)" { class: link }
+Network.TCP -> Server_Receiver: "HTTP Multipart 전송\n(Port 5000)" { class: link }

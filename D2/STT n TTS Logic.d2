@@ -1,0 +1,116 @@
+direction: down
+
+# --- 스타일 및 클래스 정의 ---
+classes: {
+  mcu_node: {
+    style: {
+      border-radius: 8
+      fill: "#fef08a"
+      stroke: "#fde047"
+      stroke-width: 2
+    }
+  }
+  pc_server: {
+    style: {
+      border-radius: 8
+      fill: "#f8fafc"
+      stroke: "#cbd5e1"
+      stroke-width: 2
+    }
+  }
+  cloud_api: {
+    style: {
+      border-radius: 8
+      fill: "#f3e8ff"
+      stroke: "#d8b4fe"
+      stroke-width: 2
+    }
+  }
+  logic_module: {
+    style: {
+      border-radius: 4
+      fill: "#e0f2fe"
+      stroke: "#7dd3fc"
+    }
+  }
+  audio_buffer: {
+    style: {
+      border-radius: 4
+      fill: "#dcfce7"
+      stroke: "#86efac"
+      stroke-dash: 5
+    }
+  }
+}
+
+# --- 엔티티 정의 ---
+
+ESP32_SoundMCU: "사운드 제어 보드 (ESP32 펌웨어)" {
+  class: mcu_node
+  direction: right
+
+  Input_Stage: "음성 입력부" {
+    direction: down
+    Mic: "마이크로폰\n(I2S / ADC 샘플링)" { class: logic_module }
+    UDP_Sender: "오디오 패킷 송신\n(UDP 전송)" { class: logic_module }
+  }
+
+  Output_Stage: "음성 출력부" {
+    direction: down
+    UDP_Receiver: "AI 오디오 수신\n(선점형 태스크)" { class: logic_module }
+    I2S_Amp: "I2S 앰프 (MAX98357A)\n& 스피커 재생" { class: logic_module }
+  }
+  
+  Input_Stage.Mic -> Input_Stage.UDP_Sender: "PCM 데이터화"
+  Output_Stage.UDP_Receiver -> Output_Stage.I2S_Amp: "스트리밍 버퍼 디코딩"
+}
+
+PC_Control_Server: "PC 중앙 제어 서버 (app.py)" {
+  class: pc_server
+  
+  Audio_Pipeline: "오디오 전처리 파이프라인" {
+    direction: right
+    UDP_Listener: "비동기 UDP 수신\n(포트 5005)" { class: logic_module }
+    VAD_Engine: "VAD (발화 감지) 엔진\n(scipy / numpy 분석)" { class: logic_module }
+    Audio_Buffer: "음성 임시 버퍼\n(무음 감지 시 트리거)" { class: audio_buffer }
+  }
+
+  AI_Processing: "AI 추론 및 컨텍스트 매니저" {
+    direction: right
+    STT_Whisper: "로컬 STT (OpenAI Whisper)\n(음성 -> 텍스트 변환)" { class: logic_module }
+    Context_Mgr: "컨텍스트 및 프롬프트 매니저\n(이전 대화 및 센서값 병합)" { class: logic_module }
+  }
+
+  TTS_Pipeline: "음성 합성 및 송출 파이프라인" {
+    direction: right
+    TTS_Engine: "음성 합성 (Edge-TTS)\n(텍스트 -> 오디오 스트림)" { class: logic_module }
+    Audio_Sender: "AI 음성 송출부\n(MCU로 스트리밍 전송)" { class: logic_module }
+  }
+  
+  Audio_Pipeline.UDP_Listener -> Audio_Pipeline.VAD_Engine: "실시간 PCM 프레임 전달"
+  Audio_Pipeline.VAD_Engine -> Audio_Pipeline.Audio_Buffer: "임계치(Volume) 초과 시 패킷 누적"
+  Audio_Pipeline.Audio_Buffer -> AI_Processing.STT_Whisper: "화자 발화 종료 시 WAV 전달"
+  AI_Processing.STT_Whisper -> AI_Processing.Context_Mgr: "인식된 텍스트 문자열 주입"
+  AI_Processing.Context_Mgr -> TTS_Pipeline.TTS_Engine: "LLM 답변 텍스트 전달"
+  TTS_Pipeline.TTS_Engine -> TTS_Pipeline.Audio_Sender: "합성된 바이너리 오디오 전달"
+}
+
+Cloud_Services: "외부 AI 클라우드 서비스" {
+  class: cloud_api
+  direction: right
+  
+  Gemini_API: "Google Gemini API\n(비전/자연어 LLM 추론)"
+  Microsoft_Edge: "Microsoft Edge TTS API\n(고품질 클라우드 합성)"
+}
+
+# --- 관계 및 데이터 흐름 정의 ---
+
+# 1. 엣지 -> 서버 (음성 수집)
+ESP32_SoundMCU.Input_Stage.UDP_Sender -> PC_Control_Server.Audio_Pipeline.UDP_Listener: "사용자 발화 스트림 지속 전송"
+
+# 2. 서버 <-> 클라우드 (AI 연산)
+PC_Control_Server.AI_Processing.Context_Mgr <-> Cloud_Services.Gemini_API: "대화 프롬프트 전송 및\n응답 텍스트 수신"
+PC_Control_Server.TTS_Pipeline.TTS_Engine <-> Cloud_Services.Microsoft_Edge: "음성 합성 요청 및\n결과 오디오 수신"
+
+# 3. 서버 -> 엣지 (결과 피드백)
+PC_Control_Server.TTS_Pipeline.Audio_Sender -> ESP32_SoundMCU.Output_Stage.UDP_Receiver: "AI 응답 오디오 전송\n(기존 스트림 선점 및 강제 재생)"
