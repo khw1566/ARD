@@ -254,6 +254,68 @@
             margin-top: 12px;
             flex-wrap: wrap;
         }
+
+        /* ARD System ASCII Art Banner */
+        .ard-ascii-banner-wrapper {
+            background: linear-gradient(135deg, rgba(20, 24, 33, 0.95), rgba(11, 15, 25, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-left: 3px solid var(--primary, #0696D7);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            flex-wrap: wrap;
+        }
+
+        .ard-ascii-pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.72rem;
+            line-height: 1.15;
+            color: var(--primary, #0696D7);
+            text-shadow: 0 0 10px rgba(6, 150, 215, 0.35);
+            letter-spacing: 0.05em;
+            white-space: pre;
+            user-select: none;
+        }
+
+        .ard-ascii-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 240px;
+        }
+
+        .ard-ascii-meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.72rem;
+            color: var(--secondary, #94a3b8);
+            font-family: 'JetBrains Mono', monospace;
+            width: fit-content;
+        }
+
+        .ard-ascii-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main, #ffffff);
+            letter-spacing: 0.02em;
+        }
+
+        .ard-ascii-desc {
+            font-size: 0.76rem;
+            color: var(--text-dim, #888888);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -304,6 +366,26 @@
     </nav>
 
     <main class="settings-body">
+        <!-- ARD System ASCII Art Banner Header -->
+        <div class="ard-ascii-banner-wrapper">
+            <pre class="ard-ascii-pre">
+ █████╗ ██████╗ ██████╗ 
+██╔══██╗██╔══██╗██╔══██╗
+███████║██████╔╝██║  ██║
+██╔══██║██╔══██╗██║  ██║
+██║  ██║██║  ██║██████╔╝
+╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+  AUTONOMOUS ROBOT DYNAMICS</pre>
+            <div class="ard-ascii-meta">
+                <div class="ard-ascii-meta-badge">
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--primary, #0696D7); box-shadow:0 0 6px var(--primary, #0696D7);"></span>
+                    SYSTEM CORE [v2.4.0-CAD]
+                </div>
+                <div class="ard-ascii-title">ARD 통합 시스템 엔지니어링 콘솔</div>
+                <div class="ard-ascii-desc">Multi-MCU 패킷 텔레메트리, AI 시각/음성 분석 엔진 및 실시간 동기화 제어 센터</div>
+            </div>
+        </div>
+
         <!-- 1. STYLE & COLOR TAB -->
         <section id="tab-theme" class="settings-view active">
             <div class="card status-card" style="margin-bottom: 20px;">
