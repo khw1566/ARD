@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <ArdNetwork.h>
+ArdNetwork ardNetwork;
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
@@ -10,18 +12,26 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_AHTX0.h>
+#include "BoundedAht20.h"
+#include "BoundedLine.h"
+#include "CommandValidation.h"
+#include "esp_system.h"
+#include <atomic>
+
+#ifndef ARD_ENABLE_TOF
+#define ARD_ENABLE_TOF 0
+#endif
 #include <Adafruit_BMP280.h>
 #include <time.h>
 #include "esp_sntp.h"
-#include <BluetoothSerial.h>
 
 // --- Forward Declarations ---
 void sendLogAsync(String msg);
 void updateUrls();
 void processCommand(String command);
 void syncGPSTimePos();
-void moveMotorQueued(long xSteps, long ySteps, char type);
+void moveMotorQueued(long xSteps, long ySteps, long zSteps, char type);
+void emergencyStop();
 void sendHeartbeat();
 void handleWifiConfigMode();
 void printHelp();
@@ -29,27 +39,13 @@ void updateOLED();
 String readSerialLine();
 
 // --- Configuration & Storage ---
-Preferences prefs;
 // --- WiFi Configuration (Fallback Support) ---
-const char* WIFI_SSID_1 = "1-309";
-const char* WIFI_PASS_1 = "0522300751";
-const char* WIFI_SERVER_1 = "192.168.0.35";
 
-const char* WIFI_SSID_2 = "A35_m";
-const char* WIFI_PASS_2 = "00000000";
-const char* WIFI_SERVER_2 = "10.234.216.12";
 
-const char* WIFI_SSID_3 = "YOUR_WIFI_SSID";
-const char* WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char* WIFI_SERVER_3 = "192.168.0.13";
 
-uint32_t WIFI_TIMEOUT_MS = 5000; // 5 seconds per attempt
 
 String ssid_active = "";
-String pass_active = "";
-String server_ip_pref = ""; 
 String server_ip = "192.168.0.35"; // Active server IP
-int targetLastByte = 150; 
 
 String serverUrl;
 
@@ -75,11 +71,21 @@ String serverUrl;
 // --- Pins for 0.96" OLED (SSD1306) ---
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1 
+#define OLED_RESET    -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- Environment Sensors (AHT20 + BMP280) ---
-Adafruit_AHTX0 aht;
+BoundedAht20 aht;
+bool ahtReady = false, bmpReady = false, oledReady = false, tofReady = false;
+struct EnvironmentSample { float temperature = 0, humidity = 0, pressure = 0; bool ahtValid = false, bmpValid = false; };
+EnvironmentSample environment;
+portMUX_TYPE environmentMux = portMUX_INITIALIZER_UNLOCKED;
+EnvironmentSample environmentSnapshot() {
+    portENTER_CRITICAL(&environmentMux);
+    EnvironmentSample snapshot = environment;
+    portEXIT_CRITICAL(&environmentMux);
+    return snapshot;
+}
 Adafruit_BMP280 bmp;
 int oledPage = 0;
 unsigned long lastPageSwitch = 0;
@@ -97,7 +103,7 @@ void buzzerTask(void *pvParameters);
 void inputTask(void *pvParameters);
 
 // --- Pins for NEO-6M GPS ---
-// [주의] GPIO 0은 부팅 핀입니다. GPS TX가 연결되어 있으면 부팅이 안 될 수 있습니다. 
+// [주의] GPIO 0은 부팅 핀입니다. GPS TX가 연결되어 있으면 부팅이 안 될 수 있습니다.
 // 가급적 GPIO 32(RX), 33(TX) 또는 GPIO 13(RX), 14(TX) 사용을 권장합니다.
 #define GPS_RX_PIN 32  // (현재 코드상의 핀, 하드웨어 연결과 일치해야 함!)
 #define GPS_TX_PIN 33
@@ -124,6 +130,7 @@ struct MotorAction {
     long stepsX;
     long stepsY;
     long stepsZ;
+    uint32_t generation;
     char axis; // 'x', 'y', 'z', 'b'(both x/y)
 };
 struct BuzzerAction {
@@ -132,7 +139,12 @@ struct BuzzerAction {
 QueueHandle_t commandQueue;
 QueueHandle_t buzzerQueue;
 uint32_t interCommandDelay = 0; // Default 0ms
-volatile bool stopActive = false; // Emergency Stop Flag
+uint32_t motionGeneration = 0;
+bool commandAccepted = true; // Only networkTask executes remote/serial commands.
+std::atomic<uint32_t> droppedLogs{0};
+volatile uint32_t requestedI2cClock = 0;
+volatile bool gpsSyncRequested = false;
+std::atomic<bool> stopActive{false}; // Emergency Stop Flag
 
 // --- Manual Control Configuration ---
 #define SW1_PIN 13 // Left / Prev / Cancel
@@ -140,7 +152,7 @@ volatile bool stopActive = false; // Emergency Stop Flag
 #define POT_PIN 34 // Analog Input
 
 enum ManualState { MANUAL_OFF, MANUAL_MENU, MANUAL_CTRL_X, MANUAL_CTRL_Y, MANUAL_CTRL_Z, MANUAL_CTRL_DIFF_FW, MANUAL_CTRL_DIFF_ROT, MANUAL_HOME };
-ManualState manualMode = MANUAL_OFF;
+std::atomic<ManualState> manualMode{MANUAL_OFF};
 int manualMenuIndex = 0; // 0: X, 1: Y, 2: Z, 3: Diff-FW, 4: Diff-Rot, 5: Home, 6: Exit
 
 // Manual Control Gear Ratios (Applied only in Manual Mode)
@@ -149,6 +161,7 @@ float manualGearRatioY = 4.0;
 float manualGearRatioZ = 1.0; // Direct drive
 long manualBaseStepsX = 0;
 long manualBaseStepsY = 0;
+long manualBaseStepsZ = 0;
 
 struct ButtonStatus {
     int pin;
@@ -164,14 +177,14 @@ ButtonStatus btn2 = {SW2_PIN, HIGH, 0, 0, 0, false};
 void handleButton(ButtonStatus &btn, int &clickEvent, bool &longPressEvent) {
     clickEvent = 0;
     longPressEvent = false;
-    
+
     bool current = digitalRead(btn.pin);
     unsigned long now = millis();
-    
+
     if (current == LOW && btn.lastState == HIGH && (now - btn.releaseTime > 50)) { // Pressed (Debounce 50ms)
         btn.pressTime = now;
         btn.isLongPressing = false;
-    } 
+    }
     else if (current == HIGH && btn.lastState == LOW && (now - btn.pressTime > 50)) { // Released
         btn.releaseTime = now;
         if (!btn.isLongPressing) {
@@ -186,13 +199,13 @@ void handleButton(ButtonStatus &btn, int &clickEvent, bool &longPressEvent) {
             btn.clickCount = 0;
         }
     }
-    
+
     // Click event generated if no new press within 250ms
     if (current == HIGH && btn.clickCount > 0 && (now - btn.releaseTime > 250)) {
         clickEvent = btn.clickCount;
         btn.clickCount = 0;
     }
-    
+
     btn.lastState = current;
 }
 
@@ -205,22 +218,29 @@ int motorSpeedZ = 1000;
 int motorAccelZ = 1000;
 
 // PID Rail Control Variables
-bool usePIDRail = false;
-int targetRailDist = 140; 
+std::atomic<bool> usePIDRail{false};
+int targetRailDist = 140;
 float stepsPerMmZ = 43.48; // Physical conversion factor (Steps/mm)
 float pid_p = 0.3; // P-Gain (Dimensionless when used with stepsPerMmZ)
-float pid_i = 0.01; 
-float pid_d = 5.0;  
+float pid_i = 0.01;
+float pid_d = 5.0;
 float integralRail = 0;
 float lastRailError = 0;
 unsigned long lastPIDTime = 0;
 bool enableGPS = false;
-String tofStatus = "Ready";
+const char* tofStatus = ARD_ENABLE_TOF ? "Ready" : "DISABLED";
+
+// 지연시간 실측 메트릭
+unsigned long lastMoveDurationMs = 0;
+unsigned long lastHomingDurationMs = 0;
+unsigned long currentMoveStartTime = 0;
+bool isExecutingMove = false;
+bool waitingForDelay = false;
+uint32_t motionBootId = 0;
 
 // --- Motor Control Task (Core 1, High Priority) ---
 void motorTask(void *pvParameters) {
     MotorAction nextAction;
-    bool waitingForDelay = false;
     unsigned long delayStartTime = 0;
 
     while (true) {
@@ -228,21 +248,35 @@ void motorTask(void *pvParameters) {
             // Check if motors are currently moving
             bool isXMoving = stepperX.distanceToGo() != 0;
             bool isYMoving = stepperY.distanceToGo() != 0;
+            bool isZMoving = stepperZ.distanceToGo() != 0;
 
-            if (!isXMoving && !isYMoving) {
-                // Both motors are stopped, check for next action
+            if (!isXMoving && !isYMoving && !isZMoving) {
+                // Both motors are stopped
+                if (isExecutingMove) {
+                    isExecutingMove = false;
+                    lastMoveDurationMs = millis() - currentMoveStartTime;
+                    sendLogAsync("Motion complete in " + String(lastMoveDurationMs) + "ms");
+                }
+
                 if (stopActive) {
                     waitingForDelay = false; // Reset if stop was triggered
                 }
 
-                if (!waitingForDelay) {
+                if (!waitingForDelay && !stopActive && manualMode == MANUAL_OFF) {
                     if (xQueueReceive(commandQueue, &nextAction, 0)) {
+                        if (nextAction.generation != motionGeneration) {
+                            xSemaphoreGive(motorMutex);
+                            vTaskDelay(1);
+                            continue;
+                        }
                         if (interCommandDelay > 0) {
                             waitingForDelay = true;
                             delayStartTime = millis();
                         } else {
                             // Execute immediately (if stop not active)
                             if (!stopActive) {
+                                isExecutingMove = true;
+                                currentMoveStartTime = millis();
                                 if (nextAction.axis == 'x' || nextAction.axis == 'b') {
                                     digitalWrite(EN_PIN_X, LOW);
                                     stepperX.move(nextAction.stepsX);
@@ -263,9 +297,11 @@ void motorTask(void *pvParameters) {
                     if (millis() - delayStartTime >= interCommandDelay || stopActive) {
                         bool wasStopped = stopActive;
                         waitingForDelay = false;
-                        
+
                         // Execute now ONLY if not stopped during wait
-                        if (!wasStopped) {
+                        if (!wasStopped && nextAction.generation == motionGeneration && manualMode == MANUAL_OFF) {
+                            isExecutingMove = true;
+                            currentMoveStartTime = millis();
                             if (nextAction.axis == 'x' || nextAction.axis == 'b') {
                                 digitalWrite(EN_PIN_X, LOW);
                                 stepperX.move(nextAction.stepsX);
@@ -286,49 +322,46 @@ void motorTask(void *pvParameters) {
             stepperX.run();
             stepperY.run();
             stepperZ.run();
-            
+
             // Enhanced Real-time PID Feedback Logic for Rail
-            if (usePIDRail) {
+            if (usePIDRail && !stopActive && tofReady) {
                 unsigned long now = millis();
-                
+
                 // 50ms 주기로 실시간 제어 (움찔거림 방지 및 매끄러운 이동)
                 if (now - lastPIDTime >= 50) {
                     float dt = (now - lastPIDTime) / 1000.0f;
                     lastPIDTime = now;
-                    
-                    if (lastDistance > 0 && lastDistance < 2000) { 
+
+                    if (lastDistance > 0 && lastDistance < 2000) {
                         float error = (float)targetRailDist - (float)lastDistance;
-                        
+
                         // 데드존(허용 오차): ±2.0mm 이내면 정지
                         if (abs(error) <= 2.0) {
                             if (stepperZ.distanceToGo() != 0) {
-                                if (xSemaphoreTake(motorMutex, 0)) {
-                                    stepperZ.stop();
-                                    xSemaphoreGive(motorMutex);
-                                }
+                                stepperZ.stop(); // motorMutex is already owned here.
                             }
-                            integralRail = 0; 
+                            integralRail = 0;
                             lastRailError = error;
                         } else {
                             // PID 계산 (물리 계수 stepsPerMmZ 반영)
                             float current_p = pid_p;
                             if (abs(error) < 3.0) current_p *= 0.5; // Soft Landing
-                            
+
                             float p_term = error * stepsPerMmZ * current_p;
-                            
-                            if (abs(error) < 10.0) { 
+
+                            if (abs(error) < 10.0) {
                                 integralRail += error * dt;
                                 integralRail = constrain(integralRail, -50, 50);
                             } else {
                                 integralRail = 0;
                             }
                             float i_term = integralRail * stepsPerMmZ * pid_i;
-                            
+
                             float d_term = ((error - lastRailError) / dt) * stepsPerMmZ * pid_d * 0.01;
                             lastRailError = error;
-                            
+
                             long moveDelta = (long)(p_term + i_term + d_term);
-                            
+
                             if (moveDelta != 0) {
                                 digitalWrite(EN_PIN_Z, LOW);
                                 stepperZ.moveTo(stepperZ.currentPosition() + moveDelta);
@@ -341,27 +374,28 @@ void motorTask(void *pvParameters) {
                 lastRailError = 0;
                 integralRail = 0;
             }
-            
+
             xSemaphoreGive(motorMutex);
         }
-        
+
         vTaskDelay(1); // Precision stepping still possible with tight loop inside mutex period if needed
     }
 }
 
 void updateOLED() {
+    if (!oledReady) return;
     if (manualMode != MANUAL_OFF) {
         // Manual Control UI Override
         display.clearDisplay();
         display.setTextSize(1);
         display.setTextColor(SSD1306_WHITE);
         display.setCursor(0, 0);
-        
+
         if (manualMode == MANUAL_MENU) {
             display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
             display.println(" [ MANUAL SELECT ] ");
             display.setTextColor(SSD1306_WHITE);
-            
+
             const char* items[] = {"X-Axis (Servo)", "Y-Axis (Servo)", "Z-Axis (Distance)", "Diff-Drive (FW)", "Diff-Drive (ROT)", "Go Home", "Exit"};
             for(int i=0; i<7; i++) {
                 display.setCursor(0, 11 + (i * 9));
@@ -377,14 +411,14 @@ void updateOLED() {
             else if (manualMode == MANUAL_CTRL_DIFF_FW) display.println(" [ CTRL: DIFF-FW ] ");
             else if (manualMode == MANUAL_CTRL_DIFF_ROT) display.println(" [ CTRL: DIFF-ROT ] ");
             display.setTextColor(SSD1306_WHITE);
-            
+
             // This part will be updated dynamically in loop() for real-time responsiveness.
             // We just draw the static frame here.
             display.setCursor(0, 20);
             display.println("Target: ");
             display.setCursor(0, 35);
             display.println("Real  : ");
-            
+
             display.setCursor(0, 55);
             display.println("LONG PRESS TO EXIT");
         }
@@ -400,9 +434,9 @@ void updateOLED() {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    
+
     struct tm timeinfo;
-    bool timeValid = getLocalTime(&timeinfo);
+    bool timeValid = getLocalTime(&timeinfo, 0);
 
     // Header (Show Time HH:MM:SS here)
     display.setCursor(0,0);
@@ -411,9 +445,9 @@ void updateOLED() {
     } else {
         display.printf("ARD [%d/3] ", oledPage + 1);
     }
-    
+
     // IP last octet
-    display.setCursor(95, 0); 
+    display.setCursor(95, 0);
     if (WiFi.status() == WL_CONNECTED) {
         String ip = WiFi.localIP().toString();
         display.print("." + ip.substring(ip.lastIndexOf('.') + 1));
@@ -421,11 +455,11 @@ void updateOLED() {
         display.print("OFFLINE");
     }
     display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
-    
+
     switch(oledPage) {
         case 0: // Network & GPS
             display.setCursor(0, 12);
-            display.printf("SSID: %s", ssid_active.length() > 0 ? ssid_active.c_str() : "N/A");
+            display.printf("SSID: %s", WiFi.SSID().c_str());
             display.setCursor(0, 22);
             display.printf("SRV : %s", server_ip.c_str());
             display.setCursor(0, 32);
@@ -437,7 +471,7 @@ void updateOLED() {
                 else display.println("SEARCHING...");
             } else display.println("DISABLED");
             break;
-            
+
         case 1: // Motion & ToF
             display.setCursor(0, 12);
             display.printf("X:%.1f Y:%.1f deg", (float)stepperX.currentPosition()*1.8, (float)stepperY.currentPosition()*1.8);
@@ -446,38 +480,34 @@ void updateOLED() {
             display.setCursor(0, 32);
             display.printf("ToF : %.1f mm", lastDistance);
             display.setCursor(0, 42);
-            display.printf("Sts : %s", tofStatus.c_str());
+            display.printf("Sts : %s", tofStatus);
             break;
-            
+
         case 2: // Environment
             display.setCursor(0, 12);
             if (timeValid) {
                 // Show Date YYYY-MM-DD instead of full time
                 display.printf("DATE: %04d-%02d-%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
             } else display.println("DATE: SYNCING...");
-            
-            // Read AHT20
-            sensors_event_t humidity, temp;
-            aht.getEvent(&humidity, &temp);
-            
+
+            const EnvironmentSample sample = environmentSnapshot();
             display.setCursor(0, 22);
-            display.printf("TEMP: %.1f C", temp.temperature);
+            if (sample.ahtValid) display.printf("TEMP: %.1f C", sample.temperature);
+            else display.print("TEMP: N/A");
             display.setCursor(0, 32);
-            display.printf("HUMI: %.1f %%", humidity.relative_humidity);
+            if (sample.ahtValid) display.printf("HUMI: %.1f %%", sample.humidity);
+            else display.print("HUMI: N/A");
             display.setCursor(0, 42);
-            display.printf("PRES: %.1f hPa", bmp.readPressure() / 100.0F);
-            break;
-            
-            display.setCursor(0, 42);
-            display.printf("PRES: %.1f hPa", bmp.readPressure() / 100.0F);
+            if (sample.bmpValid) display.printf("PRES: %.1f hPa", sample.pressure);
+            else display.print("PRES: N/A");
             break;
     }
-    
+
     // Footer / RSSI
     display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
     display.setCursor(0, 55);
     display.printf("RSSI:%d dBm  V:%d", WiFi.RSSI(), buzzerVolume);
-    
+
     display.display();
 }
 
@@ -488,51 +518,51 @@ void buzzerTask(void *pvParameters) {
         if (xQueueReceive(buzzerQueue, &action, portMAX_DELAY)) {
             int type = action.type;
             if (buzzerVolume <= 0 && (type != 1 || heartbeatVolume <= 0)) continue;
-            
+
             switch(type) {
                 case 1: // Heartbeat Success
-                    ledcWriteTone(0, 1000); ledcWrite(0, heartbeatVolume); vTaskDelay(pdMS_TO_TICKS(10));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 1000); ledcWrite(BUZZER_PIN, heartbeatVolume); vTaskDelay(pdMS_TO_TICKS(10));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 2: // Boot Start
-                    ledcWriteTone(0, 523); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(100));
-                    ledcWriteTone(0, 659); vTaskDelay(pdMS_TO_TICKS(100));
-                    ledcWriteTone(0, 783); vTaskDelay(pdMS_TO_TICKS(100));
-                    ledcWriteTone(0, 1046); vTaskDelay(pdMS_TO_TICKS(200));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 523); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(100));
+                    ledcWriteTone(BUZZER_PIN, 659); vTaskDelay(pdMS_TO_TICKS(100));
+                    ledcWriteTone(BUZZER_PIN, 783); vTaskDelay(pdMS_TO_TICKS(100));
+                    ledcWriteTone(BUZZER_PIN, 1046); vTaskDelay(pdMS_TO_TICKS(200));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 3: // Emergency Stop
                     for(int i=0; i<4; i++) {
-                        ledcWriteTone(0, 1500); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(80));
-                        ledcWrite(0, 0); vTaskDelay(pdMS_TO_TICKS(40));
+                        ledcWriteTone(BUZZER_PIN, 1500); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(80));
+                        ledcWrite(BUZZER_PIN, 0); vTaskDelay(pdMS_TO_TICKS(40));
                     }
                     break;
                 case 4: // Connection Loss
                     for(int i=0; i<2; i++) {
-                        ledcWriteTone(0, 800); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(200));
-                        ledcWriteTone(0, 400); vTaskDelay(pdMS_TO_TICKS(200));
+                        ledcWriteTone(BUZZER_PIN, 800); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(200));
+                        ledcWriteTone(BUZZER_PIN, 400); vTaskDelay(pdMS_TO_TICKS(200));
                     }
-                    ledcWrite(0, 0);
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 5: // Command Received
-                    ledcWriteTone(0, 2000); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(50));
-                    ledcWrite(0, 0); vTaskDelay(pdMS_TO_TICKS(30));
-                    ledcWriteTone(0, 2500); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(50));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 2000); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(50));
+                    ledcWrite(BUZZER_PIN, 0); vTaskDelay(pdMS_TO_TICKS(30));
+                    ledcWriteTone(BUZZER_PIN, 2500); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(50));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 6: // Menu Scroll
-                    ledcWriteTone(0, 3000); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(15));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 3000); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(15));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 7: // Menu Select/Enter
-                    ledcWriteTone(0, 1200); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(30));
-                    ledcWriteTone(0, 1800); vTaskDelay(pdMS_TO_TICKS(40));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 1200); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(30));
+                    ledcWriteTone(BUZZER_PIN, 1800); vTaskDelay(pdMS_TO_TICKS(40));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
                 case 8: // Menu Cancel/Exit
-                    ledcWriteTone(0, 800); ledcWrite(0, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(30));
-                    ledcWriteTone(0, 500); vTaskDelay(pdMS_TO_TICKS(50));
-                    ledcWrite(0, 0);
+                    ledcWriteTone(BUZZER_PIN, 800); ledcWrite(BUZZER_PIN, buzzerVolume); vTaskDelay(pdMS_TO_TICKS(30));
+                    ledcWriteTone(BUZZER_PIN, 500); vTaskDelay(pdMS_TO_TICKS(50));
+                    ledcWrite(BUZZER_PIN, 0);
                     break;
             }
         }
@@ -551,7 +581,7 @@ void updateUrls() {
 }
 
 // --- TCP Configuration ---
-WiFiServer server(5002); 
+WiFiServer server(5002);
 
 // Serial Line Reader
 String readSerialLine() {
@@ -585,23 +615,24 @@ void sendUBX(uint8_t* msg, int len) {
 
 void syncGPSTimePos() {
     if (WiFi.status() != WL_CONNECTED) return;
-    
+
     Serial.println("  [A-GPS] Syncing Time/Pos from Server...");
     HTTPClient http;
-    http.begin(serverUrl + "/api/time");
+    http.begin(ardNetwork.httpUrl() + "/api/time");
+    http.setConnectTimeout(500);
     http.setTimeout(500); // 500ms 타임아웃 제한 (모터 스태터 방지)
     int httpCode = http.GET();
-    
+
     if (httpCode == 200) {
         String payload = http.getString();
         StaticJsonDocument<200> doc;
         deserializeJson(doc, payload);
-        
+
         uint16_t week = doc["week"];
         uint32_t tow = doc["tow_ms"];
-        
+
         Serial.printf("  [A-GPS] Server Time: Week %u, TOW %u\n", week, tow);
-        
+
         // UBX-AID-INI Message (48-byte payload)
         uint8_t ubx_aid_ini[56] = {
             0xB5, 0x62, // Header
@@ -621,7 +652,7 @@ void syncGPSTimePos() {
             0,0,0,0,    // fAcc
             0,0         // CK_A, CK_B (placeholder)
         };
-        
+
         // Calculate Checksum over bytes 2..53
         uint8_t ck_a = 0, ck_b = 0;
         for (int i = 2; i < 54; i++) {
@@ -630,7 +661,7 @@ void syncGPSTimePos() {
         }
         ubx_aid_ini[54] = ck_a;
         ubx_aid_ini[55] = ck_b;
-        
+
         sendUBX(ubx_aid_ini, 56);
         Serial.println("  [A-GPS] AssistNow (Time) Sent to GPS.");
         sendLogAsync("A-GPS (Time) Synced from PC");
@@ -643,7 +674,8 @@ void syncGPSTimePos() {
 void sendLog(String msg) {
     if (WiFi.status() != WL_CONNECTED) return;
     HTTPClient http;
-    http.begin(serverUrl + "/api/log");
+    http.begin(ardNetwork.httpUrl() + "/api/log");
+    http.setConnectTimeout(500);
     http.setTimeout(500);
     http.addHeader("Content-Type", "application/json");
     StaticJsonDocument<200> doc;
@@ -661,7 +693,8 @@ void sendLog(String msg) {
 void sendHeartbeat() {
     if (WiFi.status() != WL_CONNECTED) return;
     HTTPClient http;
-    http.begin(serverUrl + "/api/heartbeat");
+    http.begin(ardNetwork.httpUrl() + "/api/heartbeat");
+    http.setConnectTimeout(500);
     http.setTimeout(1000); // 1s timeout for safety
     http.addHeader("Content-Type", "application/json");
 
@@ -672,25 +705,16 @@ void sendHeartbeat() {
     doc["temp"] = temperatureRead();
     doc["tof_dist"] = lastDistance;
     doc["tof_status"] = tofStatus;
+    doc["last_move_ms"] = lastMoveDurationMs;
+    doc["last_homing_ms"] = lastHomingDurationMs;
 
-    // Environment Data (AHT20 + BMP280) - Send every 5s for responsiveness
-    static unsigned long lastEnvSend = 0;
-    static float cachedTemp = 0, cachedHumid = 0, cachedPress = 0;
-    
-    if (millis() - lastEnvSend > 5000 || lastEnvSend == 0) {
-        sensors_event_t humidity, temp;
-        if (aht.getEvent(&humidity, &temp)) {
-            cachedTemp = temp.temperature;
-            cachedHumid = humidity.relative_humidity;
-        }
-        cachedPress = bmp.readPressure() / 100.0F;
-        lastEnvSend = millis();
-        
-        doc["env_temp"] = cachedTemp;
-        doc["env_humid"] = cachedHumid;
-        doc["env_press"] = cachedPress;
-    }
-
+    // I2C is owned by loop(); network tasks only read cached values.
+    const EnvironmentSample sample = environmentSnapshot();
+    if (sample.ahtValid) { doc["env_temp"] = sample.temperature; doc["env_humid"] = sample.humidity; }
+    if (sample.bmpValid) doc["env_press"] = sample.pressure;
+    doc["free_heap"] = ESP.getFreeHeap();
+    doc["min_free_heap"] = ESP.getMinFreeHeap();
+    doc["dropped_logs"] = droppedLogs.load();
     if (enableGPS && gps.location.isValid()) {
         doc["gps_lat"] = gps.location.lat();
         doc["gps_lng"] = gps.location.lng();
@@ -704,22 +728,50 @@ void sendHeartbeat() {
     serializeJson(doc, payload);
     int httpCode = http.POST(payload);
     if (httpCode == 200) {
-        Serial.println("  [HTTP] Heartbeat sent to " + serverUrl);
+        // Successful heartbeats are intentionally quiet.
         playMelody(1); // Heartbeat blip
     } else {
         Serial.println("  [HTTP] Heartbeat failed to " + serverUrl + " | Code: " + String(httpCode) + " (" + http.errorToString(httpCode) + ")");
         // Connection loss warning removed per user request
     }
     http.end();
+    static uint32_t lastHealthLog = 0;
+    if (millis() - lastHealthLog >= 30000) {
+        lastHealthLog = millis();
+        Serial.printf("[Health] heap=%u min_heap=%u logs_dropped=%u heartbeat_stack=%u\n",
+            ESP.getFreeHeap(), ESP.getMinFreeHeap(), droppedLogs.load(), unsigned(uxTaskGetStackHighWaterMark(nullptr)));
+    }
 }
 
 void moveMotorQueued(long stepsX, long stepsY, long stepsZ, char axis) {
-    MotorAction action = {stepsX, stepsY, stepsZ, axis};
-    if (commandQueue != NULL) {
-        if (xQueueSend(commandQueue, &action, 0) != pdPASS) {
-            sendLogAsync("Command Queue FULL! Action dropped.");
-        }
+    if (!commandQueue || xSemaphoreTake(motorMutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        commandAccepted = false;
+        return;
     }
+    MotorAction action = {stepsX, stepsY, stepsZ, motionGeneration, axis};
+    if (xQueueSend(commandQueue, &action, 0) != pdPASS) {
+        commandAccepted = false;
+        sendLogAsync("Command Queue FULL! Action rejected.");
+    }
+    xSemaphoreGive(motorMutex);
+}
+
+void emergencyStop() {
+    if (!motorMutex) return;
+    xSemaphoreTake(motorMutex, portMAX_DELAY);
+    stopActive = true;
+    usePIDRail = false;
+    ++motionGeneration; // Invalidates the action already removed from the queue.
+    xQueueReset(commandQueue);
+    waitingForDelay = false;
+    isExecutingMove = false;
+    stepperX.setCurrentPosition(stepperX.currentPosition());
+    stepperY.setCurrentPosition(stepperY.currentPosition());
+    stepperZ.setCurrentPosition(stepperZ.currentPosition());
+    digitalWrite(EN_PIN_X, HIGH);
+    digitalWrite(EN_PIN_Y, HIGH);
+    digitalWrite(EN_PIN_Z, HIGH);
+    xSemaphoreGive(motorMutex);
 }
 
 void clearMotorQueue() {
@@ -730,15 +782,23 @@ void clearMotorQueue() {
 
 void moveMotor(AccelStepper &s, int enPin, long steps, String axis) {
     // Legacy mapping to Queued system (X/Y relative)
-    moveMotorQueued((axis == "X" ? steps : 0), (axis == "Y" ? steps : 0), (axis == "Z" ? steps : 0), 
+    moveMotorQueued((axis == "X" ? steps : 0), (axis == "Y" ? steps : 0), (axis == "Z" ? steps : 0),
                     (axis == "X" ? 'x' : (axis == "Y" ? 'y' : 'z')));
 }
 
 void processCommand(String command) {
-    if (command == "") return;
+    command.trim();
+    command.toLowerCase();
+    commandAccepted = true;
+    if (command == "") { commandAccepted = false; return; }
+    if (!validDriveCommand(command.c_str())) { commandAccepted = false; return; }
+    if (manualMode != MANUAL_OFF && command != "x" && command != "stop" && command != "h" && command != "?") {
+        commandAccepted = false;
+        return;
+    }
     playMelody(5); // Command Received Sound
     Serial.println("\nExecuting: " + command);
-    
+
     String cmd = command;
     cmd.toLowerCase();
 
@@ -829,7 +889,7 @@ void processCommand(String command) {
         sendLogAsync("PID I set: " + String(pid_i));
     } else if (cmd.startsWith("gps")) {
         enableGPS = (cmd.substring(3).toInt() == 1);
-        if (enableGPS) syncGPSTimePos();
+        if (enableGPS) gpsSyncRequested = true;
         sendLogAsync("GPS Module: " + String(enableGPS ? "ON" : "OFF"));
     } else if (cmd.startsWith("mzd")) {
         pid_d = cmd.substring(3).toFloat();
@@ -839,38 +899,44 @@ void processCommand(String command) {
         sendLogAsync("Target ToF: " + String(targetRailDist));
     } else if (cmd.startsWith("mzc")) {
         i2cClockSpeed = cmd.substring(3).toInt();
-        Wire.setClock(i2cClockSpeed);
+        if (i2cClockSpeed < 10000 || i2cClockSpeed > 400000) { commandAccepted = false; return; }
+        requestedI2cClock = i2cClockSpeed; // Applied by the I2C owner in loop().
         sendLogAsync("I2C Clock set: " + String(i2cClockSpeed));
     } else if (cmd.startsWith("mzh")) {
-        heartbeatInterval = cmd.substring(3).toInt();
+        const long interval = cmd.substring(3).toInt();
+        if (interval < 250 || interval > 60000) { commandAccepted = false; return; }
+        heartbeatInterval = interval;
         sendLogAsync("ToF Interval set: " + String(heartbeatInterval));
     } else if (cmd.startsWith("mzm")) {
+        if (cmd.substring(3).toInt() == 1 && !tofReady) {
+            commandAccepted = false; sendLogAsync("Rail PID rejected: ToF disabled/unavailable"); return;
+        }
         usePIDRail = (cmd.substring(3).toInt() == 1);
         if (usePIDRail) integralRail = 0;
         sendLogAsync("Rail PID Mode: " + String(usePIDRail ? "ON" : "OFF"));
     } else if (cmd.startsWith("mzs")) { // Manual Step Set (e.g. mzs45.2)
-        stepsPerMmZ = cmd.substring(3).toFloat();
+        const float factor = cmd.substring(3).toFloat();
+        if (!isfinite(factor) || factor <= 0 || factor > 100000) { commandAccepted = false; return; }
+        stepsPerMmZ = factor;
         sendLogAsync("Steps/mm Z set to: " + String(stepsPerMmZ));
     } else if (cmd == "mza") { // Auto Calibrate
-        sendLogAsync("Starting Auto Calibration... Moving 1000 steps.");
-        float d1 = lastDistance;
-        moveMotor(stepperZ, EN_PIN_Z, 1000, "Z");
-        vTaskDelay(pdMS_TO_TICKS(2500)); // Wait for move and settle (Non-blocking for other tasks)
-        float d2 = lastDistance;
-        float diff = abs(d1 - d2);
-        if (diff > 2.0) {
-            stepsPerMmZ = 1000.0 / diff;
-            sendLogAsync("Calibration Done. 1000 steps = " + String(diff) + "mm. New Factor: " + String(stepsPerMmZ));
-        } else {
-            sendLogAsync("Calibration Failed. Distance change too small.");
-        }
+        // The old fixed 2.5s wait blocked STOP reception and could calibrate mid-move.
+        commandAccepted = false;
+        sendLogAsync("Auto calibration unavailable; set measured Steps/mm with mzs<value>.");
     } else if (cmd == "home") {
         if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
+            ++motionGeneration;
+            xQueueReset(commandQueue);
+            waitingForDelay = false;
+            stopActive = false;
+            usePIDRail = false;
+            digitalWrite(EN_PIN_X, LOW);
+            digitalWrite(EN_PIN_Y, LOW);
             stepperX.moveTo(0);
             stepperY.moveTo(0);
             xSemaphoreGive(motorMutex);
         }
-        targetRailDist = 140; // Set Z to physical home distance
+        // Open-loop Z remains at its current starting position.
         sendLogAsync("System Homing Initiated from PC.");
     } else if (cmd.startsWith("mz")) {
         stopActive = false;
@@ -923,25 +989,16 @@ void processCommand(String command) {
             }
             sendLogAsync("Motor X accel: " + String(motorAccelX));
         } else if (cmd == "x" || cmd == "stop") {
-            stopActive = true; 
-            clearMotorQueue(); 
-            if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
-                stepperX.setCurrentPosition(stepperX.currentPosition());
-                stepperY.setCurrentPosition(stepperY.currentPosition());
-                stepperZ.setCurrentPosition(stepperZ.currentPosition());
-                xSemaphoreGive(motorMutex);
-            }
-            digitalWrite(EN_PIN_X, HIGH); 
-            digitalWrite(EN_PIN_Y, HIGH);
-            digitalWrite(EN_PIN_Z, HIGH);
+            emergencyStop();
             sendLogAsync("ALL Motors EMERGENCY STOP & Queue Cleared");
             playMelody(3); // Emergency Alert
-        } else if (cmd.startsWith("md")) { 
-            interCommandDelay = cmd.substring(2).toInt();
+        } else if (cmd.startsWith("md")) {
+            const long value = cmd.substring(2).toInt();
+            if (value < 0 || value > 60000) { commandAccepted = false; return; }
+            interCommandDelay = value;
             sendLogAsync("Inter-command Delay: " + String(interCommandDelay) + "ms");
         } else if (cmd.startsWith("bv")) { // Buzzer Volume
-            buzzerVolume = cmd.substring(2).toInt();
-            ledcWrite(0, buzzerVolume);
+            buzzerVolume = constrain(cmd.substring(2).toInt(), 0L, 255L);
             sendLogAsync("Buzzer Volume: " + String(buzzerVolume));
         } else if (cmd == "e" || cmd == "enable") {
             digitalWrite(EN_PIN_X, LOW);
@@ -949,84 +1006,76 @@ void processCommand(String command) {
             digitalWrite(EN_PIN_Z, LOW);
             sendLogAsync("ALL Motors Enabled");
         } else if (cmd == "d" || cmd == "disable") {
-            digitalWrite(EN_PIN_X, HIGH);
-            digitalWrite(EN_PIN_Y, HIGH);
-            digitalWrite(EN_PIN_Z, HIGH);
+            emergencyStop();
             sendLogAsync("ALL Motors Disabled");
         } else if (cmd == "w") {
+            emergencyStop();
             handleWifiConfigMode();
         } else if (cmd == "h" || cmd == "?") {
             printHelp();
+        } else {
+            commandAccepted = false;
         }
     }
 }
 
 // Separate Network Task (Core 0) to prevent command skipping
 void networkTask(void *pvParameters) {
-    static String serialBuf = "";
+    BoundedLine serialLine;
+    bool wasConnected = WiFi.status() == WL_CONNECTED;
     while (true) {
+        const bool connected = WiFi.status() == WL_CONNECTED;
+        if (connected != wasConnected) {
+            server.end();
+            if (connected) {
+                server.begin();
+                configTime(32400, 0, "pool.ntp.org", "time.google.com");
+                Serial.println("[WiFi] connected; command server restored");
+            }
+            wasConnected = connected;
+        }
         checkTcpCommand();
-        
-        // Handle GPS Parsing (moved from loop)
-        if (enableGPS) {
-            while (gpsSerial.available() > 0) {
-                char c = gpsSerial.read();
-                gps.encode(c);
-            }
-        } else {
-            while (gpsSerial.available() > 0) gpsSerial.read();
+        // Bound each pass so UART floods cannot starve TCP STOP handling.
+        for (int count = 0; count < 128 && gpsSerial.available(); ++count) {
+            const char c = gpsSerial.read();
+            if (enableGPS) gps.encode(c);
         }
-
-        // Handle Serial commands
-        while (Serial.available()) {
-            char c = Serial.read();
-            if (c == '\n' || c == '\r') {
-                serialBuf.trim();
-                if (serialBuf.length() > 0) {
-                    processCommand(serialBuf);
-                    serialBuf = "";
-                    Serial.print("\nDriveMCU> ");
-                }
-            } else if (c == 8 || c == 127) { // Backspace
-                if (serialBuf.length() > 0) {
-                    serialBuf.remove(serialBuf.length() - 1);
-                    Serial.print("\b \b");
-                }
-            } else {
-                serialBuf += c;
-                Serial.print(c);
+        for (int count = 0; count < 128 && Serial.available(); ++count) {
+            const auto result = serialLine.push(Serial.read());
+            if (result == BoundedLine::Ready) {
+                String command(serialLine.value());
+                command.trim();
+                serialLine.reset();
+                if (command.length()) processCommand(command);
+                if (!commandAccepted) Serial.println("ERR:REJECTED");
+            } else if (result == BoundedLine::TooLong) {
+                Serial.println("ERR:TOO_LONG");
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(10)); // Yield to other Core 0 tasks
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
-// Separate asynchronous Logger Task (Core 0)
+// Separate asynchronous logger: bounded queue storage, no heap-owned pointers.
+struct LogMessage { char text[160]; };
 void logTask(void *pvParameters) {
-    char* message;
+    LogMessage message;
     while (true) {
-        if (xQueueReceive(logQueue, &message, portMAX_DELAY)) {
-            sendLog(String(message));
-            free(message); // Free the allocated memory
-        }
+        if (xQueueReceive(logQueue, &message, portMAX_DELAY)) sendLog(String(message.text));
     }
 }
-
 void sendLogAsync(String msg) {
-    if (logQueue == NULL) return;
-    char* msgCopy = strdup(msg.c_str());
-    if (msgCopy == NULL) return;
-    
-    // Non-blocking send, if queue is full, skip (protects motor priority)
-    if (xQueueSend(logQueue, &msgCopy, 0) != pdPASS) {
-        free(msgCopy);
-    }
+    if (!logQueue) return;
+    LogMessage message;
+    strlcpy(message.text, msg.c_str(), sizeof(message.text));
+    if (xQueueSend(logQueue, &message, 0) != pdPASS) ++droppedLogs;
 }
 
 // Separate Heartbeat Task (Core 0) to prevent blocking loop()
 void heartbeatTask(void *pvParameters) {
     unsigned long lastHb = 0;
     while (true) {
+        if (gpsSyncRequested) { gpsSyncRequested = false; syncGPSTimePos(); }
         if (millis() - lastHb > heartbeatInterval) {
             sendHeartbeat();
             lastHb = millis();
@@ -1035,85 +1084,69 @@ void heartbeatTask(void *pvParameters) {
     }
 }
 
-void checkTcpCommand() {
-    WiFiClient client = server.available();
-    if (!client) return;
-    
-    unsigned long startWait = millis();
-    while (client.connected() && (millis() - startWait < 500)) { // 500ms session limit
-        if (client.available()) {
-            String request = client.readStringUntil('\n');
-            request.trim();
-            if (request.length() > 0) {
-                processCommand(request);
-            }
-            startWait = millis(); // Reset timeout on data
-        }
-        delay(1);
-    }
-    client.stop();
-}
-
-void handleWifiConfigMode() {
-    WiFi.disconnect(true);
-    delay(500);
-    Serial.println("\n\n--- DriveMCU Configuration Mode ---");
-    Serial.println("1. Serial Config (W/S/A)");
-    Serial.println("2. Bluetooth Config (ARD_Drive_Config)");
-    Serial.println("3. Reset & Restart");
-    Serial.print("Select (1-3): ");
-
-    BluetoothSerial SerialBT;
-
-    while (true) {
-        if (Serial.available()) {
-            String choice = readSerialLine();
-            if (choice == "1") {
-                Serial.println("Enter WIFI,SSID,PASS,IP:");
-                String line = readSerialLine();
-                if(line.startsWith("WIFI,")) {
-                    int p1 = line.indexOf(',', 5);
-                    int p2 = line.indexOf(',', p1+1);
-                    if(p1>0 && p2>0) {
-                        prefs.begin("drive-config", false);
-                        prefs.putString("ssid", line.substring(5, p1));
-                        prefs.putString("password", line.substring(p1+1, p2));
-                        prefs.putString("server_ip", line.substring(p2+1));
-                        prefs.end();
-                        ESP.restart();
+void respondToTcp(String request, NetworkClient &client) {
+    request.trim();
+    if (request.equalsIgnoreCase("ping")) {
+        client.printf("ACK:PONG,move_ms=%lu,homing_ms=%lu\n", lastMoveDurationMs, lastHomingDurationMs);
+    } else if (request.equalsIgnoreCase("status")) {
+                    StaticJsonDocument<384> status;
+                    if (xSemaphoreTake(motorMutex, pdMS_TO_TICKS(100))) {
+                        status["protocol"] = 1;
+                        status["boot_id"] = motionBootId;
+                        status["busy"] = isExecutingMove || waitingForDelay ||
+                            stepperX.distanceToGo() != 0 || stepperY.distanceToGo() != 0 ||
+                            stepperZ.distanceToGo() != 0 || uxQueueMessagesWaiting(commandQueue) > 0 ||
+                            manualMode != MANUAL_OFF;
+                        status["stopped"] = stopActive.load();
+                        status["pid"] = usePIDRail.load();
+                        status["x"] = stepperX.currentPosition();
+                        status["y"] = stepperY.currentPosition();
+                        status["z"] = stepperZ.currentPosition();
+                        status["steps_per_mm"] = stepsPerMmZ;
+                        status["tof_mm"] = lastDistance;
+                        xSemaphoreGive(motorMutex);
+                        serializeJson(status, client);
+                        client.println();
+                    } else {
+                        client.println("ERR:BUSY");
                     }
-                }
-            } else if (choice == "2") {
-                SerialBT.begin("ARD_Drive_Config");
-                Serial.println("BT Active: ARD_Drive_Config");
-                while(!SerialBT.available()) { delay(10); if(Serial.available()) break; }
-            } else if (choice == "3") {
-                prefs.begin("drive-config", false); prefs.clear(); prefs.end();
-                ESP.restart();
-            }
-        }
-        
-        if (SerialBT.hasClient() && SerialBT.available()) {
-            String line = SerialBT.readStringUntil('\n');
-            line.trim();
-            if(line.startsWith("WIFI,")) {
-                int p1 = line.indexOf(',', 5);
-                int p2 = line.indexOf(',', p1+1);
-                if(p1>0 && p2>0) {
-                    prefs.begin("drive-config", false);
-                    prefs.putString("ssid", line.substring(5, p1));
-                    prefs.putString("password", line.substring(p1+1, p2));
-                    prefs.putString("server_ip", line.substring(p2+1));
-                    prefs.end();
-                    SerialBT.println("Saved! Rebooting...");
-                    delay(1000);
-                    ESP.restart();
-                }
-            }
-        }
-        delay(10);
+    } else {
+        request.toLowerCase();
+        processCommand(request);
+        client.println(commandAccepted ? "ACK:OK" : "ERR:REJECTED");
     }
 }
+
+void checkTcpCommand() {
+    static NetworkClient client;
+    static BoundedLine line;
+    static uint32_t connectedAt = 0, lastByteAt = 0;
+    if (!client || !client.connected()) {
+        client.stop();
+        line.reset();
+        client = server.accept();
+        if (!client) return;
+        connectedAt = lastByteAt = millis();
+    }
+    // No readStringUntil: fragmented/no-newline clients must not block serial/GPS.
+    for (int count = 0; count < 128 && client.available(); ++count) {
+        lastByteAt = millis();
+        const auto result = line.push(client.read());
+        if (result == BoundedLine::TooLong) {
+            client.println("ERR:TOO_LONG"); client.stop(); line.reset(); return;
+        }
+        if (result == BoundedLine::Ready) {
+            respondToTcp(String(line.value()), client);
+            client.stop(); line.reset(); return; // one command per connection
+        }
+    }
+    if (millis() - lastByteAt >= 500 || millis() - connectedAt >= 1000) {
+        if (line.partial()) client.println("ERR:TIMEOUT");
+        client.stop(); line.reset();
+    }
+}
+
+void handleWifiConfigMode() { ardNetwork.printSetup(); }
 
 void printHelp() {
     Serial.println("\n--- DriveMCU Commands ---");
@@ -1129,9 +1162,19 @@ void printHelp() {
     Serial.print("\nDriveMCU> "); // Prompt
 }
 
+void startRequiredTask(TaskFunction_t task, const char *name, uint32_t stack, UBaseType_t priority, BaseType_t core) {
+    if (xTaskCreatePinnedToCore(task, name, stack, nullptr, priority, nullptr, core) != pdPASS) {
+        emergencyStop();
+        Serial.printf("[FATAL] Cannot create %s; motors stopped\n", name);
+        while (true) delay(1000);
+    }
+}
+
 void setup() {
+    motionBootId = esp_random();
     Serial.begin(115200);
-    
+    Serial.printf("[Boot] reset=%d, heap=%u, ToF=%s\n", int(esp_reset_reason()), ESP.getFreeHeap(), ARD_ENABLE_TOF ? "enabled" : "disabled (open loop)");
+
     // GPS 초기화를 모터 설정보다 먼저 수행하여 UART가 모터 핀을 가로채는 것을 방지
     Serial.println("GPS Initializing...");
     gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
@@ -1139,17 +1182,17 @@ void setup() {
     pinMode(STEP_PIN_X, OUTPUT);
     pinMode(DIR_PIN_X, OUTPUT);
     pinMode(EN_PIN_X, OUTPUT);
-    digitalWrite(EN_PIN_X, LOW);
+    digitalWrite(EN_PIN_X, HIGH);
 
     pinMode(STEP_PIN_Y, OUTPUT);
     pinMode(DIR_PIN_Y, OUTPUT);
     pinMode(EN_PIN_Y, OUTPUT);
-    digitalWrite(EN_PIN_Y, LOW);
+    digitalWrite(EN_PIN_Y, HIGH);
 
     pinMode(STEP_PIN_Z, OUTPUT);
     pinMode(DIR_PIN_Z, OUTPUT);
     pinMode(EN_PIN_Z, OUTPUT);
-    digitalWrite(EN_PIN_Z, LOW);
+    digitalWrite(EN_PIN_Z, HIGH);
 
     stepperX.setMaxSpeed(motorSpeedX);
     stepperX.setAcceleration(motorAccelX);
@@ -1160,16 +1203,16 @@ void setup() {
     stepperZ.setPinsInverted(true, false, false);
 
     // Initial Buzzer Setup
-    ledcSetup(0, 2000, 8);
-    ledcAttachPin(BUZZER_PIN, 0);
-    ledcWrite(0, 0); // Start silent
+    ledcAttach(BUZZER_PIN, 2000, 8);
+    ledcWrite(BUZZER_PIN, 0); // Start silent
 
     // Initial I2C
     Serial.println("--- Starting I2C Scanner ---");
     Wire.begin(I2C_SDA, I2C_SCL);
+    Wire.setTimeOut(20);
     Wire.setClock(100000); // 초기 단계에서 안정적인 속도로 설정
     delay(100); // 센서 안정화 대기
-    
+
     byte error, address;
     int nDevices = 0;
     for(address = 1; address < 127; address++ ) {
@@ -1188,7 +1231,8 @@ void setup() {
 
     // Initialize AHT20
     Serial.println("Initializing AHT20...");
-    if (!aht.begin()) {
+    ahtReady = aht.begin();
+    if (!ahtReady) {
         Serial.println("Could not find AHT20!");
     } else {
         Serial.println("AHT20 found!");
@@ -1196,8 +1240,10 @@ void setup() {
 
     // Initialize BMP280
     Serial.println("Initializing BMP280...");
-    if (!bmp.begin(0x76)) {
-        if (!bmp.begin(0x77)) {
+    bmpReady = bmp.begin(0x76);
+    if (!bmpReady) {
+        bmpReady = bmp.begin(0x77);
+        if (!bmpReady) {
             Serial.println("Could not find BMP280! Check wiring/address.");
         } else {
             Serial.println("BMP280 found at 0x77");
@@ -1206,8 +1252,10 @@ void setup() {
         Serial.println("BMP280 found at 0x76");
     }
 
-    sensor.setTimeout(500);
-    if (!sensor.init()) {
+    sensor.setTimeout(60);
+    if (!ARD_ENABLE_TOF) {
+        Serial.println("ToF disabled: open-loop rail control");
+    } else if (!(tofReady = sensor.init())) {
         Serial.println("Failed to detect and initialize VL53L0X!");
         sendLogAsync("ToF Sensor Init FAILED");
         tofStatus = "INIT_FAIL";
@@ -1219,7 +1267,8 @@ void setup() {
     }
 
     // Initialize OLED
-    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    oledReady = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    if(!oledReady) {
         Serial.println(F("SSD1306 allocation failed"));
     } else {
         Wire.setClock(100000); // 명시적 100kHz 설정 (I2C 안정성 확보)
@@ -1232,82 +1281,37 @@ void setup() {
         display.display();
     }
 
-    // Load Config
-    prefs.begin("drive-config", false);
-    if (prefs.isKey("ssid")) ssid_active = prefs.getString("ssid");
-    if (prefs.isKey("password")) pass_active = prefs.getString("password");
-    if (prefs.isKey("server_ip")) server_ip_pref = prefs.getString("server_ip");
-    if (prefs.isKey("targetLastByte")) targetLastByte = prefs.getInt("targetLastByte");
-    
+    if (!ardNetwork.begin("drive", "drive-config", server_ip.c_str()))
+        Serial.println("[NET] Network setup failed");
+    server_ip = ardNetwork.serverAddress();
     updateUrls();
-
-    // Fallback WiFi Connection Logic
-    const char* ssids[] = {ssid_active.c_str(), WIFI_SSID_1, WIFI_SSID_2, WIFI_SSID_3};
-    const char* passes[] = {pass_active.c_str(), WIFI_PASS_1, WIFI_PASS_2, WIFI_PASS_3};
-    const char* servers[] = {server_ip_pref.c_str(), WIFI_SERVER_1, WIFI_SERVER_2, WIFI_SERVER_3};
-    bool connected = false;
-
-    for (int i = 0; i < 4; i++) {
-        if (strlen(ssids[i]) == 0) continue;
-        
-        Serial.printf("\n[WiFi] Attempting connection to %s...\n", ssids[i]);
-        WiFi.begin(ssids[i], passes[i]);
-        
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED && (millis() - start < WIFI_TIMEOUT_MS)) {
-            delay(500);
-            Serial.print(".");
-        }
-        
-        if (WiFi.status() == WL_CONNECTED) {
-            // Apply paired server IP (if available)
-            if (strlen(servers[i]) > 0) {
-                server_ip = servers[i];
-                Serial.printf("\n[WiFi] Matched Server IP: %s\n", server_ip.c_str());
-            }
-            updateUrls();
-            connected = true;
-            break;
-        }
-    }
-
-    if (connected) {
-        Serial.println("\nWiFi Connected: " + WiFi.localIP().toString());
-        sntp_set_sync_interval(60 * 1000); // 1분에 한 번만 동기화 (60,000ms)
-        configTime(32400, 0, "pool.ntp.org", "time.google.com"); // NTP 시간 설정 (한국 UTC+9)
-        server.begin();
-        sendLogAsync("DriveMCU Online (IP: " + WiFi.localIP().toString() + ")");
-        
-        digitalWrite(EN_PIN_X, LOW);
-        digitalWrite(EN_PIN_Y, LOW);
-        digitalWrite(EN_PIN_Z, LOW);
-        
-        if (enableGPS) syncGPSTimePos(); // Sync A-GPS data on start if ON
-    } else {
-        Serial.println("\nWiFi All Connection Failed!");
-        handleWifiConfigMode();
-    }
+    server.begin();
 
     // Initialize Manual Pins
     pinMode(SW1_PIN, INPUT_PULLUP);
     pinMode(SW2_PIN, INPUT_PULLUP);
     pinMode(POT_PIN, INPUT); // ADC
-    
+
     // Initialize Mutex and Queues
     motorMutex = xSemaphoreCreateMutex();
-    logQueue = xQueueCreate(20, sizeof(char*)); 
+    logQueue = xQueueCreate(20, sizeof(LogMessage));
     commandQueue = xQueueCreate(32, sizeof(MotorAction));
     buzzerQueue = xQueueCreate(10, sizeof(BuzzerAction));
 
+    if (!motorMutex || !logQueue || !commandQueue || !buzzerQueue) {
+        Serial.println("[FATAL] RTOS resource allocation failed; motors remain disabled.");
+        while (true) delay(1000);
+    }
+
     // Start Tasks on Core 0 (System Tasks)
-    xTaskCreatePinnedToCore(logTask, "LogTask", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(networkTask, "NetworkTask", 8192, NULL, 10, NULL, 0);
-    xTaskCreatePinnedToCore(heartbeatTask, "HeartbeatTask", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(buzzerTask, "BuzzerTask", 2048, NULL, 5, NULL, 0);
-    
+    startRequiredTask(logTask, "LogTask", 4096, 5, 0);
+    startRequiredTask(networkTask, "NetworkTask", 8192, 10, 0);
+    startRequiredTask(heartbeatTask, "HeartbeatTask", 4096, 5, 0);
+    startRequiredTask(buzzerTask, "BuzzerTask", 2048, 5, 0);
+
     // Start Tasks on Core 1 (Performance Critical)
-    xTaskCreatePinnedToCore(inputTask, "InputTask", 4096, NULL, 20, NULL, 1);
-    xTaskCreatePinnedToCore(motorTask, "MotorTask", 4096, NULL, 24, NULL, 1);
+    startRequiredTask(inputTask, "InputTask", 4096, 20, 1);
+    startRequiredTask(motorTask, "MotorTask", 4096, 24, 1);
 
     playMelody(2); // Boot Success Melody
     printHelp();
@@ -1316,6 +1320,7 @@ void setup() {
 // --- High-Performance Input Task (100Hz) ---
 volatile int sharedClick1 = 0, sharedClick2 = 0;
 volatile bool sharedLong1 = false, sharedLong2 = false;
+portMUX_TYPE inputMux = portMUX_INITIALIZER_UNLOCKED;
 
 void inputTask(void *pvParameters) {
     while (true) {
@@ -1323,39 +1328,43 @@ void inputTask(void *pvParameters) {
         bool l1 = false, l2 = false;
         handleButton(btn1, c1, l1);
         handleButton(btn2, c2, l2);
-        
+
+        portENTER_CRITICAL(&inputMux);
         if (c1 > 0) sharedClick1 = c1;
         if (c2 > 0) sharedClick2 = c2;
         if (l1) sharedLong1 = true;
         if (l2) sharedLong2 = true;
-        
-        vTaskDelay(pdMS_TO_TICKS(10)); 
+        portEXIT_CRITICAL(&inputMux);
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
 void loop() {
     // --- Async Input Consumption ---
+    portENTER_CRITICAL(&inputMux);
     int click1 = sharedClick1; sharedClick1 = 0;
     int click2 = sharedClick2; sharedClick2 = 0;
     bool long1 = sharedLong1; sharedLong1 = false;
     bool long2 = sharedLong2; sharedLong2 = false;
-    
+    portEXIT_CRITICAL(&inputMux);
+
     // Motor run is now handled by motorTask on Core 1
-    
+
     // --- Manual Control Logic ---
     static float smoothedADC = -1;
-    static int lastADC = -1; 
-    
+    static int lastADC = -1;
+
     // 1. Multi-sample averaging for raw noise reduction
     long adcSum = 0;
     for(int i=0; i<8; i++) adcSum += analogRead(POT_PIN);
     int adcRaw = adcSum / 8;
-    
+
     if (smoothedADC < 0) smoothedADC = adcRaw;
-    
+
     // 2. Stronger EMA Filter (Alpha 0.05) to eliminate high-frequency jitter
-    smoothedADC = (smoothedADC * 0.95) + (adcRaw * 0.05); 
-    
+    smoothedADC = (smoothedADC * 0.95) + (adcRaw * 0.05);
+
     // 3. Larger Hysteresis (Deadzone): Only update if change is > 25 units (~0.6%)
     // This effectively stops the "buzzing" when the pot is not being turned.
     if (lastADC == -1 || abs((int)smoothedADC - lastADC) > 25) {
@@ -1366,11 +1375,12 @@ void loop() {
         // 길게 누르면 메뉴 진입
         if (long1 || long2) {
             playMelody(7); // Menu Enter Sound
+            emergencyStop();
             manualMode = MANUAL_MENU;
             manualMenuIndex = 0;
             updateOLED();
         } else if (click1 == 1) { // Prev Page
-            playMelody(6); 
+            playMelody(6);
             oledPage = (oledPage - 1 + 3) % 3;
             lastPageSwitch = millis();
             updateOLED();
@@ -1383,7 +1393,7 @@ void loop() {
     } else if (manualMode == MANUAL_MENU) {
         if (click1 == 1) { // Prev
             playMelody(6); // Scroll Sound
-            manualMenuIndex = (manualMenuIndex - 1 + 6) % 6;
+            manualMenuIndex = (manualMenuIndex - 1 + 7) % 7;
             updateOLED();
         } else if (click2 == 1) { // Next
             playMelody(6); // Scroll Sound
@@ -1392,12 +1402,16 @@ void loop() {
         } else if (click1 == 2 || click2 == 2) { // Select (Double Click)
             if (manualMenuIndex == 6) playMelody(8); // Exit Sound
             else playMelody(7); // Select/Enter Sound
-            
+
+            stopActive = false; // Explicit local control selection resumes motion.
             if (manualMenuIndex == 0) manualMode = MANUAL_CTRL_X;
             else if (manualMenuIndex == 1) manualMode = MANUAL_CTRL_Y;
-            else if (manualMenuIndex == 2) { 
+            else if (manualMenuIndex == 2) {
                 manualMode = MANUAL_CTRL_Z;
-                usePIDRail = true; // Enable PID for Z-Axis distance tracking
+                // Z manual mode uses open-loop travel from the entry position.
+                usePIDRail = false;
+                manualBaseStepsZ = stepperZ.currentPosition();
+                stopActive = false;
             }
             else if (manualMenuIndex == 3) manualMode = MANUAL_CTRL_DIFF_FW;
             else if (manualMenuIndex == 4) {
@@ -1412,6 +1426,9 @@ void loop() {
                 manualMode = MANUAL_HOME;
                 usePIDRail = false; // Disable PID during homing
                 if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
+                    digitalWrite(EN_PIN_X, LOW);
+                    digitalWrite(EN_PIN_Y, LOW);
+                    digitalWrite(EN_PIN_Z, LOW);
                     stepperX.moveTo(0);
                     stepperY.moveTo(0);
                     stepperZ.moveTo(0);
@@ -1442,65 +1459,66 @@ void loop() {
             static unsigned long lastOledDraw = 0;
             if (millis() - lastOledDraw > 50) { // 20FPS Update
                 lastOledDraw = millis();
-                
+
                 // Erase previous values (Partial Update for speed)
-                display.fillRect(45, 20, 80, 25, SSD1306_BLACK); 
+                if (oledReady) display.fillRect(45, 20, 80, 25, SSD1306_BLACK);
                 display.setTextColor(SSD1306_WHITE);
                 display.setTextSize(1);
-                
+
                 if (manualMode == MANUAL_CTRL_X || manualMode == MANUAL_CTRL_Y) {
                     // Servo Mode (-360 to 360 deg) -> ADC 0~4095
                     float targetDeg = (lastADC / 4095.0) * 720.0 - 360.0;
-                    
+
                     if (manualMode == MANUAL_CTRL_X) {
                         long targetSteps = (targetDeg / 1.8) * manualGearRatioX;
                         float realDeg = (stepperX.currentPosition() * 1.8) / manualGearRatioX;
-                        display.setCursor(45, 20); display.printf("%.1f deg", targetDeg);
-                        display.setCursor(45, 35); display.printf("%.1f deg", realDeg);
-                        
+                        display.setCursor(45, 20); if (oledReady) display.printf("%.1f deg", targetDeg);
+                        display.setCursor(45, 35); if (oledReady) display.printf("%.1f deg", realDeg);
+
                         if (!stopActive) {
-                            digitalWrite(EN_PIN_X, LOW);
                             if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
-                                stepperX.moveTo(targetSteps);
+                                if (!stopActive) { digitalWrite(EN_PIN_X, LOW); stepperX.moveTo(targetSteps); }
                                 xSemaphoreGive(motorMutex);
                             }
                         }
                     } else if (manualMode == MANUAL_CTRL_Y) {
                         long targetSteps = (targetDeg / 1.8) * manualGearRatioY;
                         float realDeg = (stepperY.currentPosition() * 1.8) / manualGearRatioY;
-                        display.setCursor(45, 20); display.printf("%.1f deg", targetDeg);
-                        display.setCursor(45, 35); display.printf("%.1f deg", realDeg);
-                        
+                        display.setCursor(45, 20); if (oledReady) display.printf("%.1f deg", targetDeg);
+                        display.setCursor(45, 35); if (oledReady) display.printf("%.1f deg", realDeg);
+
                         if (!stopActive) {
-                            digitalWrite(EN_PIN_Y, LOW);
                             if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
-                                stepperY.moveTo(targetSteps);
+                                if (!stopActive) { digitalWrite(EN_PIN_Y, LOW); stepperY.moveTo(targetSteps); }
                                 xSemaphoreGive(motorMutex);
                             }
                         }
                     }
                 } else if (manualMode == MANUAL_CTRL_Z) {
-                    // Distance Target Mode (140mm ~ 180mm)
-                    int targetDist = map(lastADC, 0, 4095, 140, 180);
-                    targetRailDist = targetDist; // Set global PID target
-                    
-                    display.setCursor(45, 20); display.printf("Tar: %d mm", targetDist);
-                    display.setCursor(45, 35); display.printf("Cur: %.1f mm", lastDistance);
-                    
-                    // Note: stepperZ is automatically driven by motorTask's PID loop
-                    // because we set usePIDRail = true when entering this mode.
+                    const float offsetMm = (lastADC / 4095.0f) * 30.0f - 15.0f;
+                    display.setCursor(45, 20); if (oledReady) display.printf("Off: %.1f mm", offsetMm);
+                    display.setCursor(45, 35); if (oledReady) display.print("OPEN LOOP");
+                    if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
+                        if (!stopActive) {
+                            digitalWrite(EN_PIN_Z, LOW);
+                            stepperZ.moveTo(manualBaseStepsZ + lroundf(offsetMm * stepsPerMmZ));
+                        }
+                        xSemaphoreGive(motorMutex);
+                    }
                 } else if (manualMode == MANUAL_CTRL_DIFF_FW) {
                     // Diff Drive Forward/Backward (Absolute Servo Mode)
                     float targetDeg = (lastADC / 4095.0) * 720.0 - 360.0;
-                    display.setCursor(45, 20); display.printf("%.1f deg", targetDeg);
-                    display.setCursor(45, 35); display.print("Sync: FW/BW");
-                    
+                    display.setCursor(45, 20); if (oledReady) display.printf("%.1f deg", targetDeg);
+                    display.setCursor(45, 35); if (oledReady) display.print("Sync: FW/BW");
+
                     if (!stopActive) {
-                        digitalWrite(EN_PIN_X, LOW);
-                        digitalWrite(EN_PIN_Y, LOW);
                         if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
+                            if (!stopActive) {
+                            digitalWrite(EN_PIN_X, LOW);
+                            digitalWrite(EN_PIN_Y, LOW);
                             stepperX.moveTo((targetDeg / 1.8) * manualGearRatioX);
                             stepperY.moveTo(-(targetDeg / 1.8) * manualGearRatioY);
+                            }
                             xSemaphoreGive(motorMutex);
                         }
                     }
@@ -1508,60 +1526,77 @@ void loop() {
                     // Disk Rotation (Relative Displacement Control)
                     // Maps pot to -360 ~ +360 degree offset from entering point
                     float offsetDeg = (lastADC / 4095.0) * 720.0 - 360.0;
-                    
-                    display.setCursor(45, 20); display.printf("Offs:%.1f", offsetDeg);
-                    display.setCursor(45, 35); display.print("ROT Displacement");
-                    
+
+                    display.setCursor(45, 20); if (oledReady) display.printf("Offs:%.1f", offsetDeg);
+                    display.setCursor(45, 35); if (oledReady) display.print("ROT Displacement");
+
                     if (!stopActive) {
-                        digitalWrite(EN_PIN_X, LOW);
-                        digitalWrite(EN_PIN_Y, LOW);
                         if (xSemaphoreTake(motorMutex, portMAX_DELAY)) {
+                            if (!stopActive) {
+                            digitalWrite(EN_PIN_X, LOW);
+                            digitalWrite(EN_PIN_Y, LOW);
                             stepperX.moveTo(manualBaseStepsX + (offsetDeg / 1.8) * manualGearRatioX);
                             stepperY.moveTo(manualBaseStepsY + (offsetDeg / 1.8) * manualGearRatioY);
+                            }
                             xSemaphoreGive(motorMutex);
                         }
                     }
                 } else if (manualMode == MANUAL_HOME) {
                     // Display Homing Status
-                    display.setCursor(45, 20); display.print("GO HOME...");
-                    
+                    display.setCursor(45, 20); if (oledReady) display.print("GO HOME...");
+
                     bool xDone = stepperX.distanceToGo() == 0;
                     bool yDone = stepperY.distanceToGo() == 0;
                     bool zDone = stepperZ.distanceToGo() == 0;
-                    
+
                     display.setCursor(45, 35);
-                    display.printf("%s %s %s", xDone?"X":"-", yDone?"Y":"-", zDone?"Z":"-");
-                    
+                    if (oledReady) display.printf("%s %s %s", xDone?"X":"-", yDone?"Y":"-", zDone?"Z":"-");
+
                     if (xDone && yDone && zDone) {
                         playMelody(2); // Success Sound
                         manualMode = MANUAL_MENU;
                         updateOLED();
                     }
                 }
-                display.display();
+                if (oledReady) display.display();
             }
         }
     }
+
+    if (requestedI2cClock) { const uint32_t clock = requestedI2cClock; requestedI2cClock = 0; Wire.setClock(clock); }
+    EnvironmentSample sample = environmentSnapshot();
+    float temp = 0, humidity = 0;
+    if (ahtReady && aht.poll(temp, humidity)) { sample.temperature = temp; sample.humidity = humidity; sample.ahtValid = true; }
+    sample.ahtValid = ahtReady && aht.healthy();
+    static unsigned long lastEnvRead = 0;
+    if (bmpReady && millis() - lastEnvRead >= 5000) {
+        sample.pressure = bmp.readPressure() / 100.0f;
+        sample.bmpValid = isfinite(sample.pressure) && sample.pressure > 0;
+        lastEnvRead = millis();
+    }
+    portENTER_CRITICAL(&environmentMux);
+    environment = sample;
+    portEXIT_CRITICAL(&environmentMux);
 
     static unsigned long lastToFRead = 0;
     static float distSamples[5] = {0};
     static uint8_t sampleIdx = 0;
     static uint8_t sampleCount = 0;
-    
-    if (millis() - lastToFRead > 50) { 
+
+    if (tofReady && millis() - lastToFRead > 50) {
         lastToFRead = millis();
         uint16_t dist = sensor.readRangeContinuousMillimeters();
         if (sensor.timeoutOccurred()) {
             tofStatus = "TIMEOUT";
-        } else if (dist >= 0 && dist <= 2000) {
+        } else if (dist > 0 && dist <= 2000) {
             tofStatus = "OK";
             distSamples[sampleIdx] = (float)dist;
             sampleIdx = (sampleIdx + 1) % 5;
             if (sampleCount < 5) sampleCount++;
-            
+
             float sum = 0;
             for (uint8_t i = 0; i < sampleCount; i++) sum += distSamples[i];
-            lastDistance = sum / sampleCount; 
+            lastDistance = sum / sampleCount;
         } else {
             tofStatus = "OUT OF RANGE";
             // Do not update lastDistance with invalid readings
@@ -1569,9 +1604,10 @@ void loop() {
     }
 
     static unsigned long lastOled = 0;
-    if (millis() - lastOled > 200) { 
+    if (millis() - lastOled > 200) {
         updateOLED();
         lastOled = millis();
     }
 
+    delay(1); // Keep the idle task/watchdog schedulable even with missing peripherals.
 }

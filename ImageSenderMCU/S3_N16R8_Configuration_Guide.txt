@@ -32,20 +32,15 @@ board_upload.flash_size = 16MB
 
 ## 3. Important Stability Fixes (Code Level)
 
-### Brownout Prevention
-OV5640 and WiFi usage can cause voltage drops. Disable brownout detector at the start of setup():
-```cpp
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
-
-void setup() {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
-    // ... rest of setup
-}
-```
+### Brownout Diagnosis
+Retain SDK brownout protection. Do not directly clear RTC_CNTL_BROWN_OUT_REG.
+Arduino-only builds use a precompiled SDK; sdkconfig.defaults does not rebuild it.
+Use the diagnostic environments described in POWER_DIAGNOSTIC.md to separate
+Flash/PSRAM startup from application initialization. The application prints
+Boot Stage 1-4 and the camera driver's return code to locate failures.
 
 ### Serial Monitoring
-- If rst:0x1 (POWERON) log is visible but setup() logs are missing, it's a Serial routing issue.
+- Missing setup() logs can indicate early startup failure or Serial routing issues.
 - Use `ARDUINO_USB_CDC_ON_BOOT=0` to force output to the Hardware UART.
 - Use `ARDUINO_USB_CDC_ON_BOOT=1` to use the Native USB port (requires switching cables/ports).
 

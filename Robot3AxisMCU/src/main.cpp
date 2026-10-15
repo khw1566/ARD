@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <ArdNetwork.h>
+ArdNetwork ardNetwork;
 #include <WiFiClient.h>
 #include <AccelStepper.h>
 #include <ArduinoJson.h>
@@ -28,17 +30,8 @@ const int RELAY_PINS[4] = {4, 5, 6, 7};
 const int L298N_PINS[4] = {15, 16, 17, 18};
 
 // --- Unified WiFi Configuration ---
-const char* WIFI_SSID_1 = "1-309";
-const char* WIFI_PASS_1 = "0522300751";
-const char* WIFI_SERVER_1 = "192.168.0.35";
 
-const char* WIFI_SSID_2 = "A35_m";
-const char* WIFI_PASS_2 = "00000000";
-const char* WIFI_SERVER_2 = "192.168.0.35";
 
-const char* WIFI_SSID_3 = "YOUR_WIFI_SSID";
-const char* WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char* WIFI_SERVER_3 = "192.168.0.13";
 
 String ssid_active = "";
 String server_ip = "192.168.0.35";
@@ -107,34 +100,11 @@ void loop() {
 }
 
 void setupWifi() {
-    const char* ssids[] = {WIFI_SSID_1, WIFI_SSID_2, WIFI_SSID_3};
-    const char* passes[] = {WIFI_PASS_1, WIFI_PASS_2, WIFI_PASS_3};
-    const char* servers[] = {WIFI_SERVER_1, WIFI_SERVER_2, WIFI_SERVER_3};
-
-    bool connected = false;
-    for (int i = 0; i < 3; i++) {
-        Serial.printf("[WiFi] Trying: %s\n", ssids[i]);
-        WiFi.begin(ssids[i], passes[i]);
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED && millis() - start < 5000) {
-            delay(500); Serial.print(".");
-        }
-        Serial.println();
-        if (WiFi.status() == WL_CONNECTED) {
-            ssid_active = ssids[i];
-            server_ip = servers[i];
-            serverUrl = "http://" + server_ip + ":5000";
-            connected = true;
-            break;
-        }
-    }
-    if (connected) {
-        Serial.printf("[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
-        commandServer.begin();
-    } else {
-        Serial.println("[WiFi] All failed. Retrying in 10s...");
-        delay(10000); ESP.restart();
-    }
+    if (!ardNetwork.begin("robot", nullptr, server_ip.c_str()))
+        Serial.println("[NET] Network setup failed");
+    server_ip = ardNetwork.serverAddress();
+    serverUrl = "http://" + server_ip + ":5000";
+    commandServer.begin();
 }
 
 void motorTask(void *pvParameters) {
@@ -151,9 +121,20 @@ void motorTask(void *pvParameters) {
 void networkTask(void *pvParameters) {
     setupWifi();
     unsigned long lastHB = 0;
+    bool wasConnected = false;
     String lineBuffer = "";  // 논-블로킹 라인 버퍼
 
     while (true) {
+        String address = ardNetwork.serverAddress();
+        if (address != server_ip) { server_ip = address; serverUrl = "http://" + server_ip + ":5000"; }
+        bool connected = WiFi.status() == WL_CONNECTED;
+        if (connected != wasConnected) {
+            client.stop();
+            lineBuffer = "";
+            commandServer.end();
+            if (connected) { commandServer.begin(); ssid_active = WiFi.SSID(); }
+            wasConnected = connected;
+        }
         // 새 클라이언트 접속 처리
         if (!client || !client.connected()) {
             client = commandServer.available();
@@ -179,12 +160,6 @@ void networkTask(void *pvParameters) {
         if (millis() - lastHB > 10000) {
             sendHeartbeat();
             lastHB = millis();
-        }
-
-        // WiFi 재연결
-        if (WiFi.status() != WL_CONNECTED) {
-            lineBuffer = "";  // 버퍼 초기화
-            setupWifi();
         }
 
         vTaskDelay(1); // 1ms - CPU 독점 방지 (최소값)

@@ -6,6 +6,8 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <WiFi.h>
+#include <ArdNetwork.h>
+ArdNetwork ardNetwork;
 // #include <BluetoothSerial.h> // ESP32-S3 does not support Classic BT
 // (BluetoothSerial)
 
@@ -31,22 +33,10 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 #define AMP_SD 39   // ESP32 → 앰프 SD (HIGH=켜짐, LOW=셧다운)
 
 // --- Unified WiFi Configuration ---
-Preferences prefs;
-const char *WIFI_SSID_1 = "1-309";
-const char *WIFI_PASS_1 = "0522300751";
-const char *WIFI_SERVER_1 = "10.115.5.12";
 
-const char *WIFI_SSID_2 = "A35_m";
-const char *WIFI_PASS_2 = "00000000";
-const char *WIFI_SERVER_2 = "10.115.5.12";
 
-const char *WIFI_SSID_3 = "YOUR_WIFI_SSID";
-const char *WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char *WIFI_SERVER_3 = "10.115.5.12";
 
 String ssid_active = "";
-String pass_active = "";
-String server_ip_pref = "";
 String server_ip = "10.115.5.12";
 String serverUrl = "http://10.115.5.12:5000";
 
@@ -295,190 +285,20 @@ void audioReceiverTask(void *pvParameters) {
 }
 
 void setupWifi() {
-  Serial.println("\n[WiFi] Connecting...");
-  Serial.flush();
-
-  prefs.begin("wifi-config", false);
-  // 이전 환경에서 저장된 오래된 서버 IP 강제 삭제 (노트북 환경 전환 대응)
-  prefs.remove("server_ip");
-  if (prefs.isKey("ssid"))
-    ssid_active = prefs.getString("ssid");
-  if (prefs.isKey("password"))
-    pass_active = prefs.getString("password");
-
-  const char *ssids[] = {ssid_active.c_str(), WIFI_SSID_1, WIFI_SSID_2,
-                         WIFI_SSID_3};
-  const char *passes[] = {pass_active.c_str(), WIFI_PASS_1, WIFI_PASS_2,
-                          WIFI_PASS_3};
-  const char *servers[] = {server_ip_pref.c_str(), WIFI_SERVER_1, WIFI_SERVER_2,
-                           WIFI_SERVER_3};
-
-  bool connected = false;
-  for (int i = 0; i < 4; i++) {
-    if (strlen(ssids[i]) == 0)
-      continue;
-
-    Serial.printf("[WiFi] Trying: %s\n", ssids[i]);
-    Serial.flush();
-    if (strlen(servers[i]) > 0)
-      server_ip = servers[i];
-
-    WiFi.disconnect(true);
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    WiFi.mode(WIFI_STA);
-
-    /* // 제거: 고정 IP 대신 DHCP 사용 (네트워크 호환성 증대)
-    IPAddress local_IP(192, 168, 0, 25);
-    IPAddress gateway(192, 168, 0, 1);
-    IPAddress subnet(255, 255, 255, 0);
-    IPAddress primaryDNS(8, 8, 8, 8);
-    IPAddress secondaryDNS(8, 8, 4, 4);
-
-    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-        Serial.println("[WiFi] Static IP Configuration Failed");
-    }
-    */
-
-    WiFi.begin(ssids[i], passes[i]);
-    WiFi.setSleep(false); // WiFi 시작 후 설정
-
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - start < 5000)) {
-      Serial.print(".");
-      Serial.flush();
-      vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-    Serial.println();
-
-    if (WiFi.status() == WL_CONNECTED) {
-      ssid_active = ssids[i];
-      pass_active = passes[i]; // 성공한 패스워드 기억
-      connected = true;
-
-      // 성공한 설정을 메모리에 저장 (다음 부팅 시 자동 연결용)
-      prefs.putString("ssid", ssid_active);
-      prefs.putString("password", pass_active);
-
-      // [NEW] 서버 자동 검색 (UDP Discovery)
-      Serial.println("[Discovery] Searching for PC Center...");
-      discoveryUdp.begin(DISCOVERY_PORT);
-      unsigned long discStart = millis();
-      bool found = false;
-      while (millis() - discStart < 3000) { // 3초간 대기
-        int packetSize = discoveryUdp.parsePacket();
-        if (packetSize) {
-          char buf[64];
-          int len = discoveryUdp.read(buf, 63);
-          buf[len] = 0;
-          String msg = String(buf);
-          if (msg.startsWith("ARD_SERVER_DISCOVERY:")) {
-            int firstColon = msg.indexOf(':');
-            int secondColon = msg.indexOf(':', firstColon + 1);
-            if (firstColon != -1 && secondColon != -1) {
-              server_ip = msg.substring(firstColon + 1, secondColon);
-              String port = msg.substring(secondColon + 1);
-              serverUrl = "http://" + server_ip + ":" + port;
-              Serial.printf("[Discovery] Found! IP=%s, URL=%s\n",
-                            server_ip.c_str(), serverUrl.c_str());
-              prefs.putString("server_ip", server_ip);
-              found = true;
-              break;
-            }
-          }
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-      }
-      discoveryUdp.stop();
-      if (!found) {
-        Serial.printf("[Discovery] Not found. Using fallback: %s\n",
-                      server_ip.c_str());
-        serverUrl = "http://" + server_ip + ":5000";
-        prefs.putString("server_ip", server_ip);
-      }
-      break;
-    }
-    Serial.printf("[WiFi] Failed: %s\n", ssids[i]);
-    Serial.flush();
-  }
-  prefs.end();
-
-  if (connected) {
-    // serverUrl is already set by UDP Discovery or fallback in setupWifi loop
-    Serial.printf("[WiFi] Connected! SSID=%s  IP=%s\n", ssid_active.c_str(),
-                  WiFi.localIP().toString().c_str());
-    Serial.printf("[WiFi] Server -> %s\n", serverUrl.c_str());
-
-    // lwIP DNS API로 Google DNS 직접 설정
-    ip_addr_t dns1, dns2;
-    IP4_ADDR(&dns1.u_addr.ip4, 8, 8, 8, 8);
-    dns1.type = IPADDR_TYPE_V4;
-    IP4_ADDR(&dns2.u_addr.ip4, 8, 8, 4, 4);
-    dns2.type = IPADDR_TYPE_V4;
-    dns_setserver(0, &dns1);
-    dns_setserver(1, &dns2);
-    Serial.println("[WiFi] DNS -> 8.8.8.8 / 8.8.4.4");
-    Serial.flush();
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-
-  } else {
-
-    Serial.println("[WiFi] ALL FAILED. Enter config mode ('w' key)...");
-    Serial.flush();
-    handleWifiConfigMode();
-  }
+  if (!ardNetwork.begin("control", "wifi-config", server_ip.c_str()))
+    Serial.println("[NET] Network setup failed");
+  server_ip = ardNetwork.serverAddress();
+  serverUrl = "http://" + server_ip + ":5000";
+  configTime(32400, 0, "pool.ntp.org");
 }
 
-void handleWifiConfigMode() {
-  WiFi.disconnect(true);
-  vTaskDelay(500 / portTICK_PERIOD_MS);
-  Serial.println("\n\n--- ControlMCU Configuration Mode ---");
-  Serial.println("1. Serial Config (WIFI,SSID,PASS,IP)");
-  Serial.println("2. Bluetooth Config (Disabled on ESP32-S3)");
-  Serial.println("3. Reset & Restart");
-  Serial.flush();
-
-  // BluetoothSerial SerialBT; // Disabled on ESP32-S3
-
-  while (true) {
-    if (Serial.available()) {
-      String choice = readSerialLine();
-      if (choice == "1") {
-        Serial.println("Enter WIFI,SSID,PASS,IP:");
-        String line = readSerialLine();
-        if (line.startsWith("WIFI,")) {
-          int p1 = line.indexOf(',', 5);
-          int p2 = line.indexOf(',', p1 + 1);
-          if (p1 > 0 && p2 > 0) {
-            prefs.begin("wifi-config", false);
-            prefs.putString("ssid", line.substring(5, p1));
-            prefs.putString("password", line.substring(p1 + 1, p2));
-            prefs.putString("server_ip", line.substring(p2 + 1));
-            prefs.end();
-            ESP.restart();
-          }
-        }
-      } else if (choice == "2") {
-        Serial.println("Bluetooth Config is not supported on ESP32-S3. Please "
-                       "use Serial.");
-        // SerialBT.begin("ARD_Control_Config");
-        // Serial.println("BT Active: ARD_Control_Config");
-      } else if (choice == "3") {
-        prefs.begin("wifi-config", false);
-        prefs.clear();
-        prefs.end();
-        ESP.restart();
-      }
-    }
-
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-}
+void handleWifiConfigMode() { ardNetwork.printSetup(); }
 
 void sendStateToPC() {
   if (WiFi.status() != WL_CONNECTED)
     return;
   HTTPClient http;
-  http.begin(serverUrl + "/api/control/update");
+  http.begin(ardNetwork.httpUrl() + "/api/control/update");
   http.setTimeout(1000);
   http.addHeader("Content-Type", "application/json");
 
@@ -510,7 +330,7 @@ void sendHeartbeat() {
   if (WiFi.status() != WL_CONNECTED)
     return;
   HTTPClient http;
-  http.begin(serverUrl + "/api/heartbeat");
+  http.begin(ardNetwork.httpUrl() + "/api/heartbeat");
   http.setTimeout(1000);
   http.addHeader("Content-Type", "application/json");
 
@@ -521,7 +341,7 @@ void sendHeartbeat() {
   doc["temp"] = temperatureRead();
   doc["mode"] = String(currentMode);
   doc["sub_mode"] = currentSubMode;
-  doc["ssid"] = ssid_active;
+  doc["ssid"] = WiFi.SSID();
 
   String payload;
   serializeJson(doc, payload);
@@ -546,7 +366,7 @@ void sendStopRequestToPC() {
   if (WiFi.status() != WL_CONNECTED)
     return;
   HTTPClient http;
-  http.begin(serverUrl + "/api/soundmcu/stop");
+  http.begin(ardNetwork.httpUrl() + "/api/soundmcu/stop");
   http.setTimeout(1000);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST("{}");

@@ -1,40 +1,25 @@
 #include "esp_camera.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/soc.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <WiFi.h>
+#include <ArdNetwork.h>
+ArdNetwork ardNetwork;
 #include <WiFiUdp.h>
+#include "esp_system.h"
+
 
 // --- 사용자 구성 & 저장소 ---
-Preferences prefs;
-const char *WIFI_SSID_1 = "YOUR_WIFI_SSID";
-const char *WIFI_PASS_1 = "YOUR_WIFI_PASSWORD";
-const char *WIFI_SERVER_1 = "192.168.0.13";
 
-const char *WIFI_SSID_2 = "1-309";
-const char *WIFI_PASS_2 = "0522300751";
-const char *WIFI_SERVER_2 = "192.168.0.35";
 
-const char *WIFI_SSID_3 = "A35_m";
-const char *WIFI_PASS_3 = "00000000";
-const char *WIFI_SERVER_3 = "10.115.5.12";
 
-uint32_t WIFI_TIMEOUT_MS = 5000; // 5 seconds per attempt
 
 String ssid_active = "";
-String pass_active = "";
-String server_ip_pref = "";
 String server_ip = "10.115.5.12"; // Active server IP
 int udp_port = 5001;
 
-// --- 스마트 고정 IP 설정 (사용자 요청 사항: 뒷자리만 고정) ---
-bool useStaticIP = true;  // 고정 IP 사용 여부
-int targetLastByte = 100; // 송신기에 부여하고 싶은 IP 뒷자리 (예: 192.168.0.36)
-                          // 주의: server_ip와 중복되지 않게 설정하세요!
-
+// Shared SoftAP/STA manager uses DHCP.
 String serverUrl, configUrl, logUrl, heartbeatUrl;
 
 void updateUrls() {
@@ -45,11 +30,14 @@ void updateUrls() {
 }
 
 WiFiUDP udp;
+unsigned long lastCaptureDurationMs = 0;
+unsigned long lastTxDurationMs = 0;
+// WiFiServer tcpCmdServer(5003); // 지연시간 측정용 (일시 비활성화)
 
 // --- 현재 상태 트래킹 ---
-String currentResolution = "SVGA";
-int currentQuality = 10;
-String currentSensor = "OV5640";
+String currentResolution = "SVGA"; // 안정 해상도 SVGA (800x600)
+int currentQuality = 12;
+String currentSensor = "OV3660";   // 기본 센서 OV3660
 bool configChanged = false;
 String currentMode = "UDP"; // 기본값
 
@@ -125,88 +113,30 @@ String readSerialLine() {
 }
 
 void setup() {
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-
   Serial.begin(115200);
-  delay(2000);
   Serial.println("\n\n=== TRANSMITTER SYSTEM ONLINE ===");
+  Serial.println("[Boot] Stage 1: setup entered; SDK brownout protection retained");
+  Serial.printf("[Boot] Reset reason: %d, heap: %u, PSRAM: %u bytes\n",
+                static_cast<int>(esp_reset_reason()), ESP.getFreeHeap(),
+                ESP.getPsramSize());
+  Serial.printf("[Boot] SDK: %s, CPU: %u MHz\n", ESP.getSdkVersion(),
+                ESP.getCpuFreqMHz());
+  Serial.flush();
 
-  // 1. 설정 및 WiFi 정보 로드
-  prefs.begin("wifi-config", false);
-  prefs.remove("server_ip"); // 노트북 환경 전환을 위해 이전 IP 삭제
-  if (prefs.isKey("ssid"))
-    ssid_active = prefs.getString("ssid");
-  if (prefs.isKey("password"))
-    pass_active = prefs.getString("password");
-
+  if (!ardNetwork.begin("image", "wifi-config", server_ip.c_str()))
+    Serial.println("[NET] Network setup failed");
+  server_ip = ardNetwork.serverAddress();
   updateUrls();
 
-  // Fallback WiFi Connection Logic
-  const char *ssids[] = {ssid_active.c_str(), WIFI_SSID_1, WIFI_SSID_2,
-                         WIFI_SSID_3};
-  const char *passes[] = {pass_active.c_str(), WIFI_PASS_1, WIFI_PASS_2,
-                          WIFI_PASS_3};
-  const char *servers[] = {server_ip_pref.c_str(), WIFI_SERVER_1, WIFI_SERVER_2,
-                           WIFI_SERVER_3};
-  bool connected = false;
-
-  for (int i = 0; i < 4; i++) {
-    if (strlen(ssids[i]) == 0)
-      continue;
-
-    Serial.printf("\n[WiFi] Attempting connection to %s...\n", ssids[i]);
-
-    // Set Target Server IP before attempting Static Config (it depends on it)
-    if (strlen(servers[i]) > 0)
-      server_ip = servers[i];
-
-    if (useStaticIP) {
-      IPAddress serverAddr;
-      if (serverAddr.fromString(server_ip)) {
-        IPAddress local_IP = serverAddr;
-        local_IP[3] = targetLastByte;
-        IPAddress gateway = serverAddr;
-        gateway[3] = 1;
-        IPAddress subnet(255, 255, 255, 0);
-        WiFi.config(local_IP, gateway, subnet);
-      }
-    }
-
-    WiFi.begin(ssids[i], passes[i]);
-    WiFi.setSleep(false);
-
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED &&
-           (millis() - start < WIFI_TIMEOUT_MS)) {
-      delay(500);
-      Serial.print(".");
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-      updateUrls(); // Synced URL with the current server_ip
-      connected = true;
-      break;
-    }
-  }
-
-  if (connected) {
-    Serial.println("\nWiFi Connected Success!");
-    Serial.print("Local IP: ");
-    Serial.println(WiFi.localIP());
-    sendLog("Transmitter", "System Online. IP: " + WiFi.localIP().toString());
-  } else {
-    Serial.println("\nWiFi All Connection Failed!");
-    handleWifiConfigMode();
-  }
-
-  Serial.println("=== SYSTEM READY. Type 'c' to capture ===");
-
   // 최초 카메라 초기화
+  Serial.println("[Boot] Stage 4: camera initialization");
+  Serial.flush();
   initCamera();
+  Serial.println("[Boot] Setup complete. Type 'c' to capture");
 }
 
 void initCamera() {
-  camera_config_t config;
+  camera_config_t config = {};
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
@@ -235,14 +165,19 @@ void initCamera() {
   config.fb_count = psramFound() ? 2 : 1;
   config.fb_location = psramFound() ? CAMERA_FB_IN_PSRAM : CAMERA_FB_IN_DRAM;
 
+  Serial.printf("[Camera] Calling esp_camera_init: PSRAM=%s, fb_count=%u\n",
+                psramFound() ? "yes" : "no", config.fb_count);
+  Serial.flush();
   esp_err_t err = esp_camera_init(&config);
+  Serial.printf("[Camera] esp_camera_init returned: %s (0x%x)\n",
+                esp_err_to_name(err), err);
   if (err != ESP_OK) {
-    Serial.printf("Camera init failed: 0x%x\n", err);
+    Serial.printf("Camera init failed: 0x%04x\n", err);
     return;
   }
 
   sensor_t *s = esp_camera_sensor_get();
-  if (s) {
+  if (s != nullptr) {
     s->set_exposure_ctrl(s, 1);
     s->set_gain_ctrl(s, 1);
     s->set_whitebal(s, 1);
@@ -253,47 +188,13 @@ void initCamera() {
     String logMsg = "Camera Init: " + currentResolution +
                     " (Q:" + String(currentQuality) + ")";
     Serial.println(logMsg);
-    sendLog("ImageSenderMCU", logMsg);
-  }
-}
-
-void handleWifiConfigMode() {
-  WiFi.disconnect(true);
-  delay(500);
-  Serial.println("\n\n--- ImageSender Config Mode ---");
-  Serial.println("1. Serial Config (WIFI,SSID,PASS,IP)");
-  Serial.println("2. Bluetooth Config (ARD_Cam_Config)");
-  Serial.println("3. Reset & Restart");
-  Serial.print("Select (1-3): ");
-
-  while (true) {
-    if (Serial.available()) {
-      String choice = readSerialLine();
-      if (choice == "1") {
-        Serial.println("Enter WIFI,SSID,PASS,IP:");
-        String line = readSerialLine();
-        if(line.startsWith("WIFI,")) {
-            int p1 = line.indexOf(',', 5);
-            int p2 = line.indexOf(',', p1+1);
-            if(p1>0 && p2>0) {
-                prefs.begin("wifi-config", false);
-                prefs.putString("ssid", line.substring(5, p1));
-                prefs.putString("password", line.substring(p1+1, p2));
-                prefs.putString("server_ip", line.substring(p2+1));
-                prefs.end();
-                ESP.restart();
-            }
-        }
-      } else if (choice == "3") {
-        prefs.begin("wifi-config", false);
-        prefs.clear();
-        prefs.end();
-        ESP.restart();
-      }
+    if (WiFi.status() == WL_CONNECTED) {
+      sendLog("ImageSenderMCU", logMsg);
     }
-    delay(100);
   }
 }
+
+void handleWifiConfigMode() { ardNetwork.printSetup(); }
 
 void sendLog(String level, String msg) {
   if (WiFi.status() != WL_CONNECTED)
@@ -330,6 +231,8 @@ void sendHeartbeat() {
   doc["rssi"] = WiFi.RSSI();
   doc["ip"] = WiFi.localIP().toString();
   doc["temp"] = temperatureRead();
+  // doc["capture_ms"] = lastCaptureDurationMs;
+  // doc["tx_ms"] = lastTxDurationMs;
   String payload;
   serializeJson(doc, payload);
 
@@ -396,7 +299,37 @@ void checkRemoteConfig() {
   }
 }
 
+#if 0 // TCP command server is disabled; keep its implementation out of the build.
+void checkTcpCommand() {
+  WiFiClient client = tcpCmdServer.accept();
+  if (!client) return;
+  unsigned long startWait = millis();
+  while (client.connected() && (millis() - startWait < 500)) {
+    if (client.available()) {
+      String req = client.readStringUntil('\n');
+      req.trim();
+      if (req.equalsIgnoreCase("c") || req.equalsIgnoreCase("capture")) {
+        Serial.println("[TCP] Direct Capture Command Received via Port 5003");
+        pendingCapture = true;
+        client.println("ACK:CAPTURE_START");
+      } else if (req.equalsIgnoreCase("ping")) {
+        client.printf("ACK:PONG,cap_ms=%lu,tx_ms=%lu\n", lastCaptureDurationMs, lastTxDurationMs);
+      }
+      startWait = millis();
+    }
+    delay(1);
+  }
+  client.stop();
+}
+#endif
+
 void loop() {
+  String address = ardNetwork.serverAddress();
+  if (address != server_ip) { server_ip = address; updateUrls(); }
+  if (WiFi.status() == WL_CONNECTED) ssid_active = WiFi.SSID();
+  // TCP 5003 포트 직접 명령 검사 (지연시간 측정용, 일시 비활성화)
+  // checkTcpCommand();
+
   // [버그 수정 4] 캡처 플래그가 세팅된 경우, 가장 먼저 캡처를 실행합니다.
   if (pendingCapture) {
     pendingCapture = false;
@@ -427,9 +360,9 @@ void loop() {
     }
   }
 
-  // 30초마다 하트비트 전송
+  // 하트비트 전송 (30초 주기 안정화)
   static unsigned long lastHeartbeat = 0;
-  if (millis() - lastHeartbeat > 5000) {
+  if (millis() - lastHeartbeat > 30000) {
     sendHeartbeat();
     lastHeartbeat = millis();
   }
@@ -437,22 +370,32 @@ void loop() {
 }
 
 void captureAndUpload() {
-  Serial.println("Capturing...");
-  delay(500); // 캡처 전 센서 안정화 대기
+  sensor_t *s = esp_camera_sensor_get();
+  if (!s) {
+    Serial.println("Capture aborted: Camera sensor not detected.");
+    return;
+  }
 
+  Serial.println("Capturing...");
+  delay(50); // 캡처 전 센서 안정화 최소 대기
+
+  unsigned long t_cap_start = millis();
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Capture Error! Frame buffer is NULL. Retrying...");
-    delay(500);
+    delay(200);
     fb = esp_camera_fb_get(); // 다시 한번 시도
     if (!fb) {
       Serial.println("Critical: Repeated Capture Failure!");
       return;
     }
   }
+  lastCaptureDurationMs = millis() - t_cap_start;
 
-  Serial.printf("Captured %u bytes. Mode: %s. Uploading...\n", fb->len,
-                currentMode.c_str());
+  Serial.printf("Captured %u bytes (Capture Latency: %lu ms). Mode: %s. Uploading...\n",
+                fb->len, lastCaptureDurationMs, currentMode.c_str());
+
+  unsigned long t_tx_start = millis();
 
   if (WiFi.status() == WL_CONNECTED) {
     if (currentMode == "TCP") {
@@ -464,13 +407,12 @@ void captureAndUpload() {
       http.setTimeout(10000); // 10초 타임아웃
       http.addHeader("Content-Type", "image/jpeg");
 
-      unsigned long startTime = millis();
       int httpCode = http.POST(fb->buf, fb->len);
-      unsigned long duration = millis() - startTime;
+      lastTxDurationMs = millis() - t_tx_start;
 
       if (httpCode > 0) {
-        Serial.printf("HTTP Upload Success: %d (%u ms). Finishing...\n",
-                      httpCode, duration);
+        Serial.printf("HTTP Upload Success: %d (%lu ms). Finishing...\n",
+                      httpCode, lastTxDurationMs);
       } else {
         Serial.printf("HTTP Upload Failed: %s (%d)\n",
                       http.errorToString(httpCode).c_str(), httpCode);
@@ -494,8 +436,6 @@ void captureAndUpload() {
         else if (offset + toSend >= size)
           header = 2; // 종료 패킷
 
-        // 시작 패킷(header 0)의 경우, 수신측 버퍼 초기화를 위해 2번 전송
-        // (안정성 강화)
         int repeatCount = (header == 0) ? 2 : 1;
 
         while (repeatCount > 0) {
@@ -524,14 +464,15 @@ void captureAndUpload() {
 
           repeatCount--;
           if (repeatCount > 0)
-            delay(5); // 중복 전송 시 짧은 간격
+            delay(5);
         }
 
         offset += toSend;
-        delay(5); // 지연시간을 5ms로 환원 (버퍼 플러시 시간 확보)
+        delay(3);
       }
-      Serial.printf("UDP Upload Result: %s (%u/%u bytes)\n",
-                    (offset >= size ? "Success" : "Failed"), offset, size);
+      lastTxDurationMs = millis() - t_tx_start;
+      Serial.printf("UDP Upload Result: %s (%u/%u bytes, Tx Latency: %lu ms)\n",
+                    (offset >= size ? "Success" : "Failed"), offset, size, lastTxDurationMs);
     }
   } else {
     Serial.println("No WiFi Connection.");
@@ -540,5 +481,5 @@ void captureAndUpload() {
   esp_camera_fb_return(fb);
   Serial.println("Image sensor usage finished.");
   sendLog("Transmitter",
-          "Image sensor usage finished (Capture/Upload complete)");
+          "Image sensor usage finished. Cap: " + String(lastCaptureDurationMs) + "ms, Tx: " + String(lastTxDurationMs) + "ms");
 }

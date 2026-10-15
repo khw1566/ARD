@@ -1,0 +1,4 @@
+build*/
+firmware-output/
+managed_components/
+sdkconfig.old

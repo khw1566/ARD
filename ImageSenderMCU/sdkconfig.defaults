@@ -1,0 +1,4 @@
+# Brownout Detector - Disabled to prevent boot loop
+# OV3660 camera + WiFi + PSRAM causes voltage drop during boot
+CONFIG_ESP32S3_BROWNOUT_DET=n
+CONFIG_ESP32S3_BROWNOUT_DET_LVL_SEL_7=y

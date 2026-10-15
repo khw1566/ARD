@@ -9,9 +9,11 @@
 #include <TJpg_Decoder.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <ArdNetwork.h>
+ArdNetwork ardNetwork;
 #include "CYD28_TouchscreenR.h"
 #include <vector>
-#include <BluetoothSerial.h>
+#include <atomic>
 
 // --- Custom Font ---
 #include "font8x8.h"
@@ -33,19 +35,8 @@ void redraw(bool full = false);
 #define BOT_Y      (CONT_Y+CONT_H)
 
 // --- WiFi ---
-const char* WIFI_SSID_1 = "1-309";
-const char* WIFI_PASS_1 = "0522300751";
-const char* WIFI_SERVER_1 = "192.168.0.41";
-const char* WIFI_SSID_2 = "A35_m";
-const char* WIFI_PASS_2 = "00000000";
-const char* WIFI_SERVER_2 = "10.115.5.12";
-const char* WIFI_SSID_3 = "YOUR_WIFI_SSID";
-const char* WIFI_PASS_3 = "YOUR_WIFI_PASSWORD";
-const char* WIFI_SERVER_3 = "192.168.0.29";
 
 String ssid_active = "";
-String pass_active = "";
-String server_ip_pref = "";
 String server_ip = "192.168.0.35";
 
 // --- Colors ---
@@ -89,7 +80,7 @@ String pending_action_desc = "";
 void sendApproval(String id, bool approve) {
     if(WiFi.status()==WL_CONNECTED) {
         HTTPClient h;
-        h.begin("http://"+server_ip+":5000/api/hmi/approve");
+        h.begin(ardNetwork.httpUrl()+"/api/hmi/approve");
         h.addHeader("Content-Type", "application/json");
         JsonDocument d;
         d["id"] = id;
@@ -199,12 +190,11 @@ ABt* getButtons(int tab, int page, int &cnt) {
 }
 
 String clk="--:--";
-bool wok=false;
+std::atomic<bool> wok{false};
 unsigned long lclk=0;
 TFT_eSPI tft=TFT_eSPI();
 CYD28_TouchR touch = CYD28_TouchR(320, 240);
-WebServer wsrv(80);
-Preferences prefs;
+// Port 80 is owned by the shared ArdNetwork settings portal.
 SemaphoreHandle_t xMutex;
 
 void drText(int x, int y, const String& s, uint16_t color, uint16_t bg, int scale, int align) {
@@ -280,12 +270,12 @@ void drawSplash(){
 void TaskNetwork(void *pvParameters) {
     unsigned long lpoll=0, lhb=0;
     while(1) {
-        wsrv.handleClient();
+        wok = WiFi.status() == WL_CONNECTED;
         unsigned long now = millis();
         if (now - lpoll >= 3000) {
             lpoll = now;
             if (wok && WiFi.status() == WL_CONNECTED) {
-                HTTPClient h; h.begin("http://"+server_ip+":5000/api/status");
+                HTTPClient h; h.begin(ardNetwork.httpUrl()+"/api/status");
                 h.setTimeout(1000);
                 if(h.GET()==200){
                     JsonDocument d;
@@ -376,7 +366,7 @@ void TaskNetwork(void *pvParameters) {
         if (now - lhb >= 10000) {
             lhb = now;
             if (wok && WiFi.status() == WL_CONNECTED) {
-                HTTPClient h; h.begin("http://"+server_ip+":5000/api/heartbeat");
+                HTTPClient h; h.begin(ardNetwork.httpUrl()+"/api/heartbeat");
                 h.addHeader("Content-Type","application/json");
                 JsonDocument d; d["source"]="HMI_MCU"; d["rssi"]=WiFi.RSSI();
                 d["ip"]=WiFi.localIP().toString(); d["temp"]=temperatureRead();
@@ -507,7 +497,7 @@ void drInfo(){
                 drText(cx, cy+30, "Fetching Image...", CDM, CINF, 1, 3);
                 
                 // Fetch and draw JPG
-                HTTPClient h; h.begin("http://"+server_ip+":5000/api/hmi/last_image");
+                HTTPClient h; h.begin(ardNetwork.httpUrl()+"/api/hmi/last_image");
                 h.setTimeout(1500); // 1.5s timeout for HMI safety
                 int httpCode = h.GET();
                 if(httpCode == 200) {
@@ -736,10 +726,10 @@ void onContent(int sx,int sy){
     delay(50);
     if(wok&&WiFi.status()==WL_CONNECTED){
         HTTPClient h;
-        String urls[]={"http://"+server_ip+":5000/api/drivemcu/command",
-                        "http://"+server_ip+":5000/api/robot3axis/command",
-                        "http://"+server_ip+":5000/api/imagesendermcu/command",
-                        "http://"+server_ip+":5000/api/soundmcu/command"};
+        String urls[]={ardNetwork.httpUrl()+"/api/drivemcu/command",
+                        ardNetwork.httpUrl()+"/api/robot3axis/command",
+                        ardNetwork.httpUrl()+"/api/imagesendermcu/command",
+                        ardNetwork.httpUrl()+"/api/soundmcu/command"};
         h.begin(urls[curTab]);h.addHeader("Content-Type","application/json");
         JsonDocument d;
         if(curTab == 0 && subPage[curTab] == 3) {
@@ -787,85 +777,11 @@ void procTouch(){
 }
 
 void doWifi(){
-    int cx=SCR_W/2,cy=140;
-    tft.fillScreen(CB);
-    tft.fillRect(0,0,SCR_W,32,CHD);
-    drText(SCR_W/2, 16, "Network Setup", CWT, CHD, 2, 3);
-    prefs.begin("hmi-cfg",true);
-    ssid_active=prefs.getString("ssid","");
-    pass_active=prefs.getString("password","");
-    server_ip_pref=prefs.getString("server_ip","");
-    prefs.end();
-    const char* ssids[]={ssid_active.c_str(),WIFI_SSID_1,WIFI_SSID_2,WIFI_SSID_3};
-    const char* srvs[]={server_ip_pref.c_str(),WIFI_SERVER_1,WIFI_SERVER_2,WIFI_SERVER_3};
-    WiFi.mode(WIFI_STA);
-    bool ok=false;
-    for(int i=0;i<4;i++){
-        if(strlen(ssids[i])==0)continue;
-        tft.fillRoundRect(10,48,SCR_W-20,66,8,CHD);
-        tft.drawRoundRect(10,48,SCR_W-20,66,8,CACC);
-        drText(20, 58, "SSID:", CDM, CHD, 1, 0);
-        drText(76, 58, String(ssids[i]).substring(0,18), CACC, CHD, 1, 0);
-        drText(20, 82, "Server:", CDM, CHD, 1, 0);
-        drText(76, 82, strlen(srvs[i])?srvs[i]:"Searching...", CON, CHD, 1, 0);
-        if(strlen(srvs[i]))server_ip=srvs[i];
-        const char* passes[]={pass_active.c_str(),WIFI_PASS_1,WIFI_PASS_2,WIFI_PASS_3};
-        WiFi.begin(ssids[i],passes[i]);
-        unsigned long t0=millis(); int sp2=0;
-        while(WiFi.status()!=WL_CONNECTED&&millis()-t0<5000){
-            int ang=(sp2*25)%360;
-            tft.drawSmoothArc(cx,cy,28,20,ang,(ang+110)%360,CACC,CB,true);
-            sp2++;
-            char tb[12];snprintf(tb,12,"%.1fs",(millis()-t0)/1000.0f);
-            drText(cx, cy, "          ", CB, CB, 1, 3);
-            drText(cx, cy, tb, CWT, CB, 1, 3);
-            int dx=20+(int)((millis()-t0)*(SCR_W-40)/5000);
-            tft.fillRect(20,200,SCR_W-40,4,CSEP);tft.fillRect(20,200,dx-20,4,CACC);
-            delay(50);yield();
-        }
-        if(WiFi.status()==WL_CONNECTED){ok=true;wok=true;break;}
-        WiFi.disconnect();
-    }
-    tft.fillScreen(CB);
-    if(ok){
-        tft.fillCircle(cx,110,30,CON);
-        drText(cx, 110, "OK", CWT, CON, 3, 3);
-        drText(cx, 165, "Connected!", CON, CB, 2, 3);
-        configTime(9*3600,0,"pool.ntp.org");
-        delay(1200);
-    }else{
-        tft.fillCircle(cx,110,30,COFF);
-        drText(cx, 110, "!", CWT, COFF, 4, 3);
-        drText(cx, 165, "Failed", COFF, CB, 2, 3);
-        delay(2000);
-        BluetoothSerial SerialBT;
-        SerialBT.begin("ARD_HMI_Config");
-        while(true){
-            if(touch.touched()) break;
-            if(SerialBT.available()){
-                String line = SerialBT.readStringUntil('\n');
-                line.trim();
-                if(line.startsWith("WIFI,")){
-                    int p1 = line.indexOf(',', 5);
-                    if(p1 > 0){
-                        String newSsid = line.substring(5, p1);
-                        int p2 = line.indexOf(',', p1+1);
-                        if(p2 > 0){
-                            String newPass = line.substring(p1+1, p2);
-                            String newIp = line.substring(p2+1);
-                            prefs.begin("hmi-cfg", false);
-                            prefs.putString("ssid", newSsid);
-                            prefs.putString("password", newPass);
-                            prefs.putString("server_ip", newIp);
-                            prefs.end();
-                            ESP.restart();
-                        }
-                    }
-                }
-            }
-            delay(10);
-        }
-    }
+    if (!ardNetwork.begin("hmi", "hmi-cfg", server_ip.c_str()))
+        Serial.println("[NET] Network setup failed");
+    server_ip = ardNetwork.serverAddress();
+    wok = WiFi.status() == WL_CONNECTED;
+    configTime(9*3600, 0, "pool.ntp.org");
 }
 
 void setup(){
