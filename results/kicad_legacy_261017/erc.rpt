@@ -1,0 +1,24 @@
+ERC report (2026-10-17T12:48:04, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+
+***** Sheet /ControlMCU / 조작 및 오디오/
+
+***** Sheet /DriveMCU / 3축 스텝 모터/
+
+***** Sheet /DriveMCU / 센서 및 수동 조작/
+
+***** Sheet /Robot3AxisMCU / 로봇 및 공압 제어/
+
+***** Sheet /ImageSenderMCU / 병렬 카메라/
+
+***** Sheet /HMI_MCU / CYD LCD 및 터치/
+
+ ** ERC messages: 0  Errors 0  Warnings 0
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

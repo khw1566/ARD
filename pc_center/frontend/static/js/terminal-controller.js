@@ -159,7 +159,12 @@
         }
 
         function appendLine(text, className) {
-            if (!screen) return;
+            if (!screen || !text) return;
+            const textStr = String(text);
+            // HTTP 200 성공 로그 무시 (단, 일반 명령어 응답 중 200 수치는 보존하고 200 OK / 200 - 로그 패턴 필터링)
+            if (textStr.includes(' 200 ') || textStr.includes(' 200 -') || textStr.includes('HTTP/1.1" 200') || textStr.includes('HTTP/1.0" 200')) {
+                return;
+            }
             const div = document.createElement('div');
             div.className = `term-line ${className || ''}`;
             div.textContent = text;

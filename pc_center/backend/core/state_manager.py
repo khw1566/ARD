@@ -23,7 +23,7 @@ class StateManager:
             "HMI_MCU": {"ip": "Unknown", "rssi": -99, "temp": 0.0},
             "SoundMCU": {"ip": "Unknown", "rssi": -99, "temp": 0.0, "status": "Idle"},
             "Robot3AxisMCU": {"ip": "Unknown", "rssi": -99, "temp": 0.0},
-            "last_analysis": {"object": "Unknown", "category": "Unknown", "x": 0.5, "y": 0.5}
+            "last_analysis": {"object": "Unknown", "category": "Unknown"}
         }
 
         self.motor_state = {

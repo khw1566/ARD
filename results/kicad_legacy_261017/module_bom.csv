@@ -1,0 +1,29 @@
+Subsystem,Module,Quantity,Confidence,Notes
+ControlMCU,ESP32-S3 development board,1,CODE_CONFIRMED,Exact board SKU and PSRAM wiring require inspection
+ControlMCU,4-way digital joystick,1,INTERFACE_CONFIRMED,4 contacts; physical assembly not confirmed
+ControlMCU,A/B mode toggle,1,INTERFACE_CONFIRMED,Two digital inputs; switch topology not confirmed
+ControlMCU,Push button,1,CODE_CONFIRMED,INPUT_PULLUP
+ControlMCU,Button indicator LED,1,INTERFACE_CONFIRMED,Drive resistor and return circuit unknown
+ControlMCU,WS2812B onboard RGB LED,1,CODE_COMMENT,Board revision requires inspection
+ControlMCU,MAX98357A amplifier,1,CODE_COMMENT,Supply and speaker rating unknown
+DriveMCU,ESP32-WROOM32D development board,1,CODE_COMMENT,PlatformIO esp32dev
+DriveMCU,A4988 stepper driver,3,CODE_COMMENT,X/Y/Z axis interfaces
+DriveMCU,Stepper motor,3,INFERRED_LOAD,Motor model and winding terminals unknown
+DriveMCU,NEO-6M GPS module,1,CODE_COMMENT,GPS parsing disabled by default
+DriveMCU,SSD1306 128x64 OLED,1,CODE_CONFIRMED,I2C 0x3C
+DriveMCU,AHT20 module,1,CODE_CONFIRMED,I2C 0x38
+DriveMCU,BMP280 module,1,CODE_CONFIRMED,I2C 0x76 or 0x77
+DriveMCU,VL53L0X module,1,OPTIONAL,ARD_ENABLE_TOF=0 by default
+DriveMCU,Manual button,2,INTERFACE_CONFIRMED,INPUT_PULLUP
+DriveMCU,Potentiometer,1,CODE_COMMENT,Wiper GPIO34; resistance unknown
+DriveMCU,Passive buzzer,1,CODE_COMMENT,Electrical driver circuit unknown
+Robot3AxisMCU,ESP32-S3 N16R8 development board,1,BUILD_CONFIG,Exact board SKU unknown
+Robot3AxisMCU,STEP DIR EN stepper driver,3,INTERFACE_CONFIRMED,Driver model unknown
+Robot3AxisMCU,Stepper motor,3,INFERRED_LOAD,Motor model unknown
+Robot3AxisMCU,4-channel relay module,1,CODE_COMMENT,4 inputs active LOW
+Robot3AxisMCU,L298N driver module,1,CODE_COMMENT,Enable and motor outputs not defined in source
+ImageSenderMCU,ESP32-S3 N16R8 development board,1,BUILD_CONFIG,OPI PSRAM configuration
+ImageSenderMCU,DVP camera module,1,INTERFACE_CONFIRMED,Documents mix OV5660 and OV5640; inspect sensor SKU
+HMI_MCU,ESP32-2432S028 CYD board,1,BUILD_CONFIG,LCD and touch are onboard functional subassemblies
+HMI_MCU,ILI9341 LCD,1,ONBOARD,Not an additional external module
+HMI_MCU,XPT2046 touch controller,1,ONBOARD,Separate touch SPI pins

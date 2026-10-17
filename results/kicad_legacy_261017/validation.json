@@ -1,0 +1,17 @@
+{
+  "source_files_unchanged": true,
+  "sheets": 7,
+  "source_signal_connections": 78,
+  "exported_signal_nets": 72,
+  "all_port_pairs_match": true,
+  "no_extra_or_merged_nets": true,
+  "explicitly_unresolved_single_terminal_nets": 64,
+  "erc_errors": 0,
+  "erc_warnings": 0,
+  "png_width": 3600,
+  "limitations": [
+    "All module pins are passive logical ports; ERC does not verify GPIO electrical capability.",
+    "Supply, ground, motor coil, relay contact and module config terminals unresolved.",
+    "No physical wiring, voltage, current, PCB or hardware test performed."
+  ]
+}

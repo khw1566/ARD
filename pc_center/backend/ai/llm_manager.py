@@ -270,7 +270,7 @@ def get_gemini_conversational_response(user_text):
         )
         
         model = genai.GenerativeModel(
-            model_name=config.get("model_name", "gemini-2.5-flash"),
+            model_name=config.get("model_name", "gemini-2.5-flash-lite"),
             system_instruction=system_instruction,
             tools=[get_mcu_system_status, control_drivemcu_motor, control_pneumatic_gripper, trigger_image_sensor, move_3axis_robot, homing_all_robots, update_camera_settings, get_available_music_list, play_local_music_file, play_youtube_search, search_youtube_list, play_youtube_url]
         )

@@ -218,7 +218,19 @@ const translations = {
         tab_settings_theme: "스타일/색상 설정",
         tab_settings_stats: "통신 및 패킷 통계",
         tab_settings_network: "PC 하드웨어 & 네트워크",
-        menu_btn: "메뉴"
+        menu_btn: "메뉴",
+        sorting_dashboard_title: "실시간 폐기물 자동 선별 관제",
+        sorting_start_btn: "선별 작업 시작 (Start Sorting)",
+        sorting_status_ready: "물체를 올린 후 선별 시작을 누르세요",
+        sorting_step_1: "1. 물체 투입",
+        sorting_step_2: "2. AI 재질 판별",
+        sorting_step_3: "3. 배출함 선회",
+        sorting_step_4: "4. 전도 배출",
+        sorting_step_5: "5. 원점 복귀",
+        sorting_target_bin: "목표 배출구",
+        sorting_target_yaw: "선회 각도",
+        sorting_dump_angle: "전도 각도",
+        sorting_log_title: "선별 관제 상태 로그"
     },
     en: {
         app_title: "ARD Control Center",
@@ -439,7 +451,19 @@ const translations = {
         tab_settings_theme: "Style & Colors",
         tab_settings_stats: "Traffic & API Stats",
         tab_settings_network: "PC Hardware & Network",
-        menu_btn: "Menu"
+        menu_btn: "Menu",
+        sorting_dashboard_title: "Real-time Waste Sorting Dashboard",
+        sorting_start_btn: "Start Sorting Sequence",
+        sorting_status_ready: "Place item on turntable and click Start Sorting",
+        sorting_step_1: "1. Place Item",
+        sorting_step_2: "2. AI Inference",
+        sorting_step_3: "3. Yaw Rotation",
+        sorting_step_4: "4. Roll Dump",
+        sorting_step_5: "5. Return Home",
+        sorting_target_bin: "Target Bin",
+        sorting_target_yaw: "Yaw Angle",
+        sorting_dump_angle: "Dump Angle",
+        sorting_log_title: "Sorting Status Logs"
     }
 };
 

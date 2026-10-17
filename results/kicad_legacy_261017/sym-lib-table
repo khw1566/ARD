@@ -1,0 +1,1 @@
+(sym_lib_table (version 7) (lib (name "ARD") (type "KiCad") (uri "${KIPRJMOD}/ARD.kicad_sym") (options "") (descr "Firmware-derived logical module ports; not physical footprints")))

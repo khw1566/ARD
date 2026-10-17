@@ -1,0 +1,1007 @@
+{
+  "date": "2026-10-17",
+  "author": "Codex",
+  "source_root": "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_software",
+  "sources": {
+    "ControlMCU/src/main.cpp": {
+      "sha256": "5973485e8eecb912bfae3d47eee3f8ae45c5208f146c5b59a788277c1f8a321c"
+    },
+    "DriveMCU/src/main.cpp": {
+      "sha256": "b7f94bad1d22776b7462fe23947827bdf8bccbb7758e704b162f255b8d70b5cb"
+    },
+    "Robot3AxisMCU/src/main.cpp": {
+      "sha256": "335135f63348d6480f5cee6482ae6ad678698da97f05f40aaf3fd0617d345958"
+    },
+    "ImageSenderMCU/src/main.cpp": {
+      "sha256": "02f7029a303a2f7da7359a96dcec3656af8d296d9fd5c47d158cdf732cfa3a78"
+    },
+    "HMI_MCU/platformio.ini": {
+      "sha256": "1bd2bcdfdf524671a03b9b995622f35c63b8a77b80368ea2cc5635e8dd5c1240"
+    },
+    "HMI_MCU/src/CYD28_TouchscreenR.h": {
+      "sha256": "eb8eaf075166554ba5d510e19300f9a54f3c4885a8c72b6b3aaae77f9db42ded"
+    },
+    "ControlMCU/platformio.ini": {
+      "sha256": "0535afadc40ab62825751c4f03b35cff6c6823002da72fba91b1349be2005205"
+    },
+    "DriveMCU/platformio.ini": {
+      "sha256": "94cd140e38e67d37802095cc8381002bb82b729cf00af6187b491fdfbb61583d"
+    },
+    "Robot3AxisMCU/platformio.ini": {
+      "sha256": "bc84fe59c1f54e07f8bccae4b5940698cb383036e60c8aa5d321d816e5b884c8"
+    },
+    "ImageSenderMCU/platformio.ini": {
+      "sha256": "956cf64c4ded84eaf69c5a33115bc14c09a522c723abf56e244788f859ebe03b"
+    },
+    "DriveMCU/include/BoundedAht20.h": {
+      "sha256": "d5c14513ed2297b386df2c71d88bb4539e06d398da9f389ace23a2acc39091ca"
+    }
+  },
+  "signal_connections": 78,
+  "sheets": [
+    {
+      "name": "ARD_Legacy",
+      "number": 1,
+      "title": "ARD 구형 시스템 / 전체 구성",
+      "subtitle": "5개 MCU의 역할과 무선 통신 구조 · 세부 GPIO 연결은 다음 시트 참조",
+      "notes": [
+        "범위: ControlMCU / DriveMCU / Robot3AxisMCU / ImageSenderMCU / HMI_MCU의 현재 소스.",
+        "ImageSenderMCU_P4는 S3 카메라의 대체 보드이므로 본체 회로에서 제외. SoundMCU는 현재 폴더에 소스 없음.",
+        "전원 장치, 배선 색상, 커넥터 순서, 보호회로와 부품 정격은 미확정. 실물 배선 검증 전 제작용으로 사용하지 말 것."
+      ],
+      "nets": {},
+      "modules": []
+    },
+    {
+      "name": "02_Control",
+      "number": 2,
+      "title": "ControlMCU / 조작 및 오디오",
+      "subtitle": "ESP32-S3 · 디지털 조이스틱 / 모드 토글 / MAX98357A · 입력은 내부 풀업",
+      "notes": [
+        "입력 스위치는 코드상 INPUT_PULLUP: 스위치 ON 시 GPIO-GND 연결로 해석. 기구 배선 / 토글 COM은 실물 확인.",
+        "GPIO35/36: 주석의 N16R8 + Octal PSRAM 보드라면 메모리 신호와 충돌 가능. 현재 배정을 기록했으며 수정하지 않음.",
+        "LED 직렬 저항 / 오디오 전원 / 스피커 정격 / 외부 LED 구동부는 소스만으로 확인 불가. 전원 핀은 TBD."
+      ],
+      "nets": {
+        "C_G4": [
+          [
+            "U200",
+            "4"
+          ],
+          [
+            "D201",
+            "DRIVE"
+          ]
+        ],
+        "C_G11": [
+          [
+            "U200",
+            "11"
+          ],
+          [
+            "SW203",
+            "CONTACT"
+          ]
+        ],
+        "C_G13": [
+          [
+            "U200",
+            "13"
+          ],
+          [
+            "SW201",
+            "LEFT"
+          ]
+        ],
+        "C_G14": [
+          [
+            "U200",
+            "14"
+          ],
+          [
+            "SW201",
+            "RIGHT"
+          ]
+        ],
+        "C_G21": [
+          [
+            "U200",
+            "21"
+          ],
+          [
+            "SW201",
+            "DOWN"
+          ]
+        ],
+        "C_G35": [
+          [
+            "U200",
+            "35"
+          ],
+          [
+            "SW202",
+            "A"
+          ]
+        ],
+        "C_G36": [
+          [
+            "U200",
+            "36"
+          ],
+          [
+            "SW202",
+            "B"
+          ]
+        ],
+        "C_G39": [
+          [
+            "U200",
+            "39"
+          ],
+          [
+            "U201",
+            "SD"
+          ]
+        ],
+        "C_G40": [
+          [
+            "U200",
+            "40"
+          ],
+          [
+            "U201",
+            "DIN"
+          ]
+        ],
+        "C_G41": [
+          [
+            "U200",
+            "41"
+          ],
+          [
+            "U201",
+            "LRC"
+          ]
+        ],
+        "C_G42": [
+          [
+            "U200",
+            "42"
+          ],
+          [
+            "U201",
+            "BCLK"
+          ]
+        ],
+        "C_G47": [
+          [
+            "U200",
+            "47"
+          ],
+          [
+            "SW201",
+            "UP"
+          ]
+        ],
+        "C_G48": [
+          [
+            "U200",
+            "48"
+          ],
+          [
+            "D202",
+            "DIN"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U200",
+          "ESP32-S3 / board ports"
+        ],
+        [
+          "SW201",
+          "4-way joystick / active LOW"
+        ],
+        [
+          "SW202",
+          "Mode toggle A / B"
+        ],
+        [
+          "SW203",
+          "Push button / active LOW"
+        ],
+        [
+          "D201",
+          "Button indicator LED"
+        ],
+        [
+          "U201",
+          "MAX98357A I2S amplifier"
+        ],
+        [
+          "D202",
+          "WS2812B / onboard"
+        ]
+      ]
+    },
+    {
+      "name": "03_Drive_Motors",
+      "number": 3,
+      "title": "DriveMCU / 3축 스텝 모터",
+      "subtitle": "ESP32-WROOM32D · A4988 X/Y/Z · ENABLE active LOW · GPIO는 소스에서 추출",
+      "notes": [
+        "A4988의 VMOT / VDD / GND / RESET / SLEEP / MS1~3 / 코일 배선 및 전류 제한은 펌웨어에서 확인할 수 없음.",
+        "TBD 핀의 X 표시는 증거 범위 밖이라는 뜻. 실제 회로에서 미연결로 두어도 된다는 뜻이 아님.",
+        "X/Y는 차동 구동, Z는 레일. 드라이버 전원과 모터 정격을 확정한 후 전원 / 보호 / 디커플링 회로 설계 필요."
+      ],
+      "nets": {
+        "D_G5": [
+          [
+            "U300",
+            "5"
+          ],
+          [
+            "U302",
+            "ENABLE_N"
+          ]
+        ],
+        "D_G16": [
+          [
+            "U300",
+            "16"
+          ],
+          [
+            "U302",
+            "STEP"
+          ]
+        ],
+        "D_G17": [
+          [
+            "U300",
+            "17"
+          ],
+          [
+            "U302",
+            "DIR"
+          ]
+        ],
+        "D_G18": [
+          [
+            "U300",
+            "18"
+          ],
+          [
+            "U301",
+            "STEP"
+          ]
+        ],
+        "D_G19": [
+          [
+            "U300",
+            "19"
+          ],
+          [
+            "U301",
+            "DIR"
+          ]
+        ],
+        "D_G21": [
+          [
+            "U300",
+            "21"
+          ],
+          [
+            "U301",
+            "ENABLE_N"
+          ]
+        ],
+        "D_G25": [
+          [
+            "U300",
+            "25"
+          ],
+          [
+            "U303",
+            "STEP"
+          ]
+        ],
+        "D_G26": [
+          [
+            "U300",
+            "26"
+          ],
+          [
+            "U303",
+            "DIR"
+          ]
+        ],
+        "D_G27": [
+          [
+            "U300",
+            "27"
+          ],
+          [
+            "U303",
+            "ENABLE_N"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U300",
+          "ESP32-WROOM32D / GPIO"
+        ],
+        [
+          "U301",
+          "A4988 / X axis"
+        ],
+        [
+          "U302",
+          "A4988 / Y axis"
+        ],
+        [
+          "U303",
+          "A4988 / Z axis"
+        ]
+      ]
+    },
+    {
+      "name": "04_Drive_Sensors",
+      "number": 4,
+      "title": "DriveMCU / 센서 및 수동 조작",
+      "subtitle": "공유 I2C: SDA GPIO22 / SCL GPIO23 · GPS: UART2 9600 8N1",
+      "notes": [
+        "I2C 주소: SSD1306 0x3C, AHT20 0x38, BMP280 0x76 → 0x77 순서 탐색, VL53L0X 라이브러리 기본 주소.",
+        "VL53L0X는 ARD_ENABLE_TOF=0으로 기본 비활성. GPS 파싱도 enableGPS=false가 기본이며 명령으로 활성화.",
+        "버튼 GND, 가변저항 3.3V/GND, 버저 구동 방식, I2C 풀업 및 각 모듈 전원 전압은 실물 확인 필요."
+      ],
+      "nets": {
+        "D_G4": [
+          [
+            "U400",
+            "4"
+          ],
+          [
+            "J401",
+            "BUZZER_DRIVE"
+          ]
+        ],
+        "D_G13": [
+          [
+            "U400",
+            "13"
+          ],
+          [
+            "J401",
+            "SW1"
+          ]
+        ],
+        "D_G14": [
+          [
+            "U400",
+            "14"
+          ],
+          [
+            "J401",
+            "SW2"
+          ]
+        ],
+        "D_G22": [
+          [
+            "U400",
+            "22"
+          ],
+          [
+            "U401",
+            "SDA"
+          ],
+          [
+            "U402",
+            "SDA"
+          ],
+          [
+            "U403",
+            "SDA"
+          ],
+          [
+            "U404",
+            "SDA"
+          ]
+        ],
+        "D_G23": [
+          [
+            "U400",
+            "23"
+          ],
+          [
+            "U401",
+            "SCL"
+          ],
+          [
+            "U402",
+            "SCL"
+          ],
+          [
+            "U403",
+            "SCL"
+          ],
+          [
+            "U404",
+            "SCL"
+          ]
+        ],
+        "D_G32": [
+          [
+            "U400",
+            "32"
+          ],
+          [
+            "U405",
+            "TX"
+          ]
+        ],
+        "D_G33": [
+          [
+            "U400",
+            "33"
+          ],
+          [
+            "U405",
+            "RX"
+          ]
+        ],
+        "D_G34": [
+          [
+            "U400",
+            "34"
+          ],
+          [
+            "J401",
+            "POT_WIPER"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U400",
+          "ESP32-WROOM32D / GPIO"
+        ],
+        [
+          "U401",
+          "SSD1306 / 128 x 64 / 0x3C"
+        ],
+        [
+          "U402",
+          "AHT20 / 0x38"
+        ],
+        [
+          "U403",
+          "BMP280 / 0x76 or 0x77"
+        ],
+        [
+          "U404",
+          "VL53L0X / optional, OFF"
+        ],
+        [
+          "U405",
+          "NEO-6M / UART2 9600"
+        ],
+        [
+          "J401",
+          "Manual inputs / buzzer"
+        ]
+      ]
+    },
+    {
+      "name": "05_Robot3Axis",
+      "number": 5,
+      "title": "Robot3AxisMCU / 로봇 및 공압 제어",
+      "subtitle": "ESP32-S3 N16R8 · STEP/DIR/EN 3축 · 4ch relay / L298N inputs",
+      "notes": [
+        "3축 스텝 드라이버는 STEP/DIR/EN 인터페이스만 확인됨. A4988 등 정확한 모듈 형식은 미확정.",
+        "릴레이는 active LOW, CH1/2는 주석상 공압 그리퍼. COM/NO/NC / 솔레노이드 전압 / 플라이백 회로 확인 필요.",
+        "GPIO3/46은 부트 스트랩 핀. L298N ENA/ENB와 모터 / 전원 연결, 드라이버 전류 제한은 코드에 없음."
+      ],
+      "nets": {
+        "R_G3": [
+          [
+            "U500",
+            "3"
+          ],
+          [
+            "U503",
+            "DIR"
+          ]
+        ],
+        "R_G4": [
+          [
+            "U500",
+            "4"
+          ],
+          [
+            "K501",
+            "IN1"
+          ]
+        ],
+        "R_G5": [
+          [
+            "U500",
+            "5"
+          ],
+          [
+            "K501",
+            "IN2"
+          ]
+        ],
+        "R_G6": [
+          [
+            "U500",
+            "6"
+          ],
+          [
+            "K501",
+            "IN3"
+          ]
+        ],
+        "R_G7": [
+          [
+            "U500",
+            "7"
+          ],
+          [
+            "K501",
+            "IN4"
+          ]
+        ],
+        "R_G8": [
+          [
+            "U500",
+            "8"
+          ],
+          [
+            "U503",
+            "STEP"
+          ]
+        ],
+        "R_G9": [
+          [
+            "U500",
+            "9"
+          ],
+          [
+            "U501",
+            "STEP"
+          ]
+        ],
+        "R_G10": [
+          [
+            "U500",
+            "10"
+          ],
+          [
+            "U501",
+            "DIR"
+          ]
+        ],
+        "R_G11": [
+          [
+            "U500",
+            "11"
+          ],
+          [
+            "U501",
+            "ENABLE_N"
+          ]
+        ],
+        "R_G12": [
+          [
+            "U500",
+            "12"
+          ],
+          [
+            "U502",
+            "STEP"
+          ]
+        ],
+        "R_G13": [
+          [
+            "U500",
+            "13"
+          ],
+          [
+            "U502",
+            "DIR"
+          ]
+        ],
+        "R_G14": [
+          [
+            "U500",
+            "14"
+          ],
+          [
+            "U502",
+            "ENABLE_N"
+          ]
+        ],
+        "R_G15": [
+          [
+            "U500",
+            "15"
+          ],
+          [
+            "U504",
+            "IN1"
+          ]
+        ],
+        "R_G16": [
+          [
+            "U500",
+            "16"
+          ],
+          [
+            "U504",
+            "IN2"
+          ]
+        ],
+        "R_G17": [
+          [
+            "U500",
+            "17"
+          ],
+          [
+            "U504",
+            "IN3"
+          ]
+        ],
+        "R_G18": [
+          [
+            "U500",
+            "18"
+          ],
+          [
+            "U504",
+            "IN4"
+          ]
+        ],
+        "R_G46": [
+          [
+            "U500",
+            "46"
+          ],
+          [
+            "U503",
+            "ENABLE_N"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U500",
+          "ESP32-S3 N16R8 / GPIO"
+        ],
+        [
+          "U501",
+          "X stepper driver / type TBD"
+        ],
+        [
+          "U502",
+          "Y stepper driver / type TBD"
+        ],
+        [
+          "U503",
+          "Z stepper driver / type TBD"
+        ],
+        [
+          "K501",
+          "4ch relay / active LOW"
+        ],
+        [
+          "U504",
+          "L298N / DC motor driver"
+        ]
+      ]
+    },
+    {
+      "name": "06_ImageSender",
+      "number": 6,
+      "title": "ImageSenderMCU / 병렬 카메라",
+      "subtitle": "ESP32-S3 N16R8 · esp_camera DVP 8-bit · 데이터 순서는 실제 config.pin_d0~d7 기준",
+      "notes": [
+        "실제 D0~D7 = GPIO11, 9, 8, 10, 12, 18, 17, 16. 기존 요약 문서의 배열과 다르므로 현재 소스를 우선.",
+        "PWDN / RESET = -1: MCU가 제어하지 않음. 센서 모듈의 전원 / 리셋 / 클럭 회로와 커넥터 순서는 확인 필요.",
+        "문서에는 OV5660 / OV5640가 혼재. 정확한 센서 SKU는 실물 확인. SD 카드 연결은 현재 main.cpp에 없어 제외."
+      ],
+      "nets": {
+        "CAM_G4": [
+          [
+            "U600",
+            "4"
+          ],
+          [
+            "U601",
+            "SCCB_SDA"
+          ]
+        ],
+        "CAM_G5": [
+          [
+            "U600",
+            "5"
+          ],
+          [
+            "U601",
+            "SCCB_SCL"
+          ]
+        ],
+        "CAM_G6": [
+          [
+            "U600",
+            "6"
+          ],
+          [
+            "U601",
+            "VSYNC"
+          ]
+        ],
+        "CAM_G7": [
+          [
+            "U600",
+            "7"
+          ],
+          [
+            "U601",
+            "HREF"
+          ]
+        ],
+        "CAM_G8": [
+          [
+            "U600",
+            "8"
+          ],
+          [
+            "U601",
+            "D2"
+          ]
+        ],
+        "CAM_G9": [
+          [
+            "U600",
+            "9"
+          ],
+          [
+            "U601",
+            "D1"
+          ]
+        ],
+        "CAM_G10": [
+          [
+            "U600",
+            "10"
+          ],
+          [
+            "U601",
+            "D3"
+          ]
+        ],
+        "CAM_G11": [
+          [
+            "U600",
+            "11"
+          ],
+          [
+            "U601",
+            "D0"
+          ]
+        ],
+        "CAM_G12": [
+          [
+            "U600",
+            "12"
+          ],
+          [
+            "U601",
+            "D4"
+          ]
+        ],
+        "CAM_G13": [
+          [
+            "U600",
+            "13"
+          ],
+          [
+            "U601",
+            "PCLK"
+          ]
+        ],
+        "CAM_G15": [
+          [
+            "U600",
+            "15"
+          ],
+          [
+            "U601",
+            "XCLK"
+          ]
+        ],
+        "CAM_G16": [
+          [
+            "U600",
+            "16"
+          ],
+          [
+            "U601",
+            "D7"
+          ]
+        ],
+        "CAM_G17": [
+          [
+            "U600",
+            "17"
+          ],
+          [
+            "U601",
+            "D6"
+          ]
+        ],
+        "CAM_G18": [
+          [
+            "U600",
+            "18"
+          ],
+          [
+            "U601",
+            "D5"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U600",
+          "ESP32-S3 N16R8 / GPIO"
+        ],
+        [
+          "U601",
+          "DVP camera / exact SKU TBD"
+        ]
+      ]
+    },
+    {
+      "name": "07_HMI",
+      "number": 7,
+      "title": "HMI_MCU / CYD LCD 및 터치",
+      "subtitle": "ESP32-2432S028 · ILI9341 LCD + XPT2046 touch · 보드 내부 신호의 기능별 표현",
+      "notes": [
+        "LCD는 TFT_eSPI 빌드 플래그, 터치는 실제 사용 중인 CYD28_TouchscreenR.h의 핀 정의에서 추출.",
+        "터치 SPI는 LCD SPI와 별도: MOSI32 / MISO39 / CLK25 / CS33 / IRQ36. 외부 점퍼 배선 지시가 아님.",
+        "LCD RST=-1로 MCU 제어 없음. BL21은 백라이트 제어 신호이며 LED 전류를 GPIO가 직접 공급한다는 뜻이 아님."
+      ],
+      "nets": {
+        "H_G2": [
+          [
+            "U700",
+            "2"
+          ],
+          [
+            "U701",
+            "DC"
+          ]
+        ],
+        "H_G12": [
+          [
+            "U700",
+            "12"
+          ],
+          [
+            "U701",
+            "MISO"
+          ]
+        ],
+        "H_G13": [
+          [
+            "U700",
+            "13"
+          ],
+          [
+            "U701",
+            "MOSI"
+          ]
+        ],
+        "H_G14": [
+          [
+            "U700",
+            "14"
+          ],
+          [
+            "U701",
+            "SCLK"
+          ]
+        ],
+        "H_G15": [
+          [
+            "U700",
+            "15"
+          ],
+          [
+            "U701",
+            "CS"
+          ]
+        ],
+        "H_G21": [
+          [
+            "U700",
+            "21"
+          ],
+          [
+            "U701",
+            "BL_CTRL"
+          ]
+        ],
+        "H_G25": [
+          [
+            "U700",
+            "25"
+          ],
+          [
+            "U702",
+            "CLK"
+          ]
+        ],
+        "H_G32": [
+          [
+            "U700",
+            "32"
+          ],
+          [
+            "U702",
+            "MOSI"
+          ]
+        ],
+        "H_G33": [
+          [
+            "U700",
+            "33"
+          ],
+          [
+            "U702",
+            "CS"
+          ]
+        ],
+        "H_G36": [
+          [
+            "U700",
+            "36"
+          ],
+          [
+            "U702",
+            "IRQ"
+          ]
+        ],
+        "H_G39": [
+          [
+            "U700",
+            "39"
+          ],
+          [
+            "U702",
+            "MISO"
+          ]
+        ]
+      },
+      "modules": [
+        [
+          "U700",
+          "ESP32 / CYD onboard GPIO"
+        ],
+        [
+          "U701",
+          "ILI9341 / onboard LCD"
+        ],
+        [
+          "U702",
+          "XPT2046 / onboard touch"
+        ]
+      ]
+    }
+  ],
+  "scope": "Firmware-confirmed logical module ports. All supplies, grounds and load terminals unresolved; no fabrication claim."
+}

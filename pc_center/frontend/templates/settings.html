@@ -262,7 +262,7 @@
         .telemetry-chart-wrap {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 6px;
@@ -279,8 +279,26 @@
             white-space: nowrap;
         }
 
+        .telemetry-mode-toggle {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--primary, #0696D7);
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .telemetry-mode-toggle:hover {
+            background: rgba(6, 150, 215, 0.2);
+            border-color: var(--primary, #0696D7);
+        }
+
         .telemetry-canvas-box {
-            width: 220px;
+            width: 200px;
             height: 38px;
             position: relative;
         }
@@ -559,8 +577,11 @@
                 <!-- Live Sparkline Chart for Heartbeat & Control Signals -->
                 <div class="telemetry-chart-wrap">
                     <div class="telemetry-chart-legend">
-                        <div><span style="color:#22c55e;">●</span> 하트비트: <span id="telemetry-hb-count" style="color:#ffffff; font-weight:bold;">0</span></div>
-                        <div><span style="color:#38bdf8;">●</span> 제어신호: <span id="telemetry-ctrl-count" style="color:#ffffff; font-weight:bold;">0</span></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span><span style="color:#22c55e;">●</span> HB: <span id="telemetry-hb-count" style="color:#ffffff; font-weight:bold;">0</span></span>
+                            <button id="telemetry-mode-btn" class="telemetry-mode-toggle" title="누적(Total) / 초당 신호수(Rate/s) 모드 전환">초당(Rate)</button>
+                        </div>
+                        <div><span style="color:#38bdf8;">●</span> CTRL: <span id="telemetry-ctrl-count" style="color:#ffffff; font-weight:bold;">0</span></div>
                     </div>
                     <div class="telemetry-canvas-box">
                         <canvas id="telemetry-live-canvas"></canvas>
@@ -830,29 +851,49 @@
                         <div class="input-group">
                             <label for="cfg_model_name">Model Name</label>
                             <select id="cfg_model_name">
-                                <option value="gemini-2.5-flash">gemini-2.5-flash (Default)</option>
-                                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                                <option value="gemini-2.5-flash-lite" {% if config.model_name == 'gemini-2.5-flash-lite' or not config.model_name %}selected{% endif %}>gemini-2.5-flash-lite (Default/Fast)</option>
+                                <option value="gemini-2.5-flash" {% if config.model_name == 'gemini-2.5-flash' %}selected{% endif %}>gemini-2.5-flash (Standard)</option>
+                                <option value="gemini-3.1-flash-lite" {% if config.model_name == 'gemini-3.1-flash-lite' %}selected{% endif %}>gemini-3.1-flash-lite (Next-Gen)</option>
                             </select>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <div class="input-group">
                             <label for="cfg_camera_model">Camera Sensor</label>
                             <select id="cfg_camera_model">
-                                <option value="OV5660" {% if config.imagesendermcu.camera_model == 'OV5660' %}selected{% endif %}>OV5660 (Primary)</option>
-                                <option value="OV2640" {% if config.imagesendermcu.camera_model == 'OV2640' %}selected{% endif %}>OV2640</option>
+                                <option value="OV3660" {% if config.imagesendermcu.camera_model == 'OV3660' %}selected{% endif %}>OV3660 (Primary 3MP)</option>
+                                <option value="OV5640" {% if config.imagesendermcu.camera_model == 'OV5640' %}selected{% endif %}>OV5640 (5MP)</option>
+                                <option value="OV2640" {% if config.imagesendermcu.camera_model == 'OV2640' %}selected{% endif %}>OV2640 (2MP)</option>
                             </select>
                         </div>
                         <div class="input-group">
                             <label for="cfg_resolution">Stream Resolution</label>
                             <select id="cfg_resolution">
+                                <option value="QSXGA" {% if config.imagesendermcu.resolution == 'QSXGA' %}selected{% endif %}>QSXGA (2592x1944)</option>
+                                <option value="UXGA" {% if config.imagesendermcu.resolution == 'UXGA' %}selected{% endif %}>UXGA (1600x1200 - 권장)</option>
+                                <option value="SXGA" {% if config.imagesendermcu.resolution == 'SXGA' %}selected{% endif %}>SXGA (1280x1024)</option>
+                                <option value="XGA" {% if config.imagesendermcu.resolution == 'XGA' %}selected{% endif %}>XGA (1024x768)</option>
                                 <option value="SVGA" {% if config.imagesendermcu.resolution == 'SVGA' %}selected{% endif %}>SVGA (800x600)</option>
                                 <option value="VGA" {% if config.imagesendermcu.resolution == 'VGA' %}selected{% endif %}>VGA (640x480)</option>
+                                <option value="CIF" {% if config.imagesendermcu.resolution == 'CIF' %}selected{% endif %}>CIF (400x296)</option>
                                 <option value="QVGA" {% if config.imagesendermcu.resolution == 'QVGA' %}selected{% endif %}>QVGA (320x240)</option>
                             </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_transmission_mode">Transmission Mode</label>
+                            <select id="cfg_transmission_mode">
+                                <option value="UDP" {% if config.imagesendermcu.transmission_mode == 'UDP' %}selected{% endif %}>UDP (High Speed Packet)</option>
+                                <option value="TCP" {% if config.imagesendermcu.transmission_mode == 'TCP' %}selected{% endif %}>TCP (HTTP POST Reliable)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_jpeg_quality">JPEG Quality (1~63) <span id="cfg_jpeg_val" style="color:var(--text-muted); font-size:0.8rem;">({{ config.imagesendermcu.jpeg_quality }})</span></label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <input type="range" id="cfg_jpeg_quality" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}" style="flex:1;">
+                                <input type="number" id="cfg_jpeg_quality_num" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}" style="width:65px;">
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:3px;">* 낮을수록 고화질</span>
                         </div>
                     </div>
 
@@ -883,11 +924,33 @@
     <script>
         // --- Live Sparkline Telemetry Chart for Banner ---
         let cTelemetry = null;
+        let telemetryMode = 'rate'; // 'rate' (초당 송수신 수, PPS) or 'total' (누적 수)
+        let lastTelemetryTime = 0;
+        let lastHbTotal = 0;
+        let lastCtrlTotal = 0;
+
         const telemetryHistory = {
             labels: Array(20).fill(''),
             heartbeats: Array(20).fill(0),
             controls: Array(20).fill(0)
         };
+
+        function toggleTelemetryMode() {
+            telemetryMode = (telemetryMode === 'rate') ? 'total' : 'rate';
+            const btn = document.getElementById('telemetry-mode-btn');
+            if (btn) {
+                btn.textContent = (telemetryMode === 'rate') ? '초당(Rate)' : '누적(Total)';
+                btn.style.color = (telemetryMode === 'rate') ? 'var(--primary, #0696D7)' : '#fbbf24';
+            }
+            // Reset buffer to avoid scale jump
+            telemetryHistory.heartbeats = Array(20).fill(0);
+            telemetryHistory.controls = Array(20).fill(0);
+            if (cTelemetry) {
+                cTelemetry.data.datasets[0].data = [...telemetryHistory.heartbeats];
+                cTelemetry.data.datasets[1].data = [...telemetryHistory.controls];
+                cTelemetry.update();
+            }
+        }
 
         function initTelemetryChart() {
             if (cTelemetry) return;
@@ -935,12 +998,15 @@
                     }
                 }
             });
+
+            document.getElementById('telemetry-mode-btn')?.addEventListener('click', toggleTelemetryMode);
         }
 
         function updateTelemetryStream(data) {
             initTelemetryChart();
             let totalHb = 0;
             let totalCtrl = 0;
+            const now = Date.now();
 
             const mcus = ['imagesendermcu', 'hmi_mcu', 'drivemcu', 'controlmcu', 'robot3axismcu'];
             mcus.forEach(key => {
@@ -967,15 +1033,37 @@
                 }
             });
 
+            // Calculate rate (per second) if previous time exists
+            let hbRate = 0;
+            let ctrlRate = 0;
+            if (lastTelemetryTime > 0) {
+                const dtSec = Math.max((now - lastTelemetryTime) / 1000, 0.5);
+                hbRate = Math.max(0, Math.round((totalHb - lastHbTotal) / dtSec));
+                ctrlRate = Math.max(0, Math.round((totalCtrl - lastCtrlTotal) / dtSec));
+            }
+
+            lastTelemetryTime = now;
+            lastHbTotal = totalHb;
+            lastCtrlTotal = totalCtrl;
+
             const hbEl = document.getElementById('telemetry-hb-count');
             const ctrlEl = document.getElementById('telemetry-ctrl-count');
-            if (hbEl) hbEl.textContent = totalHb.toLocaleString();
-            if (ctrlEl) ctrlEl.textContent = totalCtrl.toLocaleString();
+
+            if (telemetryMode === 'rate') {
+                if (hbEl) hbEl.textContent = `${hbRate}/s`;
+                if (ctrlEl) ctrlEl.textContent = `${ctrlRate}/s`;
+            } else {
+                if (hbEl) hbEl.textContent = totalHb.toLocaleString();
+                if (ctrlEl) ctrlEl.textContent = totalCtrl.toLocaleString();
+            }
 
             if (cTelemetry) {
-                telemetryHistory.heartbeats.push(totalHb);
+                const hbVal = (telemetryMode === 'rate') ? hbRate : totalHb;
+                const ctrlVal = (telemetryMode === 'rate') ? ctrlRate : totalCtrl;
+
+                telemetryHistory.heartbeats.push(hbVal);
                 telemetryHistory.heartbeats.shift();
-                telemetryHistory.controls.push(totalCtrl);
+                telemetryHistory.controls.push(ctrlVal);
                 telemetryHistory.controls.shift();
 
                 cTelemetry.data.datasets[0].data = [...telemetryHistory.heartbeats];
@@ -1056,7 +1144,14 @@
                 if (targetId === 'tab-stats') {
                     loadStats();
                 } else if (targetId === 'tab-network') {
-                    loadHw();
+                    setTimeout(() => {
+                        initCharts();
+                        if (cCpu) cCpu.resize();
+                        if (cRam) cRam.resize();
+                        if (cGpu) cGpu.resize();
+                        if (cNet) cNet.resize();
+                        loadHw();
+                    }, 50);
                 }
             });
         });
@@ -1269,6 +1364,7 @@
             }
         }
 
+        let hwTimer = null;
         async function loadHw() {
             try {
                 const res = await fetch('/api/hardware/status');
@@ -1276,7 +1372,7 @@
                 const data = await res.json();
                 renderHw(data);
             } catch (e) {
-                console.error(e);
+                console.error('Hardware load error:', e);
             }
         }
 
@@ -1287,50 +1383,86 @@
             const hist = data.history || {};
 
             // Top KPI Cards
-            document.getElementById('tab-hw-cpu-val').textContent = (latest.cpu_percent || 0) + '%';
-            document.getElementById('tab-hw-cpu-sub').textContent = `${latest.cpu_freq_ghz || 0} GHz | ${info.cpu_physical_cores || 0}C/${info.cpu_logical_cores || 0}T`;
-            document.getElementById('tab-hw-ram-val').textContent = (latest.ram_percent || 0) + '%';
-            document.getElementById('tab-hw-ram-sub').textContent = `${latest.ram_used_gb || 0} / ${latest.ram_total_gb || 0} GB`;
-            document.getElementById('tab-hw-gpu-val').textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
-            document.getElementById('tab-hw-gpu-sub').textContent = info.gpu_name || 'Generic GPU';
-            document.getElementById('tab-hw-net-val').textContent = `↑ ${latest.net_sent_speed_kb || 0} KB/s | ↓ ${latest.net_recv_speed_kb || 0} KB/s`;
-            document.getElementById('tab-hw-net-sub').textContent = `누적: ↑ ${latest.net_sent_total_mb || 0} MB | ↓ ${latest.net_recv_total_mb || 0} MB`;
+            const cpuValEl = document.getElementById('tab-hw-cpu-val');
+            if (cpuValEl) cpuValEl.textContent = (latest.cpu_percent || 0) + '%';
+            const cpuSubEl = document.getElementById('tab-hw-cpu-sub');
+            if (cpuSubEl) cpuSubEl.textContent = `${latest.cpu_freq_mhz || 0} MHz | ${info.cpu_cores_logical || 0} Cores (${info.cpu_cores_physical || 0}P)`;
+
+            const ramValEl = document.getElementById('tab-hw-ram-val');
+            if (ramValEl) ramValEl.textContent = (latest.ram_percent || 0) + '%';
+            const ramSubEl = document.getElementById('tab-hw-ram-sub');
+            if (ramSubEl) ramSubEl.textContent = `${latest.ram_used_gb || 0} / ${latest.ram_total_gb || 0} GB`;
+
+            const gpuValEl = document.getElementById('tab-hw-gpu-val');
+            if (gpuValEl) gpuValEl.textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+            const gpuSubEl = document.getElementById('tab-hw-gpu-sub');
+            if (gpuSubEl) gpuSubEl.textContent = latest.gpu_name || info.gpu_name || 'Integrated Graphics';
+
+            const netValEl = document.getElementById('tab-hw-net-val');
+            if (netValEl) netValEl.textContent = `↑ ${latest.net_tx_kbs || 0} KB/s | ↓ ${latest.net_rx_kbs || 0} KB/s`;
+            const netSubEl = document.getElementById('tab-hw-net-sub');
+            if (netSubEl) netSubEl.textContent = (currentLang === 'ko' ? '총 누적: ' : 'Total: ') + `↑ ${latest.net_total_sent_mb || 0} MB | ↓ ${latest.net_total_recv_mb || 0} MB`;
 
             // Specs
-            document.getElementById('tab-hw-spec-os').textContent = info.os_name || '-';
-            document.getElementById('tab-hw-spec-cpu').textContent = info.cpu_name || '-';
-            document.getElementById('tab-hw-spec-ram').textContent = `${latest.ram_total_gb || 0} GB`;
-            document.getElementById('tab-hw-spec-gpu').textContent = info.gpu_name || 'None';
+            const specOsEl = document.getElementById('tab-hw-spec-os');
+            if (specOsEl) specOsEl.textContent = info.os_name || 'Windows';
+            const specCpuEl = document.getElementById('tab-hw-spec-cpu');
+            if (specCpuEl) specCpuEl.textContent = `${info.cpu_name || 'Intel Core'} (${info.cpu_cores_logical || 0} Cores)`;
+            const specRamEl = document.getElementById('tab-hw-spec-ram');
+            if (specRamEl) specRamEl.textContent = `${info.ram_total_gb || latest.ram_total_gb || 0} GB`;
+            const specGpuEl = document.getElementById('tab-hw-spec-gpu');
+            if (specGpuEl) specGpuEl.textContent = info.gpu_name || 'Integrated Graphics';
 
             // Chart Data Update
-            const labels = hist.timestamps || [];
-            if (cCpu) {
+            const labels = hist.labels || [];
+            if (cCpu && hist.cpu) {
                 cCpu.data.labels = labels;
-                cCpu.data.datasets[0].data = hist.cpu || [];
-                cCpu.update();
-                document.getElementById('tab-hw-cpu-chart-pct').textContent = (latest.cpu_percent || 0) + '%';
+                cCpu.data.datasets[0].data = hist.cpu;
+                cCpu.update('none');
+                const cpuPctEl = document.getElementById('tab-hw-cpu-chart-pct');
+                if (cpuPctEl) cpuPctEl.textContent = (latest.cpu_percent || 0) + '%';
             }
-            if (cRam) {
+            if (cRam && hist.ram) {
                 cRam.data.labels = labels;
-                cRam.data.datasets[0].data = hist.ram || [];
-                cRam.update();
-                document.getElementById('tab-hw-ram-chart-pct').textContent = (latest.ram_percent || 0) + '%';
+                cRam.data.datasets[0].data = hist.ram;
+                cRam.update('none');
+                const ramPctEl = document.getElementById('tab-hw-ram-chart-pct');
+                if (ramPctEl) ramPctEl.textContent = (latest.ram_percent || 0) + '%';
             }
-            if (cGpu) {
+            if (cGpu && hist.gpu) {
                 cGpu.data.labels = labels;
-                cGpu.data.datasets[0].data = hist.gpu || [];
-                cGpu.update();
-                document.getElementById('tab-hw-gpu-chart-pct').textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+                cGpu.data.datasets[0].data = hist.gpu;
+                cGpu.update('none');
+                const gpuPctEl = document.getElementById('tab-hw-gpu-chart-pct');
+                if (gpuPctEl) gpuPctEl.textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
             }
-            if (cNet) {
+            if (cNet && hist.net_tx && hist.net_rx) {
                 cNet.data.labels = labels;
-                cNet.data.datasets[0].data = hist.net_sent_speed || [];
-                cNet.data.datasets[1].data = hist.net_recv_speed || [];
-                cNet.update();
+                cNet.data.datasets[0].data = hist.net_tx;
+                cNet.data.datasets[1].data = hist.net_rx;
+                cNet.update('none');
             }
         }
 
         document.getElementById('tab-hw-refresh-btn')?.addEventListener('click', loadHw);
+
+        // --- General Config: Camera & JPEG Quality Input Sync ---
+        const cfgJpegSlider = document.getElementById('cfg_jpeg_quality');
+        const cfgJpegNum = document.getElementById('cfg_jpeg_quality_num');
+        const cfgJpegValText = document.getElementById('cfg_jpeg_val');
+        if (cfgJpegSlider && cfgJpegNum) {
+            cfgJpegSlider.addEventListener('input', () => {
+                cfgJpegNum.value = cfgJpegSlider.value;
+                if (cfgJpegValText) cfgJpegValText.textContent = `(Quality: ${cfgJpegSlider.value})`;
+            });
+            cfgJpegNum.addEventListener('input', () => {
+                let val = parseInt(cfgJpegNum.value) || 10;
+                if (val < 1) val = 1;
+                if (val > 63) val = 63;
+                cfgJpegSlider.value = val;
+                if (cfgJpegValText) cfgJpegValText.textContent = `(Quality: ${val})`;
+            });
+        }
 
         // --- General Config Save ---
         document.getElementById('general-config-form')?.addEventListener('submit', async (e) => {
@@ -1340,6 +1472,8 @@
                 model_name: document.getElementById('cfg_model_name').value,
                 camera_model: document.getElementById('cfg_camera_model').value,
                 resolution: document.getElementById('cfg_resolution').value,
+                transmission_mode: document.getElementById('cfg_transmission_mode')?.value || "UDP",
+                jpeg_quality: parseInt(document.getElementById('cfg_jpeg_quality')?.value || "10"),
                 imagesendermcu_ip: document.getElementById('cfg_img_ip').value,
                 drivemcu_ip: document.getElementById('cfg_drive_ip').value,
                 hmi_mcu_ip: document.getElementById('cfg_hmi_ip').value

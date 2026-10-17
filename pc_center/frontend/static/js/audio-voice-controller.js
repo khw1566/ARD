@@ -484,7 +484,11 @@
         // 로컬 고유 턴 ID 생성
         const turnId = `t_${Date.now()}`;
         // 텍스트 입력 즉시 채팅창에 User 말풍선 노출 (turnId 바인딩!)
-        addChatMessage('User', text, null, turnId);
+        if (typeof window.addChatMessage === 'function') {
+            window.addChatMessage('User', text, null, turnId);
+        } else if (typeof addChatMessage === 'function') {
+            addChatMessage('User', text, null, turnId);
+        }
         
         try {
             await fetch('/api/soundmcu/chat', {
@@ -492,7 +496,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ text: text, turn_id: turnId })
             });
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('Chat API Error:', e); }
     };
 
     document.getElementById('send-chat-btn')?.addEventListener('click', sendChatMessage);

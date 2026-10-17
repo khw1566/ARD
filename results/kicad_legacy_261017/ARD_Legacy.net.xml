@@ -1,0 +1,1958 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>C:\Users\work\Desktop\ARD_v1\ARD_software\results\kicad_legacy_261017\ARD_Legacy.kicad_sch</source>
+    <date>2026-10-17T12:48:28</date>
+    <tool>Eeschema 10.0.3</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>ARD 구형 시스템 / 전체 구성</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>ARD_Legacy.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="2" name="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/">
+      <title_block>
+        <title>ControlMCU / 조작 및 오디오</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>02_Control.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="3" name="/DriveMCU / 3축 스텝 모터/" tstamps="/c134e2ab-f7c3-5290-a944-4d7db3d63afd/">
+      <title_block>
+        <title>DriveMCU / 3축 스텝 모터</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>03_Drive_Motors.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="4" name="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/">
+      <title_block>
+        <title>DriveMCU / 센서 및 수동 조작</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>04_Drive_Sensors.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="5" name="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/">
+      <title_block>
+        <title>Robot3AxisMCU / 로봇 및 공압 제어</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>05_Robot3Axis.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="6" name="/ImageSenderMCU / 병렬 카메라/" tstamps="/367a66d3-6629-50da-b46d-894af28944d2/">
+      <title_block>
+        <title>ImageSenderMCU / 병렬 카메라</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>06_ImageSender.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="7" name="/HMI_MCU / CYD LCD 및 터치/" tstamps="/8f19bb9f-db25-5c99-9a72-7590022932b3/">
+      <title_block>
+        <title>HMI_MCU / CYD LCD 및 터치</title>
+        <company>ARD / Presentation</company>
+        <rev>1.0 - firmware reconstruction</rev>
+        <date>2026-10-17</date>
+        <source>07_HMI.kicad_sch</source>
+        <comment number="1" value="Signal-level module schematic. Not a fabrication design."/>
+        <comment number="2" value="TBD/NC = outside firmware evidence; not confirmed physical no-connect."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="D201">
+      <value>Button indicator LED</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_D201" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>95dac7a2-e78a-542d-a6aa-868d2529d95d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="DRIVE"/>
+            <pin num="RETURN_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="D202">
+      <value>WS2812B / onboard</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_D202" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>67fac4dd-a6ae-565d-8096-bd16cc5dc3ff</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="DIN"/>
+            <pin num="VDD_ONBOARD"/>
+            <pin num="GND_ONBOARD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="SW201">
+      <value>4-way joystick / active LOW</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_SW201" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>c88972a5-7e1a-51e8-b7e7-dfc76b45e122</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="UP"/>
+            <pin num="DOWN"/>
+            <pin num="LEFT"/>
+            <pin num="RIGHT"/>
+            <pin num="COM_GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="SW202">
+      <value>Mode toggle A / B</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_SW202" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>3e38dfe4-1446-541a-8c09-4d734f66699e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="A"/>
+            <pin num="B"/>
+            <pin num="COM_GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="SW203">
+      <value>Push button / active LOW</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_SW203" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>0dbed208-0c88-5fff-9e53-c0128e341423</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="CONTACT"/>
+            <pin num="COM_GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U200">
+      <value>ESP32-S3 / board ports</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_U200" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>27cf285b-9f19-58b3-b121-caeaabcdd370</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="11"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="21"/>
+            <pin num="35"/>
+            <pin num="36"/>
+            <pin num="39"/>
+            <pin num="40"/>
+            <pin num="41"/>
+            <pin num="42"/>
+            <pin num="47"/>
+            <pin num="48"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U201">
+      <value>MAX98357A I2S amplifier</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="02_Control_U201" description=""/>
+      <property name="Sheetname" value="ControlMCU / 조작 및 오디오"/>
+      <property name="Sheetfile" value="02_Control.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ControlMCU / 조작 및 오디오/" tstamps="/ccedefab-052b-53c2-b8b3-5ccdc299b50e/"/>
+      <tstamps>0ac9bcc6-37fe-571f-bce3-1690b00e0143</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="DIN"/>
+            <pin num="LRC"/>
+            <pin num="BCLK"/>
+            <pin num="SD"/>
+            <pin num="VIN_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="SPK+_TBD"/>
+            <pin num="SPK-_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U300">
+      <value>ESP32-WROOM32D / GPIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="03_Drive_Motors_U300" description=""/>
+      <property name="Sheetname" value="DriveMCU / 3축 스텝 모터"/>
+      <property name="Sheetfile" value="03_Drive_Motors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 3축 스텝 모터/" tstamps="/c134e2ab-f7c3-5290-a944-4d7db3d63afd/"/>
+      <tstamps>50c364bb-9da6-5812-8b49-f74b712b98de</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="5"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="19"/>
+            <pin num="21"/>
+            <pin num="25"/>
+            <pin num="26"/>
+            <pin num="27"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U301">
+      <value>A4988 / X axis</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="03_Drive_Motors_U301" description=""/>
+      <property name="Sheetname" value="DriveMCU / 3축 스텝 모터"/>
+      <property name="Sheetfile" value="03_Drive_Motors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 3축 스텝 모터/" tstamps="/c134e2ab-f7c3-5290-a944-4d7db3d63afd/"/>
+      <tstamps>5de2aa8c-bc8d-5b50-ba3f-d8d30845569c</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT_TBD"/>
+            <pin num="VDD_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U302">
+      <value>A4988 / Y axis</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="03_Drive_Motors_U302" description=""/>
+      <property name="Sheetname" value="DriveMCU / 3축 스텝 모터"/>
+      <property name="Sheetfile" value="03_Drive_Motors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 3축 스텝 모터/" tstamps="/c134e2ab-f7c3-5290-a944-4d7db3d63afd/"/>
+      <tstamps>f7469dd9-9e81-5f8c-b36d-f3a81ad3c6e6</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT_TBD"/>
+            <pin num="VDD_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U303">
+      <value>A4988 / Z axis</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="03_Drive_Motors_U303" description=""/>
+      <property name="Sheetname" value="DriveMCU / 3축 스텝 모터"/>
+      <property name="Sheetfile" value="03_Drive_Motors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 3축 스텝 모터/" tstamps="/c134e2ab-f7c3-5290-a944-4d7db3d63afd/"/>
+      <tstamps>91b14e1d-d182-5fdd-94e0-4b9c415e3f8b</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT_TBD"/>
+            <pin num="VDD_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J401">
+      <value>Manual inputs / buzzer</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_J401" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>5bed0e4d-327b-560a-9725-1f39a521b3eb</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SW1"/>
+            <pin num="SW2"/>
+            <pin num="POT_WIPER"/>
+            <pin num="BUZZER_DRIVE"/>
+            <pin num="COM_TBD"/>
+            <pin num="POT_ENDS_TBD"/>
+            <pin num="BUZZER_RETURN_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U400">
+      <value>ESP32-WROOM32D / GPIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U400" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>9e936e38-8770-5633-bed4-50b0e82d2489</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="22"/>
+            <pin num="23"/>
+            <pin num="32"/>
+            <pin num="33"/>
+            <pin num="34"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U401">
+      <value>SSD1306 / 128 x 64 / 0x3C</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U401" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>c7cd43ab-59d7-57bb-9b9d-6684410e5957</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC_TBD"/>
+            <pin num="GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U402">
+      <value>AHT20 / 0x38</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U402" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>b0c30711-eb42-57a4-860c-46dfdbdc15b1</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC_TBD"/>
+            <pin num="GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U403">
+      <value>BMP280 / 0x76 or 0x77</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U403" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>c1ba3d39-b64c-5647-9358-88b398a4db3a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC_TBD"/>
+            <pin num="GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U404">
+      <value>VL53L0X / optional, OFF</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U404" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>82b1aead-f4d5-54e0-a95c-dd2d8c9f855c</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC_TBD"/>
+            <pin num="GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U405">
+      <value>NEO-6M / UART2 9600</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="04_Drive_Sensors_U405" description=""/>
+      <property name="Sheetname" value="DriveMCU / 센서 및 수동 조작"/>
+      <property name="Sheetfile" value="04_Drive_Sensors.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/DriveMCU / 센서 및 수동 조작/" tstamps="/b2a5cf02-399b-58c4-a17a-9ab1ed205ca7/"/>
+      <tstamps>e4ab9e33-277a-5a16-aa7b-2d200df0f944</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="TX"/>
+            <pin num="RX"/>
+            <pin num="VCC_TBD"/>
+            <pin num="GND_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="K501">
+      <value>4ch relay / active LOW</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_K501" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>1a7e7d33-cfb3-5211-a7e1-e42f84f96f8d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="IN1"/>
+            <pin num="IN2"/>
+            <pin num="IN3"/>
+            <pin num="IN4"/>
+            <pin num="COIL_SUPPLY_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="CONTACTS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U500">
+      <value>ESP32-S3 N16R8 / GPIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_U500" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>501b3269-f54c-5976-a0d0-730ca0df7cb0</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="3"/>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
+            <pin num="8"/>
+            <pin num="9"/>
+            <pin num="10"/>
+            <pin num="11"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="15"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="46"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U501">
+      <value>X stepper driver / type TBD</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_U501" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>fbb856eb-aa77-546a-8344-c548c28c7eb4</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="POWER_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U502">
+      <value>Y stepper driver / type TBD</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_U502" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>9f4bdf91-240c-5b15-b384-43b14312515a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="POWER_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U503">
+      <value>Z stepper driver / type TBD</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_U503" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>d65e7b74-a651-5132-ae01-e973940ad89e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="POWER_TBD"/>
+            <pin num="CONFIG_TBD"/>
+            <pin num="COILS_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U504">
+      <value>L298N / DC motor driver</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="05_Robot3Axis_U504" description=""/>
+      <property name="Sheetname" value="Robot3AxisMCU / 로봇 및 공압 제어"/>
+      <property name="Sheetfile" value="05_Robot3Axis.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/Robot3AxisMCU / 로봇 및 공압 제어/" tstamps="/9708de93-a577-556d-90e8-c7ac436f5164/"/>
+      <tstamps>3658035a-8241-54a9-8612-19b5cfa01899</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="IN1"/>
+            <pin num="IN2"/>
+            <pin num="IN3"/>
+            <pin num="IN4"/>
+            <pin num="ENA_ENB_TBD"/>
+            <pin num="POWER_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="MOTOR_OUT_TBD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U600">
+      <value>ESP32-S3 N16R8 / GPIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="06_ImageSender_U600" description=""/>
+      <property name="Sheetname" value="ImageSenderMCU / 병렬 카메라"/>
+      <property name="Sheetfile" value="06_ImageSender.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ImageSenderMCU / 병렬 카메라/" tstamps="/367a66d3-6629-50da-b46d-894af28944d2/"/>
+      <tstamps>4910daa8-dca4-5925-ae5d-cc132f8f3655</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
+            <pin num="8"/>
+            <pin num="9"/>
+            <pin num="10"/>
+            <pin num="11"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="15"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U601">
+      <value>DVP camera / exact SKU TBD</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="06_ImageSender_U601" description=""/>
+      <property name="Sheetname" value="ImageSenderMCU / 병렬 카메라"/>
+      <property name="Sheetfile" value="06_ImageSender.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/ImageSenderMCU / 병렬 카메라/" tstamps="/367a66d3-6629-50da-b46d-894af28944d2/"/>
+      <tstamps>2561ce06-c74b-577a-95e3-fc7a9d77d5f8</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="D0"/>
+            <pin num="D1"/>
+            <pin num="D2"/>
+            <pin num="D3"/>
+            <pin num="D4"/>
+            <pin num="D5"/>
+            <pin num="D6"/>
+            <pin num="D7"/>
+            <pin num="XCLK"/>
+            <pin num="PCLK"/>
+            <pin num="VSYNC"/>
+            <pin num="HREF"/>
+            <pin num="SCCB_SDA"/>
+            <pin num="SCCB_SCL"/>
+            <pin num="POWER_TBD"/>
+            <pin num="GND_TBD"/>
+            <pin num="PWDN_NOT_DRIVEN"/>
+            <pin num="RESET_NOT_DRIVEN"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U700">
+      <value>ESP32 / CYD onboard GPIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="07_HMI_U700" description=""/>
+      <property name="Sheetname" value="HMI_MCU / CYD LCD 및 터치"/>
+      <property name="Sheetfile" value="07_HMI.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/HMI_MCU / CYD LCD 및 터치/" tstamps="/8f19bb9f-db25-5c99-9a72-7590022932b3/"/>
+      <tstamps>c55c18b7-2cde-557d-b749-fc53f53a3df3</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="2"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="15"/>
+            <pin num="21"/>
+            <pin num="25"/>
+            <pin num="32"/>
+            <pin num="33"/>
+            <pin num="36"/>
+            <pin num="39"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U701">
+      <value>ILI9341 / onboard LCD</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="07_HMI_U701" description=""/>
+      <property name="Sheetname" value="HMI_MCU / CYD LCD 및 터치"/>
+      <property name="Sheetfile" value="07_HMI.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/HMI_MCU / CYD LCD 및 터치/" tstamps="/8f19bb9f-db25-5c99-9a72-7590022932b3/"/>
+      <tstamps>37bc67c8-02eb-574b-813b-928dfdb1819c</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="MOSI"/>
+            <pin num="MISO"/>
+            <pin num="SCLK"/>
+            <pin num="CS"/>
+            <pin num="DC"/>
+            <pin num="BL_CTRL"/>
+            <pin num="POWER_ONBOARD"/>
+            <pin num="GND_ONBOARD"/>
+            <pin num="RST_NOT_DRIVEN"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U702">
+      <value>XPT2046 / onboard touch</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD" part="07_HMI_U702" description=""/>
+      <property name="Sheetname" value="HMI_MCU / CYD LCD 및 터치"/>
+      <property name="Sheetfile" value="07_HMI.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/HMI_MCU / CYD LCD 및 터치/" tstamps="/8f19bb9f-db25-5c99-9a72-7590022932b3/"/>
+      <tstamps>d5dfe4c1-ef8c-56cd-b88a-a54106f3cc8e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="MOSI"/>
+            <pin num="MISO"/>
+            <pin num="CLK"/>
+            <pin num="CS"/>
+            <pin num="IRQ"/>
+            <pin num="POWER_ONBOARD"/>
+            <pin num="GND_ONBOARD"/>
+            <pin num="TOUCH_PANEL_ONBOARD"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="ARD" part="02_Control_D201">
+      <fields>
+        <field name="Reference">D201</field>
+        <field name="Value">Button indicator LED</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="DRIVE" name="DRIVE" type="passive"/>
+        <pin num="RETURN_TBD" name="RETURN_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_D202">
+      <fields>
+        <field name="Reference">D202</field>
+        <field name="Value">WS2812B / onboard</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="DIN" name="DIN" type="passive"/>
+        <pin num="GND_ONBOARD" name="GND_ONBOARD" type="passive"/>
+        <pin num="VDD_ONBOARD" name="VDD_ONBOARD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_SW201">
+      <fields>
+        <field name="Reference">SW201</field>
+        <field name="Value">4-way joystick / active LOW</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COM_GND_TBD" name="COM_GND_TBD" type="passive"/>
+        <pin num="DOWN" name="DOWN" type="passive"/>
+        <pin num="LEFT" name="LEFT" type="passive"/>
+        <pin num="RIGHT" name="RIGHT" type="passive"/>
+        <pin num="UP" name="UP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_SW202">
+      <fields>
+        <field name="Reference">SW202</field>
+        <field name="Value">Mode toggle A / B</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="A" name="A" type="passive"/>
+        <pin num="B" name="B" type="passive"/>
+        <pin num="COM_GND_TBD" name="COM_GND_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_SW203">
+      <fields>
+        <field name="Reference">SW203</field>
+        <field name="Value">Push button / active LOW</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COM_GND_TBD" name="COM_GND_TBD" type="passive"/>
+        <pin num="CONTACT" name="CONTACT" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_U200">
+      <fields>
+        <field name="Reference">U200</field>
+        <field name="Value">ESP32-S3 / board ports</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="35" name="GPIO35" type="passive"/>
+        <pin num="36" name="GPIO36" type="passive"/>
+        <pin num="39" name="GPIO39" type="passive"/>
+        <pin num="40" name="GPIO40" type="passive"/>
+        <pin num="41" name="GPIO41" type="passive"/>
+        <pin num="42" name="GPIO42" type="passive"/>
+        <pin num="47" name="GPIO47" type="passive"/>
+        <pin num="48" name="GPIO48" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="02_Control_U201">
+      <fields>
+        <field name="Reference">U201</field>
+        <field name="Value">MAX98357A I2S amplifier</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="BCLK" name="BCLK" type="passive"/>
+        <pin num="DIN" name="DIN" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="LRC" name="LRC" type="passive"/>
+        <pin num="SD" name="SD" type="passive"/>
+        <pin num="SPK+_TBD" name="SPK+_TBD" type="passive"/>
+        <pin num="SPK-_TBD" name="SPK-_TBD" type="passive"/>
+        <pin num="VIN_TBD" name="VIN_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="03_Drive_Motors_U300">
+      <fields>
+        <field name="Reference">U300</field>
+        <field name="Value">ESP32-WROOM32D / GPIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="19" name="GPIO19" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="25" name="GPIO25" type="passive"/>
+        <pin num="26" name="GPIO26" type="passive"/>
+        <pin num="27" name="GPIO27" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="03_Drive_Motors_U301">
+      <fields>
+        <field name="Reference">U301</field>
+        <field name="Value">A4988 / X axis</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD_TBD" name="VDD_TBD" type="passive"/>
+        <pin num="VMOT_TBD" name="VMOT_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="03_Drive_Motors_U302">
+      <fields>
+        <field name="Reference">U302</field>
+        <field name="Value">A4988 / Y axis</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD_TBD" name="VDD_TBD" type="passive"/>
+        <pin num="VMOT_TBD" name="VMOT_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="03_Drive_Motors_U303">
+      <fields>
+        <field name="Reference">U303</field>
+        <field name="Value">A4988 / Z axis</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD_TBD" name="VDD_TBD" type="passive"/>
+        <pin num="VMOT_TBD" name="VMOT_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_J401">
+      <fields>
+        <field name="Reference">J401</field>
+        <field name="Value">Manual inputs / buzzer</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="BUZZER_DRIVE" name="BUZZER_DRIVE" type="passive"/>
+        <pin num="BUZZER_RETURN_TBD" name="BUZZER_RETURN_TBD" type="passive"/>
+        <pin num="COM_TBD" name="COM_TBD" type="passive"/>
+        <pin num="POT_ENDS_TBD" name="POT_ENDS_TBD" type="passive"/>
+        <pin num="POT_WIPER" name="POT_WIPER" type="passive"/>
+        <pin num="SW1" name="SW1" type="passive"/>
+        <pin num="SW2" name="SW2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U400">
+      <fields>
+        <field name="Reference">U400</field>
+        <field name="Value">ESP32-WROOM32D / GPIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="22" name="GPIO22" type="passive"/>
+        <pin num="23" name="GPIO23" type="passive"/>
+        <pin num="32" name="GPIO32" type="passive"/>
+        <pin num="33" name="GPIO33" type="passive"/>
+        <pin num="34" name="GPIO34" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U401">
+      <fields>
+        <field name="Reference">U401</field>
+        <field name="Value">SSD1306 / 128 x 64 / 0x3C</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC_TBD" name="VCC_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U402">
+      <fields>
+        <field name="Reference">U402</field>
+        <field name="Value">AHT20 / 0x38</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC_TBD" name="VCC_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U403">
+      <fields>
+        <field name="Reference">U403</field>
+        <field name="Value">BMP280 / 0x76 or 0x77</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC_TBD" name="VCC_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U404">
+      <fields>
+        <field name="Reference">U404</field>
+        <field name="Value">VL53L0X / optional, OFF</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC_TBD" name="VCC_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="04_Drive_Sensors_U405">
+      <fields>
+        <field name="Reference">U405</field>
+        <field name="Value">NEO-6M / UART2 9600</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="RX" name="RX" type="passive"/>
+        <pin num="TX" name="TX" type="passive"/>
+        <pin num="VCC_TBD" name="VCC_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_K501">
+      <fields>
+        <field name="Reference">K501</field>
+        <field name="Value">4ch relay / active LOW</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COIL_SUPPLY_TBD" name="COIL_SUPPLY_TBD" type="passive"/>
+        <pin num="CONTACTS_TBD" name="CONTACTS_TBD" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="IN1" name="IN1" type="passive"/>
+        <pin num="IN2" name="IN2" type="passive"/>
+        <pin num="IN3" name="IN3" type="passive"/>
+        <pin num="IN4" name="IN4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_U500">
+      <fields>
+        <field name="Reference">U500</field>
+        <field name="Value">ESP32-S3 N16R8 / GPIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="3" name="GPIO3" type="passive"/>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="6" name="GPIO6" type="passive"/>
+        <pin num="7" name="GPIO7" type="passive"/>
+        <pin num="8" name="GPIO8" type="passive"/>
+        <pin num="9" name="GPIO9" type="passive"/>
+        <pin num="10" name="GPIO10" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="46" name="GPIO46" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_U501">
+      <fields>
+        <field name="Reference">U501</field>
+        <field name="Value">X stepper driver / type TBD</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="POWER_TBD" name="POWER_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_U502">
+      <fields>
+        <field name="Reference">U502</field>
+        <field name="Value">Y stepper driver / type TBD</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="POWER_TBD" name="POWER_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_U503">
+      <fields>
+        <field name="Reference">U503</field>
+        <field name="Value">Z stepper driver / type TBD</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS_TBD" name="COILS_TBD" type="passive"/>
+        <pin num="CONFIG_TBD" name="CONFIG_TBD" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="POWER_TBD" name="POWER_TBD" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="05_Robot3Axis_U504">
+      <fields>
+        <field name="Reference">U504</field>
+        <field name="Value">L298N / DC motor driver</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="ENA_ENB_TBD" name="ENA_ENB_TBD" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="IN1" name="IN1" type="passive"/>
+        <pin num="IN2" name="IN2" type="passive"/>
+        <pin num="IN3" name="IN3" type="passive"/>
+        <pin num="IN4" name="IN4" type="passive"/>
+        <pin num="MOTOR_OUT_TBD" name="MOTOR_OUT_TBD" type="passive"/>
+        <pin num="POWER_TBD" name="POWER_TBD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="06_ImageSender_U600">
+      <fields>
+        <field name="Reference">U600</field>
+        <field name="Value">ESP32-S3 N16R8 / GPIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="6" name="GPIO6" type="passive"/>
+        <pin num="7" name="GPIO7" type="passive"/>
+        <pin num="8" name="GPIO8" type="passive"/>
+        <pin num="9" name="GPIO9" type="passive"/>
+        <pin num="10" name="GPIO10" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="06_ImageSender_U601">
+      <fields>
+        <field name="Reference">U601</field>
+        <field name="Value">DVP camera / exact SKU TBD</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="D0" name="D0" type="passive"/>
+        <pin num="D1" name="D1" type="passive"/>
+        <pin num="D2" name="D2" type="passive"/>
+        <pin num="D3" name="D3" type="passive"/>
+        <pin num="D4" name="D4" type="passive"/>
+        <pin num="D5" name="D5" type="passive"/>
+        <pin num="D6" name="D6" type="passive"/>
+        <pin num="D7" name="D7" type="passive"/>
+        <pin num="GND_TBD" name="GND_TBD" type="passive"/>
+        <pin num="HREF" name="HREF" type="passive"/>
+        <pin num="PCLK" name="PCLK" type="passive"/>
+        <pin num="POWER_TBD" name="POWER_TBD" type="passive"/>
+        <pin num="PWDN_NOT_DRIVEN" name="PWDN_NOT_DRIVEN" type="passive"/>
+        <pin num="RESET_NOT_DRIVEN" name="RESET_NOT_DRIVEN" type="passive"/>
+        <pin num="SCCB_SCL" name="SCCB_SCL" type="passive"/>
+        <pin num="SCCB_SDA" name="SCCB_SDA" type="passive"/>
+        <pin num="VSYNC" name="VSYNC" type="passive"/>
+        <pin num="XCLK" name="XCLK" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="07_HMI_U700">
+      <fields>
+        <field name="Reference">U700</field>
+        <field name="Value">ESP32 / CYD onboard GPIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="2" name="GPIO2" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="25" name="GPIO25" type="passive"/>
+        <pin num="32" name="GPIO32" type="passive"/>
+        <pin num="33" name="GPIO33" type="passive"/>
+        <pin num="36" name="GPIO36" type="passive"/>
+        <pin num="39" name="GPIO39" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="07_HMI_U701">
+      <fields>
+        <field name="Reference">U701</field>
+        <field name="Value">ILI9341 / onboard LCD</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="BL_CTRL" name="BL_CTRL" type="passive"/>
+        <pin num="CS" name="CS" type="passive"/>
+        <pin num="DC" name="DC" type="passive"/>
+        <pin num="GND_ONBOARD" name="GND_ONBOARD" type="passive"/>
+        <pin num="MISO" name="MISO" type="passive"/>
+        <pin num="MOSI" name="MOSI" type="passive"/>
+        <pin num="POWER_ONBOARD" name="POWER_ONBOARD" type="passive"/>
+        <pin num="RST_NOT_DRIVEN" name="RST_NOT_DRIVEN" type="passive"/>
+        <pin num="SCLK" name="SCLK" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD" part="07_HMI_U702">
+      <fields>
+        <field name="Reference">U702</field>
+        <field name="Value">XPT2046 / onboard touch</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="CLK" name="CLK" type="passive"/>
+        <pin num="CS" name="CS" type="passive"/>
+        <pin num="GND_ONBOARD" name="GND_ONBOARD" type="passive"/>
+        <pin num="IRQ" name="IRQ" type="passive"/>
+        <pin num="MISO" name="MISO" type="passive"/>
+        <pin num="MOSI" name="MOSI" type="passive"/>
+        <pin num="POWER_ONBOARD" name="POWER_ONBOARD" type="passive"/>
+        <pin num="TOUCH_PANEL_ONBOARD" name="TOUCH_PANEL_ONBOARD" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="ARD">
+      <uri>${KIPRJMOD}/ARD.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="/ControlMCU / 조작 및 오디오/C_G4" class="Default">
+      <node ref="D201" pin="DRIVE" pinfunction="DRIVE_DRIVE" pintype="passive"/>
+      <node ref="U200" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="2" name="/ControlMCU / 조작 및 오디오/C_G11" class="Default">
+      <node ref="SW203" pin="CONTACT" pinfunction="CONTACT_CONTACT" pintype="passive"/>
+      <node ref="U200" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+    </net>
+    <net code="3" name="/ControlMCU / 조작 및 오디오/C_G13" class="Default">
+      <node ref="SW201" pin="LEFT" pinfunction="LEFT_LEFT" pintype="passive"/>
+      <node ref="U200" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+    </net>
+    <net code="4" name="/ControlMCU / 조작 및 오디오/C_G14" class="Default">
+      <node ref="SW201" pin="RIGHT" pinfunction="RIGHT_RIGHT" pintype="passive"/>
+      <node ref="U200" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+    </net>
+    <net code="5" name="/ControlMCU / 조작 및 오디오/C_G21" class="Default">
+      <node ref="SW201" pin="DOWN" pinfunction="DOWN_DOWN" pintype="passive"/>
+      <node ref="U200" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+    </net>
+    <net code="6" name="/ControlMCU / 조작 및 오디오/C_G35" class="Default">
+      <node ref="SW202" pin="A" pinfunction="A_A" pintype="passive"/>
+      <node ref="U200" pin="35" pinfunction="GPIO35_35" pintype="passive"/>
+    </net>
+    <net code="7" name="/ControlMCU / 조작 및 오디오/C_G36" class="Default">
+      <node ref="SW202" pin="B" pinfunction="B_B" pintype="passive"/>
+      <node ref="U200" pin="36" pinfunction="GPIO36_36" pintype="passive"/>
+    </net>
+    <net code="8" name="/ControlMCU / 조작 및 오디오/C_G39" class="Default">
+      <node ref="U200" pin="39" pinfunction="GPIO39_39" pintype="passive"/>
+      <node ref="U201" pin="SD" pinfunction="SD_SD" pintype="passive"/>
+    </net>
+    <net code="9" name="/ControlMCU / 조작 및 오디오/C_G40" class="Default">
+      <node ref="U200" pin="40" pinfunction="GPIO40_40" pintype="passive"/>
+      <node ref="U201" pin="DIN" pinfunction="DIN_DIN" pintype="passive"/>
+    </net>
+    <net code="10" name="/ControlMCU / 조작 및 오디오/C_G41" class="Default">
+      <node ref="U200" pin="41" pinfunction="GPIO41_41" pintype="passive"/>
+      <node ref="U201" pin="LRC" pinfunction="LRC_LRC" pintype="passive"/>
+    </net>
+    <net code="11" name="/ControlMCU / 조작 및 오디오/C_G42" class="Default">
+      <node ref="U200" pin="42" pinfunction="GPIO42_42" pintype="passive"/>
+      <node ref="U201" pin="BCLK" pinfunction="BCLK_BCLK" pintype="passive"/>
+    </net>
+    <net code="12" name="/ControlMCU / 조작 및 오디오/C_G47" class="Default">
+      <node ref="SW201" pin="UP" pinfunction="UP_UP" pintype="passive"/>
+      <node ref="U200" pin="47" pinfunction="GPIO47_47" pintype="passive"/>
+    </net>
+    <net code="13" name="/ControlMCU / 조작 및 오디오/C_G48" class="Default">
+      <node ref="D202" pin="DIN" pinfunction="DIN_DIN" pintype="passive"/>
+      <node ref="U200" pin="48" pinfunction="GPIO48_48" pintype="passive"/>
+    </net>
+    <net code="14" name="/DriveMCU / 3축 스텝 모터/D_G5" class="Default">
+      <node ref="U300" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+      <node ref="U302" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="15" name="/DriveMCU / 3축 스텝 모터/D_G16" class="Default">
+      <node ref="U300" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U302" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="16" name="/DriveMCU / 3축 스텝 모터/D_G17" class="Default">
+      <node ref="U300" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U302" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="17" name="/DriveMCU / 3축 스텝 모터/D_G18" class="Default">
+      <node ref="U300" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U301" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="18" name="/DriveMCU / 3축 스텝 모터/D_G19" class="Default">
+      <node ref="U300" pin="19" pinfunction="GPIO19_19" pintype="passive"/>
+      <node ref="U301" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="19" name="/DriveMCU / 3축 스텝 모터/D_G21" class="Default">
+      <node ref="U300" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+      <node ref="U301" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="20" name="/DriveMCU / 3축 스텝 모터/D_G25" class="Default">
+      <node ref="U300" pin="25" pinfunction="GPIO25_25" pintype="passive"/>
+      <node ref="U303" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="21" name="/DriveMCU / 3축 스텝 모터/D_G26" class="Default">
+      <node ref="U300" pin="26" pinfunction="GPIO26_26" pintype="passive"/>
+      <node ref="U303" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="22" name="/DriveMCU / 3축 스텝 모터/D_G27" class="Default">
+      <node ref="U300" pin="27" pinfunction="GPIO27_27" pintype="passive"/>
+      <node ref="U303" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="23" name="/DriveMCU / 센서 및 수동 조작/D_G4" class="Default">
+      <node ref="J401" pin="BUZZER_DRIVE" pinfunction="BUZZER_DRIVE_BUZZER_DRIVE" pintype="passive"/>
+      <node ref="U400" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="24" name="/DriveMCU / 센서 및 수동 조작/D_G13" class="Default">
+      <node ref="J401" pin="SW1" pinfunction="SW1_SW1" pintype="passive"/>
+      <node ref="U400" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+    </net>
+    <net code="25" name="/DriveMCU / 센서 및 수동 조작/D_G14" class="Default">
+      <node ref="J401" pin="SW2" pinfunction="SW2_SW2" pintype="passive"/>
+      <node ref="U400" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+    </net>
+    <net code="26" name="/DriveMCU / 센서 및 수동 조작/D_G22" class="Default">
+      <node ref="U400" pin="22" pinfunction="GPIO22_22" pintype="passive"/>
+      <node ref="U401" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U402" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U403" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U404" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+    </net>
+    <net code="27" name="/DriveMCU / 센서 및 수동 조작/D_G23" class="Default">
+      <node ref="U400" pin="23" pinfunction="GPIO23_23" pintype="passive"/>
+      <node ref="U401" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U402" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U403" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U404" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+    </net>
+    <net code="28" name="/DriveMCU / 센서 및 수동 조작/D_G32" class="Default">
+      <node ref="U400" pin="32" pinfunction="GPIO32_32" pintype="passive"/>
+      <node ref="U405" pin="TX" pinfunction="TX_TX" pintype="passive"/>
+    </net>
+    <net code="29" name="/DriveMCU / 센서 및 수동 조작/D_G33" class="Default">
+      <node ref="U400" pin="33" pinfunction="GPIO33_33" pintype="passive"/>
+      <node ref="U405" pin="RX" pinfunction="RX_RX" pintype="passive"/>
+    </net>
+    <net code="30" name="/DriveMCU / 센서 및 수동 조작/D_G34" class="Default">
+      <node ref="J401" pin="POT_WIPER" pinfunction="POT_WIPER_POT_WIPER" pintype="passive"/>
+      <node ref="U400" pin="34" pinfunction="GPIO34_34" pintype="passive"/>
+    </net>
+    <net code="31" name="/HMI_MCU / CYD LCD 및 터치/H_G2" class="Default">
+      <node ref="U700" pin="2" pinfunction="GPIO2_2" pintype="passive"/>
+      <node ref="U701" pin="DC" pinfunction="DC_DC" pintype="passive"/>
+    </net>
+    <net code="32" name="/HMI_MCU / CYD LCD 및 터치/H_G12" class="Default">
+      <node ref="U700" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U701" pin="MISO" pinfunction="MISO_MISO" pintype="passive"/>
+    </net>
+    <net code="33" name="/HMI_MCU / CYD LCD 및 터치/H_G13" class="Default">
+      <node ref="U700" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U701" pin="MOSI" pinfunction="MOSI_MOSI" pintype="passive"/>
+    </net>
+    <net code="34" name="/HMI_MCU / CYD LCD 및 터치/H_G14" class="Default">
+      <node ref="U700" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+      <node ref="U701" pin="SCLK" pinfunction="SCLK_SCLK" pintype="passive"/>
+    </net>
+    <net code="35" name="/HMI_MCU / CYD LCD 및 터치/H_G15" class="Default">
+      <node ref="U700" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U701" pin="CS" pinfunction="CS_CS" pintype="passive"/>
+    </net>
+    <net code="36" name="/HMI_MCU / CYD LCD 및 터치/H_G21" class="Default">
+      <node ref="U700" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+      <node ref="U701" pin="BL_CTRL" pinfunction="BL_CTRL_BL_CTRL" pintype="passive"/>
+    </net>
+    <net code="37" name="/HMI_MCU / CYD LCD 및 터치/H_G25" class="Default">
+      <node ref="U700" pin="25" pinfunction="GPIO25_25" pintype="passive"/>
+      <node ref="U702" pin="CLK" pinfunction="CLK_CLK" pintype="passive"/>
+    </net>
+    <net code="38" name="/HMI_MCU / CYD LCD 및 터치/H_G32" class="Default">
+      <node ref="U700" pin="32" pinfunction="GPIO32_32" pintype="passive"/>
+      <node ref="U702" pin="MOSI" pinfunction="MOSI_MOSI" pintype="passive"/>
+    </net>
+    <net code="39" name="/HMI_MCU / CYD LCD 및 터치/H_G33" class="Default">
+      <node ref="U700" pin="33" pinfunction="GPIO33_33" pintype="passive"/>
+      <node ref="U702" pin="CS" pinfunction="CS_CS" pintype="passive"/>
+    </net>
+    <net code="40" name="/HMI_MCU / CYD LCD 및 터치/H_G36" class="Default">
+      <node ref="U700" pin="36" pinfunction="GPIO36_36" pintype="passive"/>
+      <node ref="U702" pin="IRQ" pinfunction="IRQ_IRQ" pintype="passive"/>
+    </net>
+    <net code="41" name="/HMI_MCU / CYD LCD 및 터치/H_G39" class="Default">
+      <node ref="U700" pin="39" pinfunction="GPIO39_39" pintype="passive"/>
+      <node ref="U702" pin="MISO" pinfunction="MISO_MISO" pintype="passive"/>
+    </net>
+    <net code="42" name="/ImageSenderMCU / 병렬 카메라/CAM_G4" class="Default">
+      <node ref="U600" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+      <node ref="U601" pin="SCCB_SDA" pinfunction="SCCB_SDA_SCCB_SDA" pintype="passive"/>
+    </net>
+    <net code="43" name="/ImageSenderMCU / 병렬 카메라/CAM_G5" class="Default">
+      <node ref="U600" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+      <node ref="U601" pin="SCCB_SCL" pinfunction="SCCB_SCL_SCCB_SCL" pintype="passive"/>
+    </net>
+    <net code="44" name="/ImageSenderMCU / 병렬 카메라/CAM_G6" class="Default">
+      <node ref="U600" pin="6" pinfunction="GPIO6_6" pintype="passive"/>
+      <node ref="U601" pin="VSYNC" pinfunction="VSYNC_VSYNC" pintype="passive"/>
+    </net>
+    <net code="45" name="/ImageSenderMCU / 병렬 카메라/CAM_G7" class="Default">
+      <node ref="U600" pin="7" pinfunction="GPIO7_7" pintype="passive"/>
+      <node ref="U601" pin="HREF" pinfunction="HREF_HREF" pintype="passive"/>
+    </net>
+    <net code="46" name="/ImageSenderMCU / 병렬 카메라/CAM_G8" class="Default">
+      <node ref="U600" pin="8" pinfunction="GPIO8_8" pintype="passive"/>
+      <node ref="U601" pin="D2" pinfunction="D2_D2" pintype="passive"/>
+    </net>
+    <net code="47" name="/ImageSenderMCU / 병렬 카메라/CAM_G9" class="Default">
+      <node ref="U600" pin="9" pinfunction="GPIO9_9" pintype="passive"/>
+      <node ref="U601" pin="D1" pinfunction="D1_D1" pintype="passive"/>
+    </net>
+    <net code="48" name="/ImageSenderMCU / 병렬 카메라/CAM_G10" class="Default">
+      <node ref="U600" pin="10" pinfunction="GPIO10_10" pintype="passive"/>
+      <node ref="U601" pin="D3" pinfunction="D3_D3" pintype="passive"/>
+    </net>
+    <net code="49" name="/ImageSenderMCU / 병렬 카메라/CAM_G11" class="Default">
+      <node ref="U600" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+      <node ref="U601" pin="D0" pinfunction="D0_D0" pintype="passive"/>
+    </net>
+    <net code="50" name="/ImageSenderMCU / 병렬 카메라/CAM_G12" class="Default">
+      <node ref="U600" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U601" pin="D4" pinfunction="D4_D4" pintype="passive"/>
+    </net>
+    <net code="51" name="/ImageSenderMCU / 병렬 카메라/CAM_G13" class="Default">
+      <node ref="U600" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U601" pin="PCLK" pinfunction="PCLK_PCLK" pintype="passive"/>
+    </net>
+    <net code="52" name="/ImageSenderMCU / 병렬 카메라/CAM_G15" class="Default">
+      <node ref="U600" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U601" pin="XCLK" pinfunction="XCLK_XCLK" pintype="passive"/>
+    </net>
+    <net code="53" name="/ImageSenderMCU / 병렬 카메라/CAM_G16" class="Default">
+      <node ref="U600" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U601" pin="D7" pinfunction="D7_D7" pintype="passive"/>
+    </net>
+    <net code="54" name="/ImageSenderMCU / 병렬 카메라/CAM_G17" class="Default">
+      <node ref="U600" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U601" pin="D6" pinfunction="D6_D6" pintype="passive"/>
+    </net>
+    <net code="55" name="/ImageSenderMCU / 병렬 카메라/CAM_G18" class="Default">
+      <node ref="U600" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U601" pin="D5" pinfunction="D5_D5" pintype="passive"/>
+    </net>
+    <net code="56" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G3" class="Default">
+      <node ref="U500" pin="3" pinfunction="GPIO3_3" pintype="passive"/>
+      <node ref="U503" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="57" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G4" class="Default">
+      <node ref="K501" pin="IN1" pinfunction="IN1_IN1" pintype="passive"/>
+      <node ref="U500" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="58" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G5" class="Default">
+      <node ref="K501" pin="IN2" pinfunction="IN2_IN2" pintype="passive"/>
+      <node ref="U500" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+    </net>
+    <net code="59" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G6" class="Default">
+      <node ref="K501" pin="IN3" pinfunction="IN3_IN3" pintype="passive"/>
+      <node ref="U500" pin="6" pinfunction="GPIO6_6" pintype="passive"/>
+    </net>
+    <net code="60" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G7" class="Default">
+      <node ref="K501" pin="IN4" pinfunction="IN4_IN4" pintype="passive"/>
+      <node ref="U500" pin="7" pinfunction="GPIO7_7" pintype="passive"/>
+    </net>
+    <net code="61" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G8" class="Default">
+      <node ref="U500" pin="8" pinfunction="GPIO8_8" pintype="passive"/>
+      <node ref="U503" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="62" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G9" class="Default">
+      <node ref="U500" pin="9" pinfunction="GPIO9_9" pintype="passive"/>
+      <node ref="U501" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="63" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G10" class="Default">
+      <node ref="U500" pin="10" pinfunction="GPIO10_10" pintype="passive"/>
+      <node ref="U501" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="64" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G11" class="Default">
+      <node ref="U500" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+      <node ref="U501" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="65" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G12" class="Default">
+      <node ref="U500" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U502" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="66" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G13" class="Default">
+      <node ref="U500" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U502" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="67" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G14" class="Default">
+      <node ref="U500" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+      <node ref="U502" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="68" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G15" class="Default">
+      <node ref="U500" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U504" pin="IN1" pinfunction="IN1_IN1" pintype="passive"/>
+    </net>
+    <net code="69" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G16" class="Default">
+      <node ref="U500" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U504" pin="IN2" pinfunction="IN2_IN2" pintype="passive"/>
+    </net>
+    <net code="70" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G17" class="Default">
+      <node ref="U500" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U504" pin="IN3" pinfunction="IN3_IN3" pintype="passive"/>
+    </net>
+    <net code="71" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G18" class="Default">
+      <node ref="U500" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U504" pin="IN4" pinfunction="IN4_IN4" pintype="passive"/>
+    </net>
+    <net code="72" name="/Robot3AxisMCU / 로봇 및 공압 제어/R_G46" class="Default">
+      <node ref="U500" pin="46" pinfunction="GPIO46_46" pintype="passive"/>
+      <node ref="U503" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="73" name="unconnected-(D201-PadRETURN_TBD)" class="Default">
+      <node ref="D201" pin="RETURN_TBD" pinfunction="RETURN_TBD_RETURN_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="74" name="unconnected-(D202-PadGND_ONBOARD)" class="Default">
+      <node ref="D202" pin="GND_ONBOARD" pinfunction="GND_ONBOARD_GND_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="75" name="unconnected-(D202-PadVDD_ONBOARD)" class="Default">
+      <node ref="D202" pin="VDD_ONBOARD" pinfunction="VDD_ONBOARD_VDD_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="76" name="unconnected-(J401-PadBUZZER_RETURN_TBD)" class="Default">
+      <node ref="J401" pin="BUZZER_RETURN_TBD" pinfunction="BUZZER_RETURN_TBD_BUZZER_RETURN_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="77" name="unconnected-(J401-PadCOM_TBD)" class="Default">
+      <node ref="J401" pin="COM_TBD" pinfunction="COM_TBD_COM_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="78" name="unconnected-(J401-PadPOT_ENDS_TBD)" class="Default">
+      <node ref="J401" pin="POT_ENDS_TBD" pinfunction="POT_ENDS_TBD_POT_ENDS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="79" name="unconnected-(K501-PadCOIL_SUPPLY_TBD)" class="Default">
+      <node ref="K501" pin="COIL_SUPPLY_TBD" pinfunction="COIL_SUPPLY_TBD_COIL_SUPPLY_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="80" name="unconnected-(K501-PadCONTACTS_TBD)" class="Default">
+      <node ref="K501" pin="CONTACTS_TBD" pinfunction="CONTACTS_TBD_CONTACTS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="81" name="unconnected-(K501-PadGND_TBD)" class="Default">
+      <node ref="K501" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="82" name="unconnected-(SW201-PadCOM_GND_TBD)" class="Default">
+      <node ref="SW201" pin="COM_GND_TBD" pinfunction="COM_GND_TBD_COM_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="83" name="unconnected-(SW202-PadCOM_GND_TBD)" class="Default">
+      <node ref="SW202" pin="COM_GND_TBD" pinfunction="COM_GND_TBD_COM_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="84" name="unconnected-(SW203-PadCOM_GND_TBD)" class="Default">
+      <node ref="SW203" pin="COM_GND_TBD" pinfunction="COM_GND_TBD_COM_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="85" name="unconnected-(U201-PadGND_TBD)" class="Default">
+      <node ref="U201" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="86" name="unconnected-(U201-PadSPK+_TBD)" class="Default">
+      <node ref="U201" pin="SPK+_TBD" pinfunction="SPK+_TBD_SPK+_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="87" name="unconnected-(U201-PadSPK-_TBD)" class="Default">
+      <node ref="U201" pin="SPK-_TBD" pinfunction="SPK-_TBD_SPK-_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="88" name="unconnected-(U201-PadVIN_TBD)" class="Default">
+      <node ref="U201" pin="VIN_TBD" pinfunction="VIN_TBD_VIN_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="89" name="unconnected-(U301-PadCOILS_TBD)" class="Default">
+      <node ref="U301" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="90" name="unconnected-(U301-PadCONFIG_TBD)" class="Default">
+      <node ref="U301" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="91" name="unconnected-(U301-PadGND_TBD)" class="Default">
+      <node ref="U301" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="92" name="unconnected-(U301-PadVDD_TBD)" class="Default">
+      <node ref="U301" pin="VDD_TBD" pinfunction="VDD_TBD_VDD_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="93" name="unconnected-(U301-PadVMOT_TBD)" class="Default">
+      <node ref="U301" pin="VMOT_TBD" pinfunction="VMOT_TBD_VMOT_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="94" name="unconnected-(U302-PadCOILS_TBD)" class="Default">
+      <node ref="U302" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="95" name="unconnected-(U302-PadCONFIG_TBD)" class="Default">
+      <node ref="U302" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="96" name="unconnected-(U302-PadGND_TBD)" class="Default">
+      <node ref="U302" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="97" name="unconnected-(U302-PadVDD_TBD)" class="Default">
+      <node ref="U302" pin="VDD_TBD" pinfunction="VDD_TBD_VDD_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="98" name="unconnected-(U302-PadVMOT_TBD)" class="Default">
+      <node ref="U302" pin="VMOT_TBD" pinfunction="VMOT_TBD_VMOT_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="99" name="unconnected-(U303-PadCOILS_TBD)" class="Default">
+      <node ref="U303" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="100" name="unconnected-(U303-PadCONFIG_TBD)" class="Default">
+      <node ref="U303" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="101" name="unconnected-(U303-PadGND_TBD)" class="Default">
+      <node ref="U303" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="102" name="unconnected-(U303-PadVDD_TBD)" class="Default">
+      <node ref="U303" pin="VDD_TBD" pinfunction="VDD_TBD_VDD_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="103" name="unconnected-(U303-PadVMOT_TBD)" class="Default">
+      <node ref="U303" pin="VMOT_TBD" pinfunction="VMOT_TBD_VMOT_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="104" name="unconnected-(U401-PadGND_TBD)" class="Default">
+      <node ref="U401" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="105" name="unconnected-(U401-PadVCC_TBD)" class="Default">
+      <node ref="U401" pin="VCC_TBD" pinfunction="VCC_TBD_VCC_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="106" name="unconnected-(U402-PadGND_TBD)" class="Default">
+      <node ref="U402" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="107" name="unconnected-(U402-PadVCC_TBD)" class="Default">
+      <node ref="U402" pin="VCC_TBD" pinfunction="VCC_TBD_VCC_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="108" name="unconnected-(U403-PadGND_TBD)" class="Default">
+      <node ref="U403" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="109" name="unconnected-(U403-PadVCC_TBD)" class="Default">
+      <node ref="U403" pin="VCC_TBD" pinfunction="VCC_TBD_VCC_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="110" name="unconnected-(U404-PadGND_TBD)" class="Default">
+      <node ref="U404" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="111" name="unconnected-(U404-PadVCC_TBD)" class="Default">
+      <node ref="U404" pin="VCC_TBD" pinfunction="VCC_TBD_VCC_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="112" name="unconnected-(U405-PadGND_TBD)" class="Default">
+      <node ref="U405" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="113" name="unconnected-(U405-PadVCC_TBD)" class="Default">
+      <node ref="U405" pin="VCC_TBD" pinfunction="VCC_TBD_VCC_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="114" name="unconnected-(U501-PadCOILS_TBD)" class="Default">
+      <node ref="U501" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="115" name="unconnected-(U501-PadCONFIG_TBD)" class="Default">
+      <node ref="U501" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="116" name="unconnected-(U501-PadPOWER_TBD)" class="Default">
+      <node ref="U501" pin="POWER_TBD" pinfunction="POWER_TBD_POWER_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="117" name="unconnected-(U502-PadCOILS_TBD)" class="Default">
+      <node ref="U502" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="118" name="unconnected-(U502-PadCONFIG_TBD)" class="Default">
+      <node ref="U502" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="119" name="unconnected-(U502-PadPOWER_TBD)" class="Default">
+      <node ref="U502" pin="POWER_TBD" pinfunction="POWER_TBD_POWER_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="120" name="unconnected-(U503-PadCOILS_TBD)" class="Default">
+      <node ref="U503" pin="COILS_TBD" pinfunction="COILS_TBD_COILS_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="121" name="unconnected-(U503-PadCONFIG_TBD)" class="Default">
+      <node ref="U503" pin="CONFIG_TBD" pinfunction="CONFIG_TBD_CONFIG_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="122" name="unconnected-(U503-PadPOWER_TBD)" class="Default">
+      <node ref="U503" pin="POWER_TBD" pinfunction="POWER_TBD_POWER_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="123" name="unconnected-(U504-PadENA_ENB_TBD)" class="Default">
+      <node ref="U504" pin="ENA_ENB_TBD" pinfunction="ENA_ENB_TBD_ENA_ENB_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="124" name="unconnected-(U504-PadGND_TBD)" class="Default">
+      <node ref="U504" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="125" name="unconnected-(U504-PadMOTOR_OUT_TBD)" class="Default">
+      <node ref="U504" pin="MOTOR_OUT_TBD" pinfunction="MOTOR_OUT_TBD_MOTOR_OUT_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="126" name="unconnected-(U504-PadPOWER_TBD)" class="Default">
+      <node ref="U504" pin="POWER_TBD" pinfunction="POWER_TBD_POWER_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="127" name="unconnected-(U601-PadGND_TBD)" class="Default">
+      <node ref="U601" pin="GND_TBD" pinfunction="GND_TBD_GND_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="128" name="unconnected-(U601-PadPOWER_TBD)" class="Default">
+      <node ref="U601" pin="POWER_TBD" pinfunction="POWER_TBD_POWER_TBD" pintype="passive+no_connect"/>
+    </net>
+    <net code="129" name="unconnected-(U601-PadPWDN_NOT_DRIVEN)" class="Default">
+      <node ref="U601" pin="PWDN_NOT_DRIVEN" pinfunction="PWDN_NOT_DRIVEN_PWDN_NOT_DRIVEN" pintype="passive+no_connect"/>
+    </net>
+    <net code="130" name="unconnected-(U601-PadRESET_NOT_DRIVEN)" class="Default">
+      <node ref="U601" pin="RESET_NOT_DRIVEN" pinfunction="RESET_NOT_DRIVEN_RESET_NOT_DRIVEN" pintype="passive+no_connect"/>
+    </net>
+    <net code="131" name="unconnected-(U701-PadGND_ONBOARD)" class="Default">
+      <node ref="U701" pin="GND_ONBOARD" pinfunction="GND_ONBOARD_GND_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="132" name="unconnected-(U701-PadPOWER_ONBOARD)" class="Default">
+      <node ref="U701" pin="POWER_ONBOARD" pinfunction="POWER_ONBOARD_POWER_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="133" name="unconnected-(U701-PadRST_NOT_DRIVEN)" class="Default">
+      <node ref="U701" pin="RST_NOT_DRIVEN" pinfunction="RST_NOT_DRIVEN_RST_NOT_DRIVEN" pintype="passive+no_connect"/>
+    </net>
+    <net code="134" name="unconnected-(U702-PadGND_ONBOARD)" class="Default">
+      <node ref="U702" pin="GND_ONBOARD" pinfunction="GND_ONBOARD_GND_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="135" name="unconnected-(U702-PadPOWER_ONBOARD)" class="Default">
+      <node ref="U702" pin="POWER_ONBOARD" pinfunction="POWER_ONBOARD_POWER_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+    <net code="136" name="unconnected-(U702-PadTOUCH_PANEL_ONBOARD)" class="Default">
+      <node ref="U702" pin="TOUCH_PANEL_ONBOARD" pinfunction="TOUCH_PANEL_ONBOARD_TOUCH_PANEL_ONBOARD" pintype="passive+no_connect"/>
+    </net>
+  </nets>
+</export>

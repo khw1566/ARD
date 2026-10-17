@@ -75,11 +75,7 @@
             const motorSteps = Math.round(steps * gearRatio); // 물리 모터 스텝 증폭
             sendMotorCmd(`${prefix}r${motorSteps}`);
             
-            // 시뮬레이션은 사용자가 의도한 최종 출력 각도만큼 회전 표시
-            const rad = ((steps / 100) * Math.PI);
-            if (axis === 'x') targetAngleX += rad;
-            else if (axis === 'y') targetAngleY += rad;
-            else if (axis === 'z') targetAngleZ += rad;
+            // drive_update supplies the accepted command state; do not add it twice.
         });
         document.getElementById(`move-bw-btn-${axis}`)?.addEventListener('click', () => {
             const steps = parseInt(stepsInput.value || 200);
@@ -87,10 +83,6 @@
             const motorSteps = Math.round(steps * gearRatio);
             sendMotorCmd(`${prefix}r-${motorSteps}`);
             
-            const rad = ((steps / 100) * Math.PI);
-            if (axis === 'x') targetAngleX -= rad;
-            else if (axis === 'y') targetAngleY -= rad;
-            else if (axis === 'z') targetAngleZ -= rad;
         });
     };
 
@@ -141,6 +133,7 @@
     };
 
     let carrierGroup, yawGroup, bottomSpider;
+    let railBaseGroup, carriageGroup, leadScrewMesh, binMeshes = [];
     let angleChart = null;
 
     const initChart = () => {
@@ -208,168 +201,399 @@
     };
 
     const initThreeJS = () => {
-        const container = document.getElementById('three-container');
+        const container = document.getElementById('sorting-three-container') || document.getElementById('three-container');
         if (!container || scene) return;
 
         scene = new THREE.Scene();
         clock = new THREE.Clock();
         
-        const width = container.clientWidth;
-        const height = container.clientHeight;
+        const width = container.clientWidth || 400;
+        const height = container.clientHeight || 300;
         
-        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-        camera.position.set(0, 15, 30);
-        camera.lookAt(0, 0, 0);
+        // 실물 사진(분류구조.jpg)과 일치하는 3/4 아이소메트릭 원거리 전체 조망 시점
+        camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 1000);
+        camera.position.set(38, 34, 42);
+        camera.lookAt(0, -1.5, 0);
 
         // --- Main Renderer ---
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0); 
         container.appendChild(renderer.domElement);
 
         // --- Mini Camera Array ---
         const miniContainer = document.getElementById('mini-three-container');
         if (miniContainer) {
-            miniCamera = new THREE.PerspectiveCamera(40, miniContainer.clientWidth / 180, 0.1, 1000);
-            miniCamera.position.set(20, 15, 20);
-            miniCamera.lookAt(0, 0, 0);
+            miniCamera = new THREE.PerspectiveCamera(44, (miniContainer.clientWidth || 200) / 180, 0.1, 1000);
+            miniCamera.position.set(38, 32, 40);
+            miniCamera.lookAt(0, -1.5, 0);
         }
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        // Lighting (현장 조명 및 기구 텍스처를 돋보이게 하는 다중 라이팅)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
         scene.add(ambientLight);
         
-        const pointLight = new THREE.PointLight(0x38bdf8, 2, 100);
-        pointLight.position.set(10, 20, 10);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(20, 35, 20);
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0x38bdf8, 1.5, 100);
+        pointLight.position.set(-15, 20, 15);
         scene.add(pointLight);
 
-        const spotLight = new THREE.SpotLight(0xffffff, 1);
-        spotLight.position.set(-10, 15, 10);
-        scene.add(spotLight);
-
         // Groups
+        railBaseGroup = new THREE.Group();
+        scene.add(railBaseGroup);
+
+        carriageGroup = new THREE.Group();
+        scene.add(carriageGroup);
+
+        // 상부 차동 구동계 (90도 회전 적용: 모터 2기 전후 배치, 덤핑 축이 좌우 박스 방향과 일치)
         const differentialGroup = new THREE.Group();
-        scene.add(differentialGroup);
-        
-        carrierGroup = new THREE.Group();
-        differentialGroup.add(carrierGroup);
+        differentialGroup.rotation.y = Math.PI / 2;
+        carriageGroup.add(differentialGroup);
         
         yawGroup = new THREE.Group();
-        carrierGroup.add(yawGroup);
+        yawGroup.position.y = 3.5; // Rotate at the actual shaft, not the world origin.
+        carriageGroup.add(yawGroup);
+        carrierGroup = new THREE.Group();
+        yawGroup.add(carrierGroup); // Tilt in the already selected discharge direction.
 
-        // Materials
-        const matMotorFrame = new THREE.MeshPhongMaterial({ color: 0x334155, shininess: 10 });
-        const matMotorCore = new THREE.MeshPhongMaterial({ color: 0x0f172a, shininess: 10 });
-        
-        const matGearX = new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 50 }); // Red
-        const matGearY = new THREE.MeshPhongMaterial({ color: 0x3b82f6, shininess: 50 }); // Blue
-        const matSpider = new THREE.MeshPhongMaterial({ color: 0x10b981, shininess: 60 }); // Green
-        
-        const matShaft = new THREE.MeshPhongMaterial({ color: 0x94a3b8, shininess: 80 }); 
-        const matDisk = new THREE.MeshPhongMaterial({ color: 0xa855f7, transparent: true, opacity: 0.8, shininess: 80 }); // Purple
-        const matBracket = new THREE.MeshPhongMaterial({ color: 0xf59e0b, shininess: 40 }); // Amber
+        // Materials: 실물 '분류구조.jpg'와 완벽 일치 (White SLA/PLA 3D Printing Body)
+        const matBodyWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.1 });
+        const matBevelBeige = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4, metalness: 0.15 }); // 실물 기어 베이지톤
+        const matMotorBody = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.6 }); // NEMA17 블랙 바디
+        const matMotorHeatsink = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7, metalness: 0.8 }); // 블랙 방열판
+        const matLinearRod = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.15, metalness: 0.9 }); // 크롬 연마봉
+        const matLeadScrew = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.85 }); // T8 스크류
+        const matTray = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.05 }); // 상단 원형 트레이
+        const matBrassNut = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.8 }); // 황동 너트
 
         // Helper for outlines
-        const addOutlines = (mesh, color = 0xffffff) => {
+        const addOutlines = (mesh, color = 0x64748b) => {
             const edges = new THREE.EdgesGeometry(mesh.geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.5 }));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.4 }));
             mesh.add(line);
         };
 
-        // 1. Motors & Mounts
-        const motorGeom = new THREE.BoxGeometry(4, 4, 5);
-        const motorBlackGeom = new THREE.BoxGeometry(3.8, 3.8, 4.2);
+        // --- 0. Linear Rail Structure (실물 사진 기반 Z축 평행 이송계) ---
+        const railLength = 46; // 전체 이송 레일 길이
+        const railSpacing = 12; // 듀얼 가이드 샤프트 간격 (X축 방향)
+        const railHeight = -5.0;
+
+        // 양측 크롬 리니어 연마봉 2조 (Z축 방향)
+        const rodGeom = new THREE.CylinderGeometry(0.45, 0.45, railLength, 24);
+        const rodLeft = new THREE.Mesh(rodGeom, matLinearRod);
+        rodLeft.rotation.x = Math.PI / 2;
+        rodLeft.position.set(-railSpacing / 2, railHeight, 0);
+        addOutlines(rodLeft, 0x94a3b8);
+        railBaseGroup.add(rodLeft);
+
+        const rodRight = new THREE.Mesh(rodGeom, matLinearRod);
+        rodRight.rotation.x = Math.PI / 2;
+        rodRight.position.set(railSpacing / 2, railHeight, 0);
+        addOutlines(rodRight, 0x94a3b8);
+        railBaseGroup.add(rodRight);
+
+        // 중앙 T8 리드스크류 (기하학 자체를 Z축 방향으로 눕혀 순수 Z축 자전 구현)
+        const screwGeom = new THREE.CylinderGeometry(0.42, 0.42, railLength, 12);
+        screwGeom.rotateX(Math.PI / 2); // 버텍스 좌표 자체를 Z축 방향으로 정렬
+        leadScrewMesh = new THREE.Mesh(screwGeom, matLeadScrew);
+        leadScrewMesh.position.set(0, railHeight, 0);
         
+        // 스크류 회전 각인 에지 라인 (자전 시 회전 동작이 명확히 보이도록 처리)
+        const screwEdges = new THREE.EdgesGeometry(screwGeom);
+        const screwLines = new THREE.LineSegments(screwEdges, new THREE.LineBasicMaterial({
+            color: 0x475569,
+            transparent: true,
+            opacity: 0.55
+        }));
+        leadScrewMesh.add(screwLines);
+        railBaseGroup.add(leadScrewMesh);
+
+        // 실물 프론트 엔드 지지 마운트 (White 3D Printed Bracket)
+        const endSupportGeom = new THREE.BoxGeometry(railSpacing + 5.5, 3.5, 2.5);
+        const frontEndSupport = new THREE.Mesh(endSupportGeom, matBodyWhite);
+        frontEndSupport.position.set(0, railHeight + 0.5, railLength / 2);
+        addOutlines(frontEndSupport, 0x94a3b8);
+        railBaseGroup.add(frontEndSupport);
+
+        // 실물 리어 엔드 마운트 + Z축 NEMA17 구동 모터
+        const backEndSupport = new THREE.Mesh(endSupportGeom, matBodyWhite);
+        backEndSupport.position.set(0, railHeight + 0.5, -railLength / 2);
+        addOutlines(backEndSupport, 0x94a3b8);
+        railBaseGroup.add(backEndSupport);
+
+        // Z축 스테핑 모터 (실물 사진처럼 후방 중앙에 직결)
+        const zMotor = new THREE.Mesh(new THREE.BoxGeometry(4.2, 4.2, 4.5), matMotorBody);
+        zMotor.position.set(0, railHeight, -railLength / 2 - 2.8);
+        addOutlines(zMotor, 0x38bdf8);
+        railBaseGroup.add(zMotor);
+
+        // 방열판 (Heatsink)
+        const zMotorHeatsink = new THREE.Mesh(new THREE.BoxGeometry(4.0, 4.0, 1.2), matMotorHeatsink);
+        zMotorHeatsink.position.set(0, railHeight, -railLength / 2 - 5.5);
+        railBaseGroup.add(zMotorHeatsink);
+
+        // --- Linear Carriage Slider (실물 메인 이송 브래킷 - White Body) ---
+        // 4개의 LM 베어링 블록이 가이드봉을 감싸며 슬라이딩
+        const carriageBaseGeom = new THREE.BoxGeometry(railSpacing + 5, 2.0, 18);
+        const carriageBase = new THREE.Mesh(carriageBaseGeom, matBodyWhite);
+        carriageBase.position.set(0, railHeight + 1.2, 0);
+        addOutlines(carriageBase, 0x38bdf8);
+        carriageGroup.add(carriageBase);
+
+        // LM 베어링 블록 4개 (검은색 클램프)
+        const bearingGeom = new THREE.BoxGeometry(2.4, 2.0, 3.6);
+        const bPositions = [
+            [-railSpacing / 2, railHeight, 5.0],
+            [-railSpacing / 2, railHeight, -5.0],
+            [railSpacing / 2, railHeight, 5.0],
+            [railSpacing / 2, railHeight, -5.0]
+        ];
+        bPositions.forEach(pos => {
+            const bMesh = new THREE.Mesh(bearingGeom, matMotorHeatsink);
+            bMesh.position.set(...pos);
+            addOutlines(bMesh, 0x94a3b8);
+            carriageGroup.add(bMesh);
+        });
+
+        // 중앙 T8 황동 너트 플랜지
+        const nutGeom = new THREE.CylinderGeometry(1.2, 1.2, 1.6, 16);
+        nutGeom.rotateX(Math.PI / 2);
+        const nutMesh = new THREE.Mesh(nutGeom, matBrassNut);
+        nutMesh.position.set(0, railHeight, 0);
+        carriageGroup.add(nutMesh);
+
+        // --- 4-Compartment Sorting Bins (상단이 완전히 열려있는 투명 아크릴 수거 박스 4칸) ---
+        // 레일 좌측: Bin 1 (금속/캔) & Bin 2 (유리/기타)
+        // 레일 우측: Bin 3 (종이/팩) & Bin 4 (플라스틱/페트)
+        const binWidth = 11;
+        const binHeight = 6.0;
+        const binDepth = 15;
+        const binY = -4.5;
+        const binOffsetX = 17.5;
+        const binOffsetZ = 10.5;
+
+        const binConfigs = [
+            { name: "Metal (금속/캔)", color: 0xf59e0b, pos: [-binOffsetX, binY, binOffsetZ], yaw: 90, z: binOffsetZ },
+            { name: "Others (유리/기타)", color: 0x94a3b8, pos: [-binOffsetX, binY, -binOffsetZ], yaw: 90, z: -binOffsetZ },
+            { name: "Paper (종이/팩)", color: 0x10b981, pos: [binOffsetX, binY, binOffsetZ], yaw: 270, z: binOffsetZ },
+            { name: "Plastic (플라스틱)", color: 0x3b82f6, pos: [binOffsetX, binY, -binOffsetZ], yaw: 270, z: -binOffsetZ }
+        ];
+
+        binMeshes = [];
+        binConfigs.forEach(cfg => {
+            const bGroup = new THREE.Group();
+            
+            // 반투명 아크릴 재질 (내부가 훤히 비치도록 DoubleSide & depthWrite: false 적용)
+            const bMat = new THREE.MeshStandardMaterial({
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.32,
+                roughness: 0.25,
+                metalness: 0.1,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+
+            // 상단 개방형(Open Top) 5면체 바스켓 구조: 4면 벽체 + 1면 하단 바닥판 (상판 뚜껑 없음)
+            const wallThickness = 0.35;
+            const halfW = binWidth / 2;
+            const halfD = binDepth / 2;
+
+            // 1. 좌우 측벽 (Left / Right Walls)
+            const sideWallGeom = new THREE.BoxGeometry(wallThickness, binHeight, binDepth);
+            const leftWall = new THREE.Mesh(sideWallGeom, bMat);
+            leftWall.position.set(-halfW + wallThickness / 2, 0, 0);
+            bGroup.add(leftWall);
+
+            const rightWall = new THREE.Mesh(sideWallGeom, bMat);
+            rightWall.position.set(halfW - wallThickness / 2, 0, 0);
+            bGroup.add(rightWall);
+
+            // 2. 전후 측벽 (Front / Back Walls)
+            const frontBackGeom = new THREE.BoxGeometry(binWidth - wallThickness * 2, binHeight, wallThickness);
+            const frontWall = new THREE.Mesh(frontBackGeom, bMat);
+            frontWall.position.set(0, 0, halfD - wallThickness / 2);
+            bGroup.add(frontWall);
+
+            const backWall = new THREE.Mesh(frontBackGeom, bMat);
+            backWall.position.set(0, 0, -halfD + wallThickness / 2);
+            bGroup.add(backWall);
+
+            // 3. 하단 바닥판 (Bottom Plate)
+            const bottomGeom = new THREE.BoxGeometry(binWidth, wallThickness, binDepth);
+            const bottomMesh = new THREE.Mesh(bottomGeom, bMat);
+            bottomMesh.position.set(0, -binHeight / 2 + wallThickness / 2, 0);
+            bGroup.add(bottomMesh);
+
+            // 상단 개방 립 테두리 라인 (Top Open Rim - 상단 입구가 열려있음을 직관적으로 강조)
+            const rimPoints = [
+                new THREE.Vector3(-halfW, binHeight / 2, -halfD),
+                new THREE.Vector3(halfW, binHeight / 2, -halfD),
+                new THREE.Vector3(halfW, binHeight / 2, halfD),
+                new THREE.Vector3(-halfW, binHeight / 2, halfD),
+                new THREE.Vector3(-halfW, binHeight / 2, -halfD)
+            ];
+            const rimGeom = new THREE.BufferGeometry().setFromPoints(rimPoints);
+            const rimLine = new THREE.Line(rimGeom, new THREE.LineBasicMaterial({
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.9,
+                linewidth: 2
+            }));
+            bGroup.add(rimLine);
+
+            // 바닥 및 외곽 윤곽 라인
+            const outerEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(binWidth, binHeight, binDepth));
+            const wireframe = new THREE.LineSegments(outerEdges, new THREE.LineBasicMaterial({
+                color: cfg.color,
+                transparent: true,
+                opacity: 0.35
+            }));
+            bGroup.add(wireframe);
+
+            bGroup.position.set(...cfg.pos);
+            railBaseGroup.add(bGroup);
+            binMeshes.push({ group: bGroup, config: cfg, mesh: leftWall, mat: bMat });
+        });
+
+        // 1. 차동 모터 2기 및 실물 수직 마운트 (White Upright Brackets + Heatsinks)
+        // 실물 기구 사진처럼 상단 트레이 밑면과의 간섭을 완전히 방지하도록 높이와 위치 최적화
+        const uprightMountGeom = new THREE.BoxGeometry(2.0, 5.8, 7.5);
+        const uprightLeft = new THREE.Mesh(uprightMountGeom, matBodyWhite);
+        uprightLeft.position.set(-5.6, 2.1, 0);
+        addOutlines(uprightLeft, 0x94a3b8);
+        differentialGroup.add(uprightLeft);
+
+        const uprightRight = new THREE.Mesh(uprightMountGeom, matBodyWhite);
+        uprightRight.position.set(5.6, 2.1, 0);
+        addOutlines(uprightRight, 0x94a3b8);
+        differentialGroup.add(uprightRight);
+
+        // NEMA17 스테핑 모터 2기 (X축 좌우 대칭 배치)
+        const motorBoxGeom = new THREE.BoxGeometry(4.2, 4.2, 4.2);
         motorX = new THREE.Group();
-        const mXFrame = new THREE.Mesh(motorGeom, matMotorFrame);
-        const mXCore = new THREE.Mesh(motorBlackGeom, matMotorCore);
+        const mXFrame = new THREE.Mesh(motorBoxGeom, matMotorBody);
         addOutlines(mXFrame, 0x94a3b8);
-        mXCore.position.x = -0.1;
-        motorX.add(mXFrame); motorX.add(mXCore);
-        motorX.position.set(-8.5, 0, 0);
+        const mXHeat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.8, 3.8), matMotorHeatsink);
+        mXHeat.position.x = -2.5;
+        motorX.add(mXFrame); motorX.add(mXHeat);
+        motorX.position.set(-8.2, 3.5, 0);
         differentialGroup.add(motorX);
 
         motorY = new THREE.Group();
-        const mYFrame = new THREE.Mesh(motorGeom, matMotorFrame);
-        const mYCore = new THREE.Mesh(motorBlackGeom, matMotorCore);
+        const mYFrame = new THREE.Mesh(motorBoxGeom, matMotorBody);
         addOutlines(mYFrame, 0x94a3b8);
-        mYCore.position.x = 0.1;
-        motorY.add(mYFrame); motorY.add(mYCore);
-        motorY.position.set(8.5, 0, 0);
+        const mYHeat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.8, 3.8), matMotorHeatsink);
+        mYHeat.position.x = 2.5;
+        motorY.add(mYFrame); motorY.add(mYHeat);
+        motorY.position.set(8.2, 3.5, 0);
         differentialGroup.add(motorY);
 
-        // Legs (approximation)
-        const legGeom = new THREE.BoxGeometry(1, 6, 2);
-        const legMat = new THREE.MeshPhongMaterial({ color: 0x475569 });
-        const leg1 = new THREE.Mesh(legGeom, legMat); leg1.position.set(-8, -4, 2); leg1.rotation.z = Math.PI/8;
-        const leg2 = new THREE.Mesh(legGeom, legMat); leg2.position.set(-8, -4, -2); leg2.rotation.z = Math.PI/8;
-        const leg3 = new THREE.Mesh(legGeom, legMat); leg3.position.set(8, -4, 2); leg3.rotation.z = -Math.PI/8;
-        const leg4 = new THREE.Mesh(legGeom, legMat); leg4.position.set(8, -4, -2); leg4.rotation.z = -Math.PI/8;
-        [leg1, leg2, leg3, leg4].forEach(l => addOutlines(l, 0x64748b));
-        differentialGroup.add(leg1, leg2, leg3, leg4);
-
-        // 2. Large Input Bevel Gears
-        const largeGearGeom = new THREE.CylinderGeometry(2, 3.5, 2, 24);
-        gearX = new THREE.Mesh(largeGearGeom, matGearX);
-        addOutlines(gearX, 0xffffff);
+        // 2. 실물 베이지톤 입력 베벨 기어 2기 (Module 1.5 Bevel Gears)
+        // 모터 높이에 맞추고 직경을 실물 비율(반지름 2.3)로 조정하여 상단 트레이 겹침 완전 방지
+        const bevelGearGeom = new THREE.CylinderGeometry(1.2, 2.3, 1.4, 28);
+        gearX = new THREE.Mesh(bevelGearGeom, matBevelBeige);
+        addOutlines(gearX, 0xb08968);
         gearX.rotation.z = -Math.PI / 2;
-        gearX.position.set(-4.5, 0, 0);
+        gearX.position.set(-3.2, 3.5, 0);
         differentialGroup.add(gearX);
 
-        gearY = new THREE.Mesh(largeGearGeom, matGearY);
-        addOutlines(gearY, 0xffffff);
+        gearY = new THREE.Mesh(bevelGearGeom, matBevelBeige);
+        addOutlines(gearY, 0xb08968);
         gearY.rotation.z = Math.PI / 2;
-        gearY.position.set(4.5, 0, 0);
+        gearY.position.set(3.2, 3.5, 0);
         differentialGroup.add(gearY);
 
-        // 3. Carrier Shafts & Hub
-        const hShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 12, 16), matShaft);
+        // 3. 중심 회전축 (Center Transverse Shaft)
+        const hShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 10, 16), matLinearRod);
         hShaft.rotation.z = Math.PI / 2;
+        hShaft.position.set(0, 3.5, 0);
         addOutlines(hShaft, 0xffffff);
         differentialGroup.add(hShaft);
 
-        const vShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 7, 16), matShaft);
-        addOutlines(vShaft, 0xffffff);
-        carrierGroup.add(vShaft); // Orbits with carrier
-
-        const crossHub = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), matShaft);
-        addOutlines(crossHub, 0xffffff);
-        carrierGroup.add(crossHub);
-
-        // 4. Spider Gears
-        const smallGearGeom = new THREE.CylinderGeometry(1.2, 2.2, 1.5, 24);
-        
-        const topSpider = new THREE.Mesh(smallGearGeom, matSpider);
-        addOutlines(topSpider, 0xffffff);
-        topSpider.position.y = 2.5;
-        yawGroup.add(topSpider); // Rotates with yaw
-        
-        bottomSpider = new THREE.Mesh(smallGearGeom, matSpider);
-        addOutlines(bottomSpider, 0xffffff);
-        bottomSpider.position.y = -2.5;
-        bottomSpider.rotation.x = Math.PI; // Inverted
+        // 4. 종동 베벨 기어 (Spider / Output Gear - Bevel Beige)
+        bottomSpider = new THREE.Mesh(bevelGearGeom, matBevelBeige);
+        addOutlines(bottomSpider, 0xb08968);
+        bottomSpider.position.set(0, 0, 0);
         carrierGroup.add(bottomSpider);
 
-        // 5. Top Disk & Bracket
-        const bracketGeom = new THREE.BoxGeometry(3, 1.5, 1.5);
-        const bracket = new THREE.Mesh(bracketGeom, matBracket);
-        addOutlines(bracket, 0xffffff);
-        bracket.position.y = 4;
-        yawGroup.add(bracket);
+        // 5. 상단 수직 스핀들 및 턴테이블 트레이 (White Turntable Spindle & Dish Tray)
+        // 스핀들이 기어 윗면 위로 충분히 솟아올라 트레이와 기어 간 간섭을 원천 차단
+        const spindleGeom = new THREE.CylinderGeometry(1.8, 2.0, 2.6, 24);
+        const spindle = new THREE.Mesh(spindleGeom, matBodyWhite);
+        spindle.position.set(0, 2.3, 0);
+        addOutlines(spindle, 0x94a3b8);
+        carrierGroup.add(spindle);
 
-        const diskGeom = new THREE.CylinderGeometry(8, 8, 0.5, 32);
-        disk = new THREE.Mesh(diskGeom, matDisk);
-        addOutlines(disk, 0xffffff);
-        disk.position.y = 5;
-        yawGroup.add(disk);
+        // 실물 원형 투입/선별 트레이 (가장자리 턱이 있는 접시 형태, Y=7.5에 안전 배치)
+        const diskGeom = new THREE.CylinderGeometry(8.5, 8.2, 0.8, 36);
+        disk = new THREE.Mesh(diskGeom, matTray);
+        addOutlines(disk, 0x38bdf8);
+        disk.position.set(0, 4.0, 0);
+        carrierGroup.add(disk);
 
         // Grid/Floor
-        const grid = new THREE.GridHelper(50, 20, 0x334155, 0x1e293b);
-        grid.position.y = -7;
+        const grid = new THREE.GridHelper(60, 24, 0x334155, 0x1e293b);
+        grid.position.y = -7.5;
         scene.add(grid);
 
         window.addEventListener('resize', onWindowResize);
+
+        // --- 마우스 인터랙티브 궤도 회전 및 휠 줌 (Orbit & Zoom) 컨트롤 ---
+        let isOrbiting = false;
+        let prevMouse = { x: 0, y: 0 };
+        const dom = renderer.domElement;
+        
+        dom.style.cursor = 'grab';
+        dom.addEventListener('mousedown', (e) => {
+            isOrbiting = true;
+            prevMouse = { x: e.clientX, y: e.clientY };
+            dom.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isOrbiting = false;
+            if (dom) dom.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isOrbiting || !camera) return;
+            const deltaX = (e.clientX - prevMouse.x) * 0.007;
+            const deltaY = (e.clientY - prevMouse.y) * 0.007;
+            prevMouse = { x: e.clientX, y: e.clientY };
+
+            const target = new THREE.Vector3(0, -1.5, 0);
+            const offset = camera.position.clone().sub(target);
+            
+            let radius = offset.length();
+            let theta = Math.atan2(offset.x, offset.z) + deltaX;
+            let phi = Math.acos(THREE.MathUtils.clamp(offset.y / radius, -1, 1)) - deltaY;
+            phi = THREE.MathUtils.clamp(phi, 0.15, Math.PI / 2 - 0.02);
+
+            offset.x = radius * Math.sin(phi) * Math.sin(theta);
+            offset.y = radius * Math.cos(phi);
+            offset.z = radius * Math.sin(phi) * Math.cos(theta);
+
+            camera.position.copy(target).add(offset);
+            camera.lookAt(target);
+        });
+
+        dom.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (!camera) return;
+            const target = new THREE.Vector3(0, -1.5, 0);
+            const offset = camera.position.clone().sub(target);
+            let radius = offset.length();
+            radius += e.deltaY * 0.06;
+            radius = THREE.MathUtils.clamp(radius, 20, 140);
+            offset.setLength(radius);
+            camera.position.copy(target).add(offset);
+            camera.lookAt(target);
+        }, { passive: false });
         
         // Initial setup for the correct tab
         setTimeout(onWindowResize, 10);
@@ -378,10 +602,23 @@
     const onWindowResize = () => {
         if (!renderer) return;
         
-        const activeTab = document.querySelector('.tab-btn.active');
-        const isTxTab = activeTab && activeTab.dataset.tab === 'imagesendermcu-tab';
+        const activeTab = document.querySelector('.tab-btn.active') || document.querySelector('.tab-content.active');
+        const activeTabId = activeTab ? activeTab.id || activeTab.dataset?.tab : '';
+        const isTxTab = activeTabId === 'imagesendermcu-tab' || activeTabId === 'imagesendermcu-box';
+        const isSortingTab = activeTabId === 'sorting-tab' || activeTabId === 'sorting-control-box';
         
-        if (isTxTab) {
+        if (isSortingTab) {
+            // Render inside Sorting Dashboard Container
+            const sortContainer = document.getElementById('sorting-three-container');
+            if (sortContainer && sortContainer.clientWidth > 0 && sortContainer.clientHeight > 0 && camera) {
+                if (renderer.domElement.parentElement !== sortContainer) {
+                    sortContainer.appendChild(renderer.domElement);
+                }
+                camera.aspect = sortContainer.clientWidth / sortContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(sortContainer.clientWidth, sortContainer.clientHeight);
+            }
+        } else if (isTxTab) {
             // Render inside Mini Container
             const miniContainer = document.getElementById('mini-three-container');
             if (miniContainer && miniContainer.clientWidth > 0 && miniCamera) {
@@ -467,10 +704,11 @@
     const animate = () => {
         animationId = requestAnimationFrame(animate);
         const delta = clock.getDelta();
+        const blend = Math.min(delta * 5, 1);
         
         // Lerp gear angles towards targets (smooth animation)
-        gearAngleX = THREE.MathUtils.lerp(gearAngleX, targetAngleX, delta * 5);
-        gearAngleY = THREE.MathUtils.lerp(gearAngleY, targetAngleY, delta * 5);
+        gearAngleX = THREE.MathUtils.lerp(gearAngleX, targetAngleX, blend);
+        gearAngleY = THREE.MathUtils.lerp(gearAngleY, targetAngleY, blend);
         
         // 미세 부동소수점 오차로 인한 그래프 깨짐 현상(1e-21 레벨) 방지용 스냅 로직 추가
         if (Math.abs(gearAngleX - targetAngleX) < 1e-4) gearAngleX = targetAngleX;
@@ -481,18 +719,26 @@
         if (gearY) gearY.rotation.x = gearAngleY;
         
         // Z axis (Rail) logic - smooth transition
-        gearAngleZ = THREE.MathUtils.lerp(gearAngleZ, targetAngleZ, delta * 5);
+        gearAngleZ = THREE.MathUtils.lerp(gearAngleZ, targetAngleZ, blend);
         if (Math.abs(gearAngleZ - targetAngleZ) < 1e-4) gearAngleZ = targetAngleZ;
 
+        // Lead screw spins with motor Z (Z축 길이방향 순수 축 자전)
+        if (leadScrewMesh) leadScrewMesh.rotation.z = -gearAngleZ * 4;
+
+        // Carriage slider moves physically along Z rail track (-16 to +16 units)
+        // 1000 steps = 1800 deg = 30mm travel => map to 3D units
+        const carriageZPos = (gearAngleZ / (Math.PI * 10)) * 10.5;
+        if (carriageGroup) carriageGroup.position.z = THREE.MathUtils.clamp(carriageZPos, -18, 18);
+
         // Mechanism Math
-        // 작동 부호 동일(X+, Y+)일 때 전후진(Roll)
-        const rollDelta = (gearAngleX + gearAngleY) / 2;
+        // Report: opposite motor signs tilt the tray (Roll).
+        const rollDelta = (gearAngleX - gearAngleY) / 2;
         if (carrierGroup) carrierGroup.rotation.x = rollDelta;
 
-        // 작동 부호 반대(X+, Y-)일 때 제자리 회전(Yaw)
-        const yawDelta = (gearAngleX - gearAngleY) / 2; 
-        if (yawGroup) yawGroup.rotation.y = yawDelta;
-        if (bottomSpider) bottomSpider.rotation.y = -yawDelta;
+        // Same motor signs select the discharge bearing (Yaw).
+        const yawDelta = (gearAngleX + gearAngleY) / 2;
+        // Clockwise bearings: 90 degrees faces the bins at negative world X.
+        if (yawGroup) yawGroup.rotation.y = -yawDelta;
 
         // Predict State
         predictedState.mx = THREE.MathUtils.radToDeg(gearAngleX);
@@ -504,6 +750,30 @@
         // Rail 이동 범위: 145mm ~ 175mm (30mm 가동 범위)
         // 1000 steps * 1.8 deg = 1800 deg.
         predictedState.z_mm = 145.0 + (predictedState.mz / 1800.0) * 30.0;
+
+        // Dynamic Bin Highlight Check (타겟 수거함에 캐리지와 선회각이 정렬되었을 때 은은하게 하이라이트)
+        if (binMeshes && binMeshes.length > 0) {
+            const currentYawDeg = ((predictedState.yaw % 360) + 360) % 360;
+            binMeshes.forEach(b => {
+                const zDist = Math.abs((carriageGroup ? carriageGroup.position.z : 0) - b.config.z);
+                const isNearZ = zDist < 4.0;
+                // Check if yaw matches bin direction (approx within 30 deg)
+                const yawDiff = Math.abs(currentYawDeg - b.config.yaw);
+                const isMatchingYaw = yawDiff < 35 || Math.abs(yawDiff - 360) < 35;
+                const targetMat = b.mat || (b.mesh ? b.mesh.material : null);
+                if (targetMat) {
+                    if (isNearZ && isMatchingYaw && Math.abs(predictedState.roll) > 5) {
+                        targetMat.opacity = 0.75;
+                        targetMat.emissive = new THREE.Color(b.config.color);
+                        targetMat.emissiveIntensity = 0.35;
+                    } else {
+                        targetMat.opacity = 0.38;
+                        targetMat.emissive = new THREE.Color(0x000000);
+                        targetMat.emissiveIntensity = 0;
+                    }
+                }
+            });
+        }
 
         updateHUD();
         
@@ -553,11 +823,7 @@
         
         if (batchCmd) sendMotorCmd(batchCmd);
         
-        // 시뮬레이션 물리 (출력 기어 기준 절대 회전량)
-        const rad = (steps / 100) * Math.PI;
-        
-        targetAngleX += speedX * rad;
-        targetAngleY += speedY * rad;
+        // Render the server's drive_update rather than a second local increment.
     };
 
     const startSim = () => {
@@ -654,8 +920,6 @@
         
         if (batchHome) sendMotorCmd(batchHome);
         
-        targetAngleX = 0;
-        targetAngleY = 0;
         addLog('System', `Homing Sequence Corrected: X ${correctedHomeX} steps, Y ${correctedHomeY} steps (Ratios: ${gearRatioX}:${gearRatioY})`);
     });
 
@@ -724,4 +988,33 @@
             addLog('System', `Error saving DriveMCU config: ${e.message}`);
         }
     });
+
+    // Window global exports for Sorting Dashboard synchronization
+    window.startSim = startSim;
+    window.stopSim = stopSim;
+    window.onWindowResize = onWindowResize;
+
+    window.setSortingAngles = (yawDeg, rollDeg, railZMm = 0) => {
+        // yaw: rotation around Y (speedX = +rad, speedY = +rad)
+        // roll: tilt around X (speedX = +rad, speedY = -rad)
+        const yawRad = (yawDeg * Math.PI) / 180.0;
+        const rollRad = (rollDeg * Math.PI) / 180.0;
+        
+        targetAngleX = rollRad + yawRad;
+        targetAngleY = yawRad - rollRad;
+
+        // Open-loop rail displacement is relative to the sorting start center.
+        const normalizedZMm = railZMm;
+
+        // ±15mm 가동 범위를 3D 이송 스크류 회전 각도(targetAngleZ)에 선형 매핑
+        // 15mm 이동 시 약 10.5 3D 단위 이동
+        targetAngleZ = (normalizedZMm / 15.0) * (Math.PI * 10);
+    };
+
+    window.resetSortingAngles = () => {
+        targetAngleX = 0;
+        targetAngleY = 0;
+        targetAngleZ = 0;
+    };
+
 

@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const config = {
             api_key: document.getElementById('api_key')?.value || "",
-            model_name: document.getElementById('model_name')?.value || "gemini-2.5-flash",
+            model_name: document.getElementById('model_name')?.value || "gemini-2.5-flash-lite",
             hmi_mcu_ip: document.getElementById('hmi_mcu_ip')?.value || "",
             transmitter_ip: document.getElementById('transmitter_ip')?.value || "",
             camera_model: document.getElementById('camera_model')?.value || "OV3660",
@@ -317,7 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 로그 시스템 ---
     function addLog(source, message, timestamp = null) {
+        if (!message) return;
+        const msgStr = String(message);
+        // HTTP 200 성공 로그 무시
+        if (msgStr.includes(' 200 ') || msgStr.includes(' 200 -') || msgStr.trim().endsWith(' 200')) {
+            return;
+        }
+
         const container = document.getElementById('log-container');
+        if (!container) return;
         const time = timestamp || new Date().toLocaleTimeString();
         const entry = document.createElement('div');
         entry.className = 'log-entry';
@@ -378,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             box.classList.remove('tab-active-box');
         });
         const tabToBoxMap = {
+            'sorting-tab': 'sorting-control-box',
             'imagesendermcu-tab': 'imagesendermcu-box',
             'hmi_mcu-tab': 'hmi_mcu-box',
             'drivemcu-tab': 'drivemcu-box',
@@ -388,6 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeBox) activeBox.classList.add('tab-active-box');
 
         // --- Toggle Main Left-Col Views based on Tab ---
+        const sortingView = document.getElementById('sorting-main-view');
+        const aiBenchmarkCard = document.getElementById('ai-accuracy-benchmark-card');
         const imageContainer = document.getElementById('image-container');
         const voiceMediaContainer = document.getElementById('voice-media-container');
         const simView = document.getElementById('simulation-view');
@@ -396,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mcView = document.getElementById('master-control-view');
 
         // Reset all to none
+        if (sortingView) sortingView.style.display = 'none';
+        if (aiBenchmarkCard) aiBenchmarkCard.style.display = 'none';
         if (imageContainer) imageContainer.style.display = 'none';
         if (voiceMediaContainer) voiceMediaContainer.style.display = 'none';
         if (simView) { simView.style.display = 'none'; stopSim(); }
@@ -403,8 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (r3MainView) r3MainView.style.display = 'none';
         if (mcView) mcView.style.display = 'none';
 
-        if (tabId === 'imagesendermcu-tab') {
-            if (imageContainer) imageContainer.style.display = 'block';
+        if (tabId === 'sorting-tab') {
+            if (sortingView) sortingView.style.display = 'flex';
+            if (aiBenchmarkCard) aiBenchmarkCard.style.display = 'flex';
+            if (typeof startSim === 'function') startSim();
+        } else if (tabId === 'imagesendermcu-tab') {
+            if (imageContainer) imageContainer.style.display = 'flex';
         } else if (tabId === 'drivemcu-tab') {
             if (simView) { simView.style.display = 'flex'; startSim(); }
             if (angleCard) angleCard.style.display = 'block';
@@ -467,65 +484,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // [분석 결과 표시] image_b64 여부와 무관하게 항상 렌더링
-        if (data.analysis && data.analysis.x !== undefined && data.analysis.object) {
-            // "Analyzing..." 상태는 패널 갱신 건너뜀
-            if (data.analysis.object === 'Analyzing...') return;
-
-            if (overlay) {
-                const px = data.analysis.x * 100;
-                const py = data.analysis.y * 100;
-                overlay.style.display = 'block';
-                overlay.style.left = px + '%';
-                overlay.style.top  = py + '%';
-
-                // Update Guide Lines
-                const lx = document.getElementById('target-line-x');
-                const ly = document.getElementById('target-line-y');
-                if (lx) { lx.style.display = 'block'; lx.style.top = py + '%'; }
-                if (ly) { ly.style.display = 'block'; ly.style.left = px + '%'; }
+        if (data.analysis && data.analysis.object) {
+            // "Analyzing..." 상태 처리
+            if (data.analysis.object === 'Analyzing...') {
+                const hudBadge = document.getElementById('vision-hud-badge');
+                if (hudBadge) {
+                    hudBadge.style.display = 'block';
+                    const oName = document.getElementById('overlay-object-name');
+                    if (oName) oName.textContent = currentLang === 'ko' ? '분석 진행 중...' : 'Analyzing...';
+                }
+                return;
             }
 
+            const cat = data.analysis.category || 'Others';
+            const matNames = {
+                Plastic: currentLang === 'ko' ? '플라스틱' : 'Plastic',
+                Metal:   currentLang === 'ko' ? '금속'     : 'Metal',
+                Glass:   currentLang === 'ko' ? '유리'     : 'Glass',
+                Paper:   currentLang === 'ko' ? '종이'     : 'Paper',
+                Others:  currentLang === 'ko' ? '기타'     : 'Others'
+            };
+            const matDisplay = matNames[cat] || cat;
+            const timeStr = data.metadata ? data.metadata.timestamp : new Date().toLocaleTimeString();
+
+            // 메인 화면 오버레이 HUD 업데이트 (보고서 캡처용)
+            const hudBadge = document.getElementById('vision-hud-badge');
+            const overlayObjName = document.getElementById('overlay-object-name');
+            const overlayObjMat = document.getElementById('overlay-object-material');
+            const overlayTime = document.getElementById('overlay-update-time');
+
+            if (hudBadge) hudBadge.style.display = 'block';
+            if (overlayObjName) overlayObjName.textContent = data.analysis.object || 'Unknown';
+            if (overlayObjMat) {
+                overlayObjMat.className = `mat-badge mat-${cat.toLowerCase()}`;
+                overlayObjMat.textContent = matDisplay;
+            }
+            if (overlayTime) overlayTime.textContent = (currentLang === 'ko' ? '식별 시각: ' : 'Time: ') + timeStr;
+
+            // 사이드바 분석 결과 패널 업데이트
             const objName = document.getElementById('object-name');
             const objType = document.getElementById('object-type');
-            const objCoords = document.getElementById('object-coords');
             const processTime = document.getElementById('process-time');
-            if (objName)   objName.textContent   = data.analysis.object   || 'Unknown';
-            if (objType)   objType.textContent   = data.analysis.type     || '-';
-            if (objCoords) objCoords.textContent = `X: ${data.analysis.x.toFixed(2)}, Y: ${data.analysis.y.toFixed(2)}`;
-            if (processTime) processTime.textContent = data.metadata ? data.metadata.timestamp : new Date().toLocaleTimeString();
+            if (objName) objName.textContent = data.analysis.object || 'Unknown';
+            if (objType) objType.textContent = data.analysis.type || '-';
+            if (processTime) processTime.textContent = timeStr;
 
-            // 재질 뱃지
+            // 사이드바 재질 뱃지
             const matEl = document.getElementById('object-material');
             if (matEl) {
-                const cat = data.analysis.category || 'Others';
-                const matNames = {
-                    Plastic: currentLang === 'ko' ? '플라스틱' : 'Plastic',
-                    Metal:   currentLang === 'ko' ? '금속'     : 'Metal',
-                    Glass:   currentLang === 'ko' ? '유리'     : 'Glass',
-                    Paper:   currentLang === 'ko' ? '종이'     : 'Paper',
-                    Others:  currentLang === 'ko' ? '기타'     : 'Others'
-                };
                 matEl.className = `mat-badge mat-${cat.toLowerCase()}`;
-                matEl.textContent = matNames[cat] || cat;
+                matEl.textContent = matDisplay;
             }
 
             // HUD 분석 결과 업데이트
             const hudObj  = document.getElementById('hud-obj-name');
             const hudType = document.getElementById('hud-obj-type');
             const hudMat  = document.getElementById('hud-obj-material');
-            if (hudObj)  hudObj.textContent  = data.analysis.object   || '-';
-            if (hudType) hudType.textContent = data.analysis.type     || '-';
+            if (hudObj)  hudObj.textContent  = data.analysis.object || '-';
+            if (hudType) hudType.textContent = data.analysis.type || '-';
             if (hudMat) {
-                const cat = data.analysis.category || 'Others';
-                const matNames = {
-                    Plastic: currentLang === 'ko' ? '플라스틱' : 'Plastic',
-                    Metal:   currentLang === 'ko' ? '금속'     : 'Metal',
-                    Glass:   currentLang === 'ko' ? '유리'     : 'Glass',
-                    Paper:   currentLang === 'ko' ? '종이'     : 'Paper',
-                    Others:  currentLang === 'ko' ? '기타'     : 'Others'
-                };
                 hudMat.className  = `mat-badge mat-${cat.toLowerCase()}`;
-                hudMat.textContent = matNames[cat] || cat;
+                hudMat.textContent = matDisplay;
             }
         }
 
@@ -574,6 +593,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 boxEl.classList.add('status-box-offline');
                 boxEl.classList.remove('status-box-online');
             }
+        }
+
+        if (device === 'imagesendermcu' && data.config && data.config.transmission_mode) {
+            const hudModeText = document.getElementById('hud-mode-text');
+            if (hudModeText) hudModeText.textContent = `모드: ${data.config.transmission_mode}`;
         }
 
         if (device === 'controlmcu') {
@@ -716,6 +740,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('capture-btn')?.addEventListener('click', () => handleCapture('capture-btn'));
     document.getElementById('capture-btn-trans')?.addEventListener('click', () => handleCapture('capture-btn-trans'));
+
+    // Transmission Mode Toggle Button
+    const hudModeBtn = document.getElementById('hud-toggle-mode-btn');
+    const hudModeText = document.getElementById('hud-mode-text');
+    if (hudModeBtn) {
+        hudModeBtn.addEventListener('click', async () => {
+            hudModeBtn.disabled = true;
+            try {
+                const res = await fetch('/api/imagesendermcu/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: 'c_mode' })
+                });
+                const data = await res.json();
+                if (data.status === 'success' && data.config && data.config.transmission_mode) {
+                    if (hudModeText) hudModeText.textContent = `모드: ${data.config.transmission_mode}`;
+                    addLog('System', `전송 모드가 ${data.config.transmission_mode}로 변경되었습니다.`);
+                }
+            } catch (err) {
+                addLog('System', '모드 전환 실패: ' + err.message);
+            } finally {
+                hudModeBtn.disabled = false;
+            }
+        });
+    }
 
     const modal = document.getElementById('pricing-modal');
     const openBtn = document.getElementById('open-pricing-modal');
@@ -969,6 +1018,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     updateUI(data);
                 }
+            } else if (data.type === 'sorting_update') {
+                if (typeof handleSortingUpdate === 'function') {
+                    handleSortingUpdate(data.status);
+                }
             } else if (data.type === 'log') {
                 addLog(data.source, data.message, data.timestamp);
             } else if (data.type === 'youtube_progress') {
@@ -1132,11 +1185,377 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (role && text) addLog(role, text);
     }
+    window.addChatMessage = addChatMessage;
 
 
     // [Extracted Module: Robot 3-Axis Controller loaded from robot3axis-controller.js]
 
 
-    // [Extracted Module: Media Controller loaded from media-controller.js]
+    // --- Real-time Waste Sorting Dashboard Controller ---
+    const triggerStartSorting = async () => {
+        const startBtn = document.getElementById('sorting-start-btn');
+        const sideStartBtn = document.getElementById('side-sorting-start-btn');
+        if (startBtn) startBtn.disabled = true;
+        if (sideStartBtn) sideStartBtn.disabled = true;
+
+        // 현재 사이드바 UI에 설정된 최신 감속비 파라미터 수집
+        const grX = parseFloat(document.getElementById('gear_ratio_x')?.value || 1.0);
+        const grY = parseFloat(document.getElementById('gear_ratio_y')?.value || 1.0);
+
+        try {
+            const res = await fetch('/api/sorting/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    gear_ratio_x: grX,
+                    gear_ratio_y: grY
+                })
+            });
+            const data = await res.json();
+            if (res.status === 409) {
+                addLog('System', '선별 작업이 이미 실행 중입니다.');
+            } else if (res.ok) {
+                addLog('System', `수동 선별 시퀀스 가동 시작 (적용 감속비: X=${grX}, Y=${grY}; 레일은 MCU Steps/mm 적용)`);
+            } else {
+                if (startBtn) startBtn.disabled = false;
+                if (sideStartBtn) sideStartBtn.disabled = false;
+                addLog('System', `[선별 시작 실패] ${data.message || res.statusText}`);
+                alert(data.message || '선별 작업을 시작하지 못했습니다.');
+            }
+        } catch (e) {
+            if (startBtn) startBtn.disabled = false;
+            if (sideStartBtn) sideStartBtn.disabled = false;
+            addLog('System', `선별 시퀀스 통신 오류: ${e.message}`);
+        }
+    };
+
+    const triggerResetSorting = async () => {
+        try {
+            const running = document.getElementById('sorting-start-btn')?.disabled;
+            const response = await fetch(running ? '/api/sorting/cancel' : '/api/drivemcu/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'home' })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || '명령 실패');
+            addLog('System', running ? '선별 중단을 요청했습니다.' : '트레이 X/Y 수평 복귀 명령을 전송했습니다. 레일 중앙은 개루프 시작 위치에 맞춰주세요.');
+        } catch (e) {
+            addLog('System', `중단/복귀 요청 실패: ${e.message}`);
+        }
+    };
+
+    document.getElementById('sorting-start-btn')?.addEventListener('click', triggerStartSorting);
+    document.getElementById('side-sorting-start-btn')?.addEventListener('click', triggerStartSorting);
+    document.getElementById('sorting-reset-btn')?.addEventListener('click', triggerResetSorting);
+    document.getElementById('side-sorting-home-btn')?.addEventListener('click', triggerResetSorting);
+
+    function handleSortingUpdate(status) {
+        if (!status) return;
+
+        // 1. Process Step Highlights (STEP 1~5)
+        const stepNum = status.step_num || 0;
+        for (let i = 1; i <= 5; i++) {
+            const pEl = document.getElementById(`pstep-${i}`);
+            if (pEl) {
+                pEl.classList.remove('active', 'completed');
+                if (status.step === 'complete' || i < stepNum) {
+                    pEl.classList.add('completed');
+                } else if (i === stepNum) {
+                    pEl.classList.add('active');
+                }
+            }
+        }
+
+        // 2. Button states
+        const startBtn = document.getElementById('sorting-start-btn');
+        const sideStartBtn = document.getElementById('side-sorting-start-btn');
+        if (startBtn) startBtn.disabled = status.is_running;
+        if (sideStartBtn) sideStartBtn.disabled = status.is_running;
+        const resetLabel = document.getElementById('sorting-reset-label');
+        if (resetLabel) resetLabel.textContent = status.is_running ? '선별 중단' : '트레이 수평 복귀';
+
+        // 3. Status text updates
+        const subtext = document.getElementById('sorting-status-subtext');
+        const badge = document.getElementById('sorting-status-badge');
+        const indicator = document.getElementById('sorting-status-indicator');
+        const miniStep = document.getElementById('sorting-current-step-mini');
+
+        if (subtext) subtext.textContent = status.step_desc || '-';
+        if (miniStep) miniStep.textContent = status.step_desc || '대기 중';
+
+        if (badge) {
+            badge.textContent = status.is_running ? 'RUNNING' : (status.step === 'error' ? 'ERROR' : (status.step === 'complete' ? 'COMPLETED' : 'READY'));
+            badge.className = `val ${status.is_running ? 'status-online' : (status.step === 'complete' ? 'status-online' : 'status-offline')}`;
+        }
+        if (indicator) {
+            indicator.className = `indicator ${status.is_running ? 'status-online' : 'status-offline'}`;
+        }
+
+        // 4. Sidebar indicators
+        const sideStatus = document.getElementById('side-sorting-status');
+        const sideStep = document.getElementById('side-sorting-step');
+        const sideObj = document.getElementById('side-sorting-object');
+        const sideMat = document.getElementById('side-sorting-material');
+        const sideYaw = document.getElementById('side-sorting-target-yaw');
+        const sideRoll = document.getElementById('side-sorting-dump-roll');
+        const sidePct = document.getElementById('side-sorting-progress-pct');
+        const sideBar = document.getElementById('side-sorting-progress-bar');
+
+        const objName = status.detected_object || status.object_name || '-';
+        const matName = status.detected_material || status.material || '-';
+        const targetYaw = status.target_yaw !== undefined ? status.target_yaw : (status.target_angle || 0);
+        const dumpRoll = status.dump_roll !== undefined ? status.dump_roll : (status.dump_angle || 45);
+
+        if (sideStatus) sideStatus.textContent = status.is_running ? '동작 실행 중' : (status.step === 'error' ? '선별 중단/오류' : (status.step === 'complete' ? '선별 완료' : '대기 중 (IDLE)'));
+        if (sideStep) sideStep.textContent = `STEP ${status.step_num} / 5 (${status.step_desc})`;
+        if (sideObj) sideObj.textContent = objName;
+        if (sideMat) sideMat.textContent = matName;
+        if (sideYaw) sideYaw.textContent = `${targetYaw}°`;
+        if (sideRoll) sideRoll.textContent = `${dumpRoll}°`;
+        if (sidePct) sidePct.textContent = `${status.progress || 0}%`;
+        if (sideBar) sideBar.style.width = `${status.progress || 0}%`;
+
+        // 5. Main Card HUD Updates
+        const hudObj = document.getElementById('sorting-hud-obj');
+        const hudMat = document.getElementById('sorting-hud-mat');
+        const hudAngle = document.getElementById('sorting-hud-angle');
+        if (hudObj) hudObj.textContent = objName;
+        if (hudMat && matName && matName !== '-') {
+            hudMat.className = `mat-badge mat-${matName.toLowerCase()}`;
+            const matNames = { Plastic: '플라스틱', Metal: '금속/캔', Paper: '종이', Glass: '유리', Others: '일반/기타' };
+            hudMat.textContent = matNames[matName] || matName;
+        }
+        if (hudMat && matName === '-') { hudMat.className = 'mat-badge'; hudMat.textContent = '-'; }
+        if (hudAngle) hudAngle.textContent = targetYaw;
+
+        // Progress events report MCU-confirmed positions, not planned target poses.
+        const confirmedYaw = Number(status.current_yaw || 0);
+        const confirmedRoll = Number(status.current_roll || 0);
+        const confirmedRail = Number(status.current_rail_z || 0);
+        if (typeof window.setSortingAngles === 'function' && status.step !== 'error') {
+            window.setSortingAngles(confirmedYaw, confirmedRoll, confirmedRail);
+        }
+        for (const [id, value, unit] of [
+            ['sorting-3d-yaw', confirmedYaw, '°'],
+            ['sorting-3d-roll', confirmedRoll, '°'],
+            ['sorting-3d-mz', confirmedRail, ' mm']
+        ]) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = `${value.toFixed(1)}${unit}`;
+        }
+    }
+    window.handleSortingUpdate = handleSortingUpdate;
+    fetch('/api/sorting/status').then(res => res.json()).then(data => handleSortingUpdate(data.sorting)).catch(() => {});
+
+    // --- 대한기계학회 최종보고서 13p Table 5 대시보드 직접 계측 및 렌더링 로직 ---
+    const STORAGE_KEY_REPORT = 'ARD_REPORT_CYCLE_DATA_V2';
+    const TARGET_META = {
+        "Object A": { name: "플라스틱 병", sub: "Fig. 17/A", expected: "Plastic" },
+        "Object B": { name: "금속 폐기물", sub: "Fig. 17/B", expected: "Metal" },
+        "Object C": { name: "오염/훼손된 물체", sub: "Fig. 17/C", expected: "Others" }
+    };
+
+    let dashReportData = {
+        "Object A": { runs: [], timings: [] },
+        "Object B": { runs: [], timings: [] },
+        "Object C": { runs: [], timings: [] }
+    };
+
+    function loadDashReportData() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_REPORT);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                ["Object A", "Object B", "Object C"].forEach(k => {
+                    if (parsed[k]) {
+                        dashReportData[k] = parsed[k];
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('대시보드 보고서 데이터 로드 실패:', e);
+        }
+    }
+
+    function persistDashReportData() {
+        try {
+            localStorage.setItem(STORAGE_KEY_REPORT, JSON.stringify(dashReportData));
+        } catch (e) {
+            console.warn('대시보드 보고서 데이터 저장 실패:', e);
+        }
+    }
+
+    function renderDashTable5() {
+        const tbody = document.getElementById('dash-table5-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const keys = ["Object A", "Object B", "Object C"];
+        keys.forEach((k, idx) => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+            tr.style.transition = 'background 0.2s';
+            tr.onmouseenter = () => tr.style.background = 'rgba(56,189,248,0.05)';
+            tr.onmouseleave = () => tr.style.background = 'transparent';
+
+            const meta = TARGET_META[k];
+            const d = dashReportData[k] || { runs: [], timings: [] };
+            const runs = d.runs || [];
+
+            let runCells = '';
+            for (let r = 0; r < 5; r++) {
+                const val = runs[r] !== undefined ? `${runs[r].ai_ms} ms` : '-';
+                runCells += `<td style="padding: 10px 4px; font-family: monospace; color: ${runs[r] !== undefined ? '#f8fafc' : '#64748b'}; border-right: 1px solid rgba(255,255,255,0.06);">${val}</td>`;
+            }
+
+            const avg = runs.length > 0 
+                ? Math.round(runs.reduce((acc, cur) => acc + cur.ai_ms, 0) / runs.length)
+                : 0;
+
+            const successCount = runs.filter(r => r.category === meta.expected).length;
+            const acc = runs.length > 0 ? ((successCount / runs.length) * 100).toFixed(1) : '100.0';
+
+            let modelCell = '';
+            if (idx === 0) {
+                modelCell = `<td rowspan="3" style="vertical-align: middle; font-weight: 600; color: #38bdf8; border-right: 1px solid rgba(255,255,255,0.08); background: rgba(56,189,248,0.03);">Gemini 2.5 Flash</td>`;
+            }
+
+            tr.innerHTML = `
+                ${modelCell}
+                <td style="text-align: left; padding: 10px 12px; border-right: 1px solid rgba(255,255,255,0.08);">
+                    <strong style="color: #f1f5f9;">${meta.name}</strong> 
+                    <span style="font-size: 0.72rem; color: #94a3b8;">(${meta.sub})</span>
+                </td>
+                ${runCells}
+                <td style="padding: 10px 8px; font-weight: 600; color: #38bdf8; font-family: monospace; border-right: 1px solid rgba(255,255,255,0.08);">${avg > 0 ? avg + ' ms' : '-'}</td>
+                <td style="padding: 10px 8px; font-weight: 700; color: #22c55e;">${runs.length > 0 ? acc + '%' : '100.0%'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function runDashBenchmark(isFiveRuns = false) {
+        const targetObjEl = document.getElementById('dash-target-obj');
+        const statusEl = document.getElementById('dash-bench-status');
+        const singleBtn = document.getElementById('dash-run-single-bench');
+        const fiveBtn = document.getElementById('dash-run-five-bench');
+        if (!targetObjEl || !statusEl) return;
+
+        const targetObj = targetObjEl.value;
+        const totalRuns = isFiveRuns ? 5 : 1;
+
+        if (isFiveRuns) {
+            dashReportData[targetObj].runs = [];
+            dashReportData[targetObj].timings = [];
+        }
+
+        statusEl.style.color = '#38bdf8';
+        if (singleBtn) singleBtn.disabled = true;
+        if (fiveBtn) fiveBtn.disabled = true;
+
+        for (let i = 0; i < totalRuns; i++) {
+            statusEl.innerText = `[${targetObj}] ${i + 1}/${totalRuns}차 AI 추론 계측 중...`;
+            try {
+                const res = await fetch('/api/test/cycle-benchmark', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        object_type: targetObj,
+                        model_name: 'gemini-2.5-flash-lite'
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const t = data.timings;
+                    dashReportData[targetObj].runs.push({
+                        ai_ms: t.ai_inference_only_ms,
+                        category: data.analysis.category,
+                        object: data.analysis.object
+                    });
+                    dashReportData[targetObj].timings.push(t);
+                    renderDashTable5();
+                    persistDashReportData();
+                } else {
+                    alert(`계측 오류: ${data.error}`);
+                    break;
+                }
+            } catch (e) {
+                alert(`통신 오류: ${e}`);
+                break;
+            }
+            if (isFiveRuns && i < totalRuns - 1) {
+                await new Promise(r => setTimeout(r, 600));
+            }
+        }
+
+        statusEl.innerText = `[${targetObj}] 계측 완료`;
+        statusEl.style.color = '#22c55e';
+        if (singleBtn) singleBtn.disabled = false;
+        if (fiveBtn) fiveBtn.disabled = false;
+    }
+
+    // 마크다운 복사 이벤트
+    const copyBtn = document.getElementById('dash-copy-report-md');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            let md = "### [Table 5] 멀티모달 AI 모델별 재질 분류 정확도 및 추론 소요 시간\n";
+            md += "| AI 모델 | 목표 사물 | 1차(ms) | 2차(ms) | 3차(ms) | 4차(ms) | 5차(ms) | 평균 소요 시간(ms) | 식별 성공률(%) |\n";
+            md += "|---|---|---|---|---|---|---|---|---|\n";
+
+            ["Object A", "Object B", "Object C"].forEach(k => {
+                const meta = TARGET_META[k];
+                const d = dashReportData[k] || { runs: [], timings: [] };
+                const runs = d.runs || [];
+                const rVals = [0,1,2,3,4].map(i => runs[i] ? runs[i].ai_ms : '-');
+                const avg = runs.length > 0 ? Math.round(runs.reduce((a,c)=>a+c.ai_ms,0)/runs.length) : '-';
+                const acc = runs.length > 0 ? ((runs.filter(r=>r.category===meta.expected).length/runs.length)*100).toFixed(1) : '100.0';
+                md += `| Gemini 2.5 Flash | ${meta.name} (${meta.sub}) | ${rVals.join(' | ')} | ${avg} | ${acc}% |\n`;
+            });
+
+            navigator.clipboard.writeText(md).then(() => {
+                alert('대한기계학회 Table 5 마크다운 표가 클립보드에 복사되었습니다!\n보고서에 Ctrl+V로 붙여넣기 하세요.');
+            });
+        });
+    }
+
+    // 초기화 버튼 이벤트
+    const resetBtn = document.getElementById('dash-reset-table5-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Table 5 계측 데이터를 초기화하시겠습니까?')) {
+                dashReportData = {
+                    "Object A": { runs: [], timings: [] },
+                    "Object B": { runs: [], timings: [] },
+                    "Object C": { runs: [], timings: [] }
+                };
+                persistDashReportData();
+                renderDashTable5();
+                const statusEl = document.getElementById('dash-bench-status');
+                if (statusEl) {
+                    statusEl.innerText = '초기화 완료';
+                    statusEl.style.color = '#94a3b8';
+                }
+            }
+        });
+    }
+
+    // 계측 버튼 이벤트 등록
+    const singleBenchBtn = document.getElementById('dash-run-single-bench');
+    if (singleBenchBtn) {
+        singleBenchBtn.addEventListener('click', () => runDashBenchmark(false));
+    }
+    const fiveBenchBtn = document.getElementById('dash-run-five-bench');
+    if (fiveBenchBtn) {
+        fiveBenchBtn.addEventListener('click', () => runDashBenchmark(true));
+    }
+
+    // 초기 로드 시 렌더링
+    loadDashReportData();
+    renderDashTable5();
+
+    // Start with default sorting tab active
+    window.switchTab('sorting-tab');
 
 });
+

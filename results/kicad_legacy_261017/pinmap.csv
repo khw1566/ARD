@@ -1,0 +1,79 @@
+﻿sheet,board,mcu_ref,gpio,device_ref,device,terminal,net,source,status,note
+02_Control,ControlMCU,U200,47,SW201,4-way joystick / active LOW,UP,C_G47,ControlMCU/src/main.cpp:15,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,21,SW201,4-way joystick / active LOW,DOWN,C_G21,ControlMCU/src/main.cpp:16,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,13,SW201,4-way joystick / active LOW,LEFT,C_G13,ControlMCU/src/main.cpp:17,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,14,SW201,4-way joystick / active LOW,RIGHT,C_G14,ControlMCU/src/main.cpp:18,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,35,SW202,Mode toggle A / B,A,C_G35,ControlMCU/src/main.cpp:19,CODE_CONFIRMED,PSRAM pin conflict conditional on actual N16R8 board
+02_Control,ControlMCU,U200,36,SW202,Mode toggle A / B,B,C_G36,ControlMCU/src/main.cpp:20,CODE_CONFIRMED,PSRAM pin conflict conditional on actual N16R8 board
+02_Control,ControlMCU,U200,11,SW203,Push button / active LOW,CONTACT,C_G11,ControlMCU/src/main.cpp:21,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,4,D201,Button indicator LED,DRIVE,C_G4,ControlMCU/src/main.cpp:22,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,40,U201,MAX98357A I2S amplifier,DIN,C_G40,ControlMCU/src/main.cpp:30,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,41,U201,MAX98357A I2S amplifier,LRC,C_G41,ControlMCU/src/main.cpp:31,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,42,U201,MAX98357A I2S amplifier,BCLK,C_G42,ControlMCU/src/main.cpp:32,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,39,U201,MAX98357A I2S amplifier,SD,C_G39,ControlMCU/src/main.cpp:33,CODE_CONFIRMED,
+02_Control,ControlMCU,U200,48,D202,WS2812B / onboard,DIN,C_G48,ControlMCU/src/main.cpp:23,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,18,U301,A4988 / X axis,STEP,D_G18,DriveMCU/src/main.cpp:54,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,19,U301,A4988 / X axis,DIR,D_G19,DriveMCU/src/main.cpp:55,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,21,U301,A4988 / X axis,ENABLE_N,D_G21,DriveMCU/src/main.cpp:56,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,16,U302,A4988 / Y axis,STEP,D_G16,DriveMCU/src/main.cpp:59,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,17,U302,A4988 / Y axis,DIR,D_G17,DriveMCU/src/main.cpp:60,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,5,U302,A4988 / Y axis,ENABLE_N,D_G5,DriveMCU/src/main.cpp:61,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,25,U303,A4988 / Z axis,STEP,D_G25,DriveMCU/src/main.cpp:64,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,26,U303,A4988 / Z axis,DIR,D_G26,DriveMCU/src/main.cpp:65,CODE_CONFIRMED,
+03_Drive_Motors,DriveMCU,U300,27,U303,A4988 / Z axis,ENABLE_N,D_G27,DriveMCU/src/main.cpp:66,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,22,U401,SSD1306 / 128 x 64 / 0x3C,SDA,D_G22,DriveMCU/src/main.cpp:67,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,23,U401,SSD1306 / 128 x 64 / 0x3C,SCL,D_G23,DriveMCU/src/main.cpp:69,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,22,U402,AHT20 / 0x38,SDA,D_G22,DriveMCU/src/main.cpp:67,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,23,U402,AHT20 / 0x38,SCL,D_G23,DriveMCU/src/main.cpp:69,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,22,U403,BMP280 / 0x76 or 0x77,SDA,D_G22,DriveMCU/src/main.cpp:67,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,23,U403,BMP280 / 0x76 or 0x77,SCL,D_G23,DriveMCU/src/main.cpp:69,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,22,U404,"VL53L0X / optional, OFF",SDA,D_G22,DriveMCU/src/main.cpp:67,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,23,U404,"VL53L0X / optional, OFF",SCL,D_G23,DriveMCU/src/main.cpp:69,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,32,U405,NEO-6M / UART2 9600,TX,D_G32,DriveMCU/src/main.cpp:108,CODE_CONFIRMED,GPS TX -> MCU RX
+04_Drive_Sensors,DriveMCU,U400,33,U405,NEO-6M / UART2 9600,RX,D_G33,DriveMCU/src/main.cpp:109,CODE_CONFIRMED,MCU TX -> GPS RX
+04_Drive_Sensors,DriveMCU,U400,13,J401,Manual inputs / buzzer,SW1,D_G13,DriveMCU/src/main.cpp:150,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,14,J401,Manual inputs / buzzer,SW2,D_G14,DriveMCU/src/main.cpp:151,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,34,J401,Manual inputs / buzzer,POT_WIPER,D_G34,DriveMCU/src/main.cpp:152,CODE_CONFIRMED,
+04_Drive_Sensors,DriveMCU,U400,4,J401,Manual inputs / buzzer,BUZZER_DRIVE,D_G4,DriveMCU/src/main.cpp:94,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,9,U501,X stepper driver / type TBD,STEP,R_G9,Robot3AxisMCU/src/main.cpp:15,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,10,U501,X stepper driver / type TBD,DIR,R_G10,Robot3AxisMCU/src/main.cpp:16,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,11,U501,X stepper driver / type TBD,ENABLE_N,R_G11,Robot3AxisMCU/src/main.cpp:14,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,12,U502,Y stepper driver / type TBD,STEP,R_G12,Robot3AxisMCU/src/main.cpp:19,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,13,U502,Y stepper driver / type TBD,DIR,R_G13,Robot3AxisMCU/src/main.cpp:20,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,14,U502,Y stepper driver / type TBD,ENABLE_N,R_G14,Robot3AxisMCU/src/main.cpp:17,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,8,U503,Z stepper driver / type TBD,STEP,R_G8,Robot3AxisMCU/src/main.cpp:23,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,3,U503,Z stepper driver / type TBD,DIR,R_G3,Robot3AxisMCU/src/main.cpp:24,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,46,U503,Z stepper driver / type TBD,ENABLE_N,R_G46,Robot3AxisMCU/src/main.cpp:21,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,4,K501,4ch relay / active LOW,IN1,R_G4,Robot3AxisMCU/src/main.cpp:27,CODE_CONFIRMED,CH1/2 pneumatic gripper
+05_Robot3Axis,Robot3AxisMCU,U500,5,K501,4ch relay / active LOW,IN2,R_G5,Robot3AxisMCU/src/main.cpp:27,CODE_CONFIRMED,CH1/2 pneumatic gripper
+05_Robot3Axis,Robot3AxisMCU,U500,6,K501,4ch relay / active LOW,IN3,R_G6,Robot3AxisMCU/src/main.cpp:27,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,7,K501,4ch relay / active LOW,IN4,R_G7,Robot3AxisMCU/src/main.cpp:27,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,15,U504,L298N / DC motor driver,IN1,R_G15,Robot3AxisMCU/src/main.cpp:30,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,16,U504,L298N / DC motor driver,IN2,R_G16,Robot3AxisMCU/src/main.cpp:30,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,17,U504,L298N / DC motor driver,IN3,R_G17,Robot3AxisMCU/src/main.cpp:30,CODE_CONFIRMED,
+05_Robot3Axis,Robot3AxisMCU,U500,18,U504,L298N / DC motor driver,IN4,R_G18,Robot3AxisMCU/src/main.cpp:30,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,11,U601,DVP camera / exact SKU TBD,D0,CAM_G11,ImageSenderMCU/src/main.cpp:61,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,9,U601,DVP camera / exact SKU TBD,D1,CAM_G9,ImageSenderMCU/src/main.cpp:60,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,8,U601,DVP camera / exact SKU TBD,D2,CAM_G8,ImageSenderMCU/src/main.cpp:59,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,10,U601,DVP camera / exact SKU TBD,D3,CAM_G10,ImageSenderMCU/src/main.cpp:58,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,12,U601,DVP camera / exact SKU TBD,D4,CAM_G12,ImageSenderMCU/src/main.cpp:57,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,18,U601,DVP camera / exact SKU TBD,D5,CAM_G18,ImageSenderMCU/src/main.cpp:56,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,17,U601,DVP camera / exact SKU TBD,D6,CAM_G17,ImageSenderMCU/src/main.cpp:55,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,16,U601,DVP camera / exact SKU TBD,D7,CAM_G16,ImageSenderMCU/src/main.cpp:53,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,15,U601,DVP camera / exact SKU TBD,XCLK,CAM_G15,ImageSenderMCU/src/main.cpp:50,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,13,U601,DVP camera / exact SKU TBD,PCLK,CAM_G13,ImageSenderMCU/src/main.cpp:64,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,6,U601,DVP camera / exact SKU TBD,VSYNC,CAM_G6,ImageSenderMCU/src/main.cpp:62,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,7,U601,DVP camera / exact SKU TBD,HREF,CAM_G7,ImageSenderMCU/src/main.cpp:63,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,4,U601,DVP camera / exact SKU TBD,SCCB_SDA,CAM_G4,ImageSenderMCU/src/main.cpp:51,CODE_CONFIRMED,
+06_ImageSender,ImageSenderMCU,U600,5,U601,DVP camera / exact SKU TBD,SCCB_SCL,CAM_G5,ImageSenderMCU/src/main.cpp:52,CODE_CONFIRMED,
+07_HMI,HMI_MCU,U700,13,U701,ILI9341 / onboard LCD,MOSI,H_G13,HMI_MCU/platformio.ini:17,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,12,U701,ILI9341 / onboard LCD,MISO,H_G12,HMI_MCU/platformio.ini:16,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,14,U701,ILI9341 / onboard LCD,SCLK,H_G14,HMI_MCU/platformio.ini:18,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,15,U701,ILI9341 / onboard LCD,CS,H_G15,HMI_MCU/platformio.ini:19,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,2,U701,ILI9341 / onboard LCD,DC,H_G2,HMI_MCU/platformio.ini:20,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,21,U701,ILI9341 / onboard LCD,BL_CTRL,H_G21,HMI_MCU/platformio.ini:22,CODE_CONFIRMED,Onboard LCD signal
+07_HMI,HMI_MCU,U700,32,U702,XPT2046 / onboard touch,MOSI,H_G32,HMI_MCU/src/CYD28_TouchscreenR.h:37,CODE_CONFIRMED,Onboard touch signal
+07_HMI,HMI_MCU,U700,39,U702,XPT2046 / onboard touch,MISO,H_G39,HMI_MCU/src/CYD28_TouchscreenR.h:38,CODE_CONFIRMED,Onboard touch signal
+07_HMI,HMI_MCU,U700,25,U702,XPT2046 / onboard touch,CLK,H_G25,HMI_MCU/src/CYD28_TouchscreenR.h:39,CODE_CONFIRMED,Onboard touch signal
+07_HMI,HMI_MCU,U700,33,U702,XPT2046 / onboard touch,CS,H_G33,HMI_MCU/src/CYD28_TouchscreenR.h:40,CODE_CONFIRMED,Onboard touch signal
+07_HMI,HMI_MCU,U700,36,U702,XPT2046 / onboard touch,IRQ,H_G36,HMI_MCU/src/CYD28_TouchscreenR.h:36,CODE_CONFIRMED,Onboard touch signal

@@ -19,6 +19,11 @@ class SSEManager:
 
     def broadcast_system_log(self, msg: str, source: str = "System"):
         """Broadcasts a system log message to all connected clients and prints to console."""
+        # 200 HTTP 성공 로그 무시
+        msg_str = str(msg)
+        if " 200 " in msg_str or " 200 -" in msg_str or msg_str.strip().endswith(" 200"):
+            return
+
         print(f"[{source}] {msg}")
         for q in self.clients:
             q.append({

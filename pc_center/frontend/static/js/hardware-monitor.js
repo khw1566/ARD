@@ -239,8 +239,14 @@
     if (openHwBtn && hwModal) {
         openHwBtn.onclick = () => {
             hwModal.style.display = 'block';
-            setTimeout(initHwCharts, 50);
-            loadHardwareData();
+            setTimeout(() => {
+                initHwCharts();
+                if (chartCpu) chartCpu.resize();
+                if (chartRam) chartRam.resize();
+                if (chartGpu) chartGpu.resize();
+                if (chartNet) chartNet.resize();
+                loadHardwareData();
+            }, 60);
             if (hwInterval) clearInterval(hwInterval);
             hwInterval = setInterval(loadHardwareData, 1000); // 1초 주기 갱신
         };

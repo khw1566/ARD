@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARD AI Performance & Accuracy Test Center</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=8">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
+    <style>
+        body {
+            background-color: var(--bg-color, #0a0e17);
+            color: var(--text-main, #f8fafc);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Outfit', sans-serif;
+        }
+        .test-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .test-header h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        .nav-links {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover {
+            color: #fff;
+            border-color: #38bdf8;
+        }
+        .test-container {
+            flex: 1;
+            padding: 24px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card-panel {
+            background: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 10px;
+        }
+        .control-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .btn-action:hover {
+            background: #0369a1;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+        .btn-success {
+            background: #15803d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-success:hover {
+            background: #166534;
+        }
+        .stats-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .summary-box {
+            background: #1f2937;
+            border-radius: 8px;
+            padding: 14px;
+            border-left: 4px solid #38bdf8;
+        }
+        .summary-box.green { border-left-color: #22c55e; }
+        .summary-box.red { border-left-color: #ef4444; }
+        .summary-box.purple { border-left-color: #a855f7; }
+        .summary-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .summary-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* 5x5 Grid Styles */
+        .mosaic-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+            margin-top: 16px;
+        }
+        .grid-cell {
+            position: relative;
+            aspect-ratio: 1;
+            background: #1e293b;
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.2s, opacity 0.2s;
+            user-select: none;
+        }
+        .grid-cell:hover {
+            transform: scale(1.02);
+            border-color: #38bdf8;
+        }
+        .grid-cell.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+            border: 2px dashed #38bdf8 !important;
+        }
+        .grid-cell.drag-over {
+            border: 2px solid #38bdf8 !important;
+            background: rgba(56, 189, 248, 0.15) !important;
+            transform: scale(1.04);
+        }
+        .grid-cell.filled {
+            border-style: solid;
+            cursor: grab;
+        }
+        .grid-cell.filled:active {
+            cursor: grabbing;
+        }
+        .grid-cell.correct {
+            border-color: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+        }
+        .grid-cell.incorrect {
+            border-color: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+        /* Custom Context Menu */
+        .custom-context-menu {
+            position: fixed;
+            z-index: 10000;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            min-width: 170px;
+            padding: 6px 0;
+            display: none;
+        }
+        .context-menu-item {
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .context-menu-item:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+        }
+        .context-menu-item.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        .context-menu-separator {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 4px 0;
+        }
+        .cell-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .cell-badge {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: 4px 6px;
+            font-size: 0.68rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .cell-status-tag {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 2;
+        }
+        .status-ok {
+            background: rgba(34, 197, 94, 0.7);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+        .status-fail {
+            background: rgba(239, 68, 68, 0.7);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+        .cell-index {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 2;
+        }
+        .cell-toggle-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .grid-cell:hover .cell-toggle-btn {
+            opacity: 1;
+        }
+        /* Benchmark Table */
+        .bench-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+        .bench-table th, .bench-table td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bench-table th {
+            background: #1e293b;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .bench-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .tag-model {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+        /* Report Benchmark Table Styles */
+        .report-section-badge {
+            background: #334155;
+            color: #f8fafc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-top: 10px;
+            background: #0f172a;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .report-table th {
+            background: #1e293b;
+            color: #cbd5e1;
+            padding: 10px 8px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .report-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+            color: #f1f5f9;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .report-table td.highlight {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+        .report-table td.success-val {
+            color: #22c55e;
+            font-weight: 700;
+        }
+        .report-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+    </style>
+</head>
+<body>
+    <header class="test-header">
+        <h1>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>ARD AI 인식 정확도 및 모델별 소요시간 평가 실험실</span>
+        </h1>
+        <div class="nav-links">
+            <a href="/">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                <span>대시보드</span>
+            </a>
+            <a href="/settings">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>통합 설정</span>
+            </a>
+            <a href="/terminal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                <span>터미널</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="test-container">
+        <!-- Panel 1: Test Execution Controls -->
+        <div class="card-panel">
+            <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>실험 제어 및 테스트 모드</span>
+            </div>
+            <div class="control-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8;">대상 AI 모델:</label>
+                    <select id="select-model" style="background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">
+                        <option value="gemini-2.5-flash-lite" selected>gemini-2.5-flash-lite (기본 권장 / 고속)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (표준)</option>
+                        <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (차세대 경량 모델)</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8;">영상 소스:</label>
+                    <input type="file" id="upload-image-input" accept="image/*" style="display: none;">
+                    <button class="btn-secondary" onclick="document.getElementById('upload-image-input').click()">로컬 파일 선택</button>
+                    <button class="btn-secondary" id="btn-capture-now" onclick="triggerMcuCapture()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        <span>ImageSender 촬영</span>
+                    </button>
+                </div>
+
+                <!-- 자동 등록 토글 스위치 -->
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 12px; border-radius: 6px;">
+                    <input type="checkbox" id="auto-register-chk" checked style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="auto-register-chk" style="font-size: 0.85rem; color: #38bdf8; font-weight: 600; cursor: pointer;">
+                        센서 수신 시 자동 등록 (Auto-Add)
+                    </label>
+                </div>
+
+                <button class="btn-action" id="btn-run-test" onclick="runSingleTest()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                    <span>현재 이미지로 모델 추론 실행</span>
+                </button>
+                <button class="btn-secondary" onclick="resetMosaicGrid()">그리드 초기화</button>
+                <button class="btn-success" id="btn-generate-mosaic" onclick="generateReportMosaic()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>5x5 바둑식 보고서 이미지 생성/저장</span>
+                </button>
+            </div>
+
+            <!-- 현재 대기/수신 중인 이미지 실시간 미리보기 바 -->
+            <div style="margin-top: 16px; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 16px;">
+                <div style="width: 80px; height: 80px; border-radius: 6px; background: #1e293b; border: 1px solid rgba(255,255,255,0.2); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <img id="preview-active-frame" style="width: 100%; height: 100%; object-fit: cover; display: none;" src="" alt="Live Feed Preview">
+                    <span id="preview-placeholder-text" style="font-size: 0.68rem; color: #64748b; text-align: center;">미리보기 없음</span>
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="stream-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                        <span id="stream-status-text" style="font-size: 0.85rem; font-weight: 600; color: #cbd5e1;">카메라 센서 연결 대기 중</span>
+                    </div>
+                    <div id="preview-meta-text" style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
+                        대기 중인 최신 영상 데이터가 없습니다. 카메라 촬영 또는 파일 업로드를 수행하세요.
+                    </div>
+                </div>
+                <button class="btn-action" id="btn-add-preview-to-grid" style="padding: 8px 16px; font-size: 0.82rem;" onclick="addCurrentPreviewToGrid()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>이 영상 등록/분석</span>
+                </button>
+            </div>
+
+            <!-- Stats Summary Indicators -->
+            <div class="stats-summary-grid">
+                <div class="summary-box">
+                    <div class="summary-label">총 테스트 횟수</div>
+                    <div class="summary-val" id="val-total-count">0 / 25</div>
+                </div>
+                <div class="summary-box green">
+                    <div class="summary-label">성공(일치) 판정</div>
+                    <div class="summary-val" id="val-success-count">0</div>
+                </div>
+                <div class="summary-box red">
+                    <div class="summary-label">실패(오인식) 판정</div>
+                    <div class="summary-val" id="val-fail-count">0</div>
+                </div>
+                <div class="summary-box purple">
+                    <div class="summary-label">식별 정확도 (Accuracy)</div>
+                    <div class="summary-val" id="val-accuracy">0.0%</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">평균 추론 소요 시간</div>
+                    <div class="summary-val" id="val-avg-duration">0 ms</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: 5x5 Mosaic Inspection Grid -->
+        <div class="card-panel">
+            <div class="panel-title" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>5 × 5 바둑식 식별 검증 그리드</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 0.78rem; color: #94a3b8;">
+                    <span>드래그앤드롭: 순서 교환</span>
+                    <span>우클릭: 삭제 / 상태 전환</span>
+                    <span style="color: #22c55e;">초록: 정상</span>
+                    <span style="color: #ef4444;">빨강: 오류</span>
+                </div>
+            </div>
+            
+            <div class="mosaic-grid" id="mosaic-grid">
+                <!-- 25 Cells dynamically created -->
+            </div>
+
+            <!-- 커스텀 우클릭 메뉴 -->
+            <div id="custom-context-menu" class="custom-context-menu">
+                <div class="context-menu-item" onclick="menuToggleAccuracy()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>성공/실패 토글</span>
+                </div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item danger" onclick="menuDeleteCell()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span>이 셀 삭제 (초기화)</span>
+                </div>
+            </div>
+
+            <div id="mosaic-result-preview" style="margin-top: 24px; display: none; text-align: center; background: #0b1120; padding: 20px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div style="font-size: 1rem; font-weight: 600; color: #38bdf8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>[보고서 제출용 5x5 바둑식 종합 합성 이미지]</span>
+                </div>
+                <img id="mosaic-final-img" style="max-width: 100%; border: 2px solid #38bdf8; border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);" src="" alt="Mosaic Report Image">
+                <div style="margin-top: 16px; display: flex; justify-content: center; gap: 12px;">
+                    <button id="btn-mosaic-download" class="btn-action" style="padding: 10px 24px; font-size: 0.95rem; text-decoration: none;" onclick="downloadMosaicImage()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>합성 이미지 다운로드 (JPG)</span>
+                    </button>
+                    <a id="mosaic-download-link" style="display: none;" download="ARD_AI_Accuracy_Report_5x5.jpg"></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 3: Detailed Inference Time & Logs Table -->
+        <div class="card-panel">
+            <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span>실험 이력 및 모델별 지연 시간 측정 기록</span>
+            </div>
+            <table class="bench-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>AI 모델</th>
+                        <th>인식 객체(Object)</th>
+                        <th>판별 재질(Category)</th>
+                        <th>소요 시간(Latency)</th>
+                        <th>사용자 판정</th>
+                        <th>타임스탬프</th>
+                    </tr>
+                </thead>
+                <tbody id="test-log-tbody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">기록된 테스트 결과가 없습니다. 테스트를 실행하세요.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Panel 4: 대한기계학회 최종보고서 13p 정량적 성능 평가 및 Cycle Time 측정 (Table 5 & 6) -->
+        <div class="card-panel" id="report-benchmark-panel">
+            <div class="panel-title" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>대한기계학회 최종보고서 13p 전용 측정 패널 (Table 5 & Table 6)</span>
+                    <span class="report-section-badge">Section 3.2</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" onclick="copyReportMarkdown()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>보고서 양식 마크다운 복사</span>
+                    </button>
+                    <button class="btn-secondary" onclick="exportReportCSV()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>CSV 다운로드</span>
+                    </button>
+                    <button class="btn-secondary" onclick="resetReportCycleData()">테이블 초기화</button>
+                </div>
+            </div>
+
+            <!-- 컨트롤 바 -->
+            <div class="control-row" style="margin-bottom: 16px; background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8;">측정 대상 사물:</label>
+                    <select id="report-target-obj" style="background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 7px 12px; border-radius: 6px;">
+                        <option value="Object A">플라스틱 병 (Object A - Fig. 17/A)</option>
+                        <option value="Object B">금속 폐기물 (Object B - Fig. 17/B)</option>
+                        <option value="Object C">오염/훼손된 물체 (Object C - Fig. 17/C)</option>
+                    </select>
+                </div>
+                <button class="btn-action" id="btn-run-single-cycle" onclick="runCycleBenchmark(false)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                    <span>1회 계측 실행</span>
+                </button>
+                <button class="btn-action" id="btn-run-five-cycle" style="background: #059669;" onclick="runCycleBenchmark(true)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon><polygon points="12 3 23 12 12 21 12 3"></polygon></svg>
+                    <span>5회 연속 자동 계측 실행 (1~5차)</span>
+                </button>
+                <span id="cycle-bench-status" style="font-size: 0.8rem; color: #94a3b8; margin-left: 10px;">대기 상태</span>
+            </div>
+
+            <!-- Table 5 렌더링 -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 0.92rem; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">
+                    [Table 5] 멀티모달 AI 모델별 재질 분류 정확도 및 추론 소요 시간
+                </div>
+                <table class="report-table" id="table-5-view">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 14%;">AI 모델</th>
+                            <th rowspan="2" style="width: 22%;">목표 사물 (Target Objects)</th>
+                            <th colspan="5">추론 소요 시간 (ms)</th>
+                            <th rowspan="2" style="width: 12%;">평균 소요 시간 (ms)</th>
+                            <th rowspan="2" style="width: 12%;">식별 성공률 (%)</th>
+                        </tr>
+                        <tr>
+                            <th>1차</th>
+                            <th>2차</th>
+                            <th>3차</th>
+                            <th>4차</th>
+                            <th>5차</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-5-tbody">
+                        <!-- 동적 렌더링 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table 6 렌더링 -->
+            <div>
+                <div style="font-size: 0.92rem; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">
+                    [Table 6] 선별 공정의 단계별 소요 시간 및 전체 처리량 분석 (단위: ms)
+                </div>
+                <table class="report-table" id="table-6-view">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">목표 사물</th>
+                            <th style="width: 12%;">PC-MCU 통신</th>
+                            <th style="width: 15%;">이미지센서 MCU 동작시간</th>
+                            <th style="width: 18%;">MCU-PC 통신 및 AI 추론시간</th>
+                            <th style="width: 15%;">DriveMCU 통신 및 구동시간</th>
+                            <th style="width: 11%;">초기화시간</th>
+                            <th style="width: 11%;">총 소요시간</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-6-tbody">
+                        <!-- 동적 렌더링 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 테스트 데이터 저장소 (최대 25개)
+        let testCells = [];
+        let currentSelectedImageBase64 = null;
+        let eventSource = null;
+        let isBenchmarkingInProgress = false;
+
+        // 드래그 앤 드롭 및 우클릭 관련 전역 상태
+        let draggedCellIndex = null;
+        let contextTargetIndex = null;
+
+        // 대한기계학회 보고서 Table 5 & Table 6 전용 저장소
+        let reportCycleData = {
+            "Object A": { runs: [], timings: [] },
+            "Object B": { runs: [], timings: [] },
+            "Object C": { runs: [], timings: [] }
+        };
+
+        // 로컬스토리지 저장 키 상수
+        const STORAGE_KEY_MOSAIC = 'ARD_TEST_MOSAIC_CELLS_V2';
+        const STORAGE_KEY_REPORT = 'ARD_REPORT_CYCLE_DATA_V2';
+
+        // 로컬스토리지에 그리드 데이터 및 보고서 데이터 영구 저장
+        function persistToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_MOSAIC, JSON.stringify(testCells));
+                localStorage.setItem(STORAGE_KEY_REPORT, JSON.stringify(reportCycleData));
+            } catch (e) {
+                console.warn('LocalStorage 저장 한도 초과 또는 실패:', e);
+            }
+        }
+
+        // 로컬스토리지에서 기존 정보 복원
+        function loadFromLocalStorage() {
+            try {
+                const savedCells = localStorage.getItem(STORAGE_KEY_MOSAIC);
+                if (savedCells) {
+                    const parsed = JSON.parse(savedCells);
+                    if (Array.isArray(parsed) && parsed.length === 25) {
+                        testCells = parsed;
+                        for (let i = 0; i < 25; i++) {
+                            renderCell(i);
+                        }
+                        updateSummary();
+                        updateLogTable();
+                    }
+                }
+
+                const savedReport = localStorage.getItem(STORAGE_KEY_REPORT);
+                if (savedReport) {
+                    reportCycleData = JSON.parse(savedReport);
+                    renderReportTables();
+                }
+            } catch (e) {
+                console.warn('LocalStorage 로드 실패:', e);
+            }
+        }
+
+        // 초기화
+        function initGrid() {
+            const grid = document.getElementById('mosaic-grid');
+            grid.innerHTML = '';
+            testCells = [];
+
+            for (let i = 0; i < 25; i++) {
+                const cellData = {
+                    index: i + 1,
+                    image_b64: null,
+                    model: '',
+                    object: '',
+                    category: '',
+                    duration_ms: 0,
+                    is_correct: true, // 기본값 성공
+                    timestamp: ''
+                };
+                testCells.push(cellData);
+
+                const div = document.createElement('div');
+                div.className = 'grid-cell';
+                div.id = `grid-cell-${i}`;
+                div.setAttribute('data-index', i);
+
+                // 클릭 (성공/실패 토글)
+                div.onclick = (e) => {
+                    if (div.classList.contains('dragging')) return;
+                    toggleCellAccuracy(i);
+                };
+
+                // 우클릭 컨텍스트 메뉴
+                div.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, i);
+                };
+
+                // 드래그 앤 드롭 리스너
+                div.draggable = false;
+                div.ondragstart = (e) => handleDragStart(e, i);
+                div.ondragover = (e) => handleDragOver(e, i);
+                div.ondragenter = (e) => handleDragEnter(e, i);
+                div.ondragleave = (e) => handleDragLeave(e, i);
+                div.ondrop = (e) => handleDrop(e, i);
+                div.ondragend = (e) => handleDragEnd(e, i);
+
+                div.innerHTML = `
+                    <div class="cell-index">#${i+1}</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">빈 슬롯</div>
+                `;
+                grid.appendChild(div);
+            }
+            updateSummary();
+        }
+
+        // 재질별 색상 및 한글 매핑
+        const MATERIAL_MAP = {
+            'Plastic': { name: '플라스틱', bg: '#0284c7', color: '#fff' },
+            'Metal': { name: '캔/금속', bg: '#d97706', color: '#fff' },
+            'Glass': { name: '유리병', bg: '#059669', color: '#fff' },
+            'Paper': { name: '종이/팩', bg: '#ca8a04', color: '#fff' },
+            'Others': { name: '일반/기타', bg: '#64748b', color: '#fff' }
+        };
+
+        function getMaterialBadgeHtml(cat) {
+            const mat = MATERIAL_MAP[cat] || { name: cat || '미분류', bg: '#475569', color: '#fff' };
+            return `<span style="background: ${mat.bg}; color: ${mat.color}; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.68rem; margin-left: 4px;">${mat.name}</span>`;
+        }
+
+        // 셀 렌더링 갱신
+        function renderCell(index) {
+            const cell = testCells[index];
+            const el = document.getElementById(`grid-cell-${index}`);
+            if (!el) return;
+
+            if (!cell.image_b64) {
+                el.className = 'grid-cell';
+                el.draggable = false;
+                el.innerHTML = `
+                    <div class="cell-index">#${cell.index}</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">빈 슬롯</div>
+                `;
+                return;
+            }
+
+            el.className = `grid-cell filled ${cell.is_correct ? 'correct' : 'incorrect'}`;
+            el.draggable = true; // 채워진 셀만 드래그 가능
+            
+            const matHtml = getMaterialBadgeHtml(cell.category);
+
+            el.innerHTML = `
+                <div class="cell-index">#${cell.index}</div>
+                <img src="${cell.image_b64}" class="cell-img" alt="Test sample">
+                <div class="cell-status-tag ${cell.is_correct ? 'status-ok' : 'status-fail'}">
+                    ${cell.is_correct ? '정상(OK)' : '오류(FAIL)'}
+                </div>
+                <div class="cell-badge">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
+                        <span style="color: #38bdf8; font-weight: 600;">${cell.object || '객체명'}</span>
+                        ${matHtml}
+                    </div>
+                    <div style="color: #94a3b8; font-size: 0.62rem; margin-top: 2px;">
+                        ${cell.duration_ms}ms · ${cell.model || 'Gemini'}
+                    </div>
+                </div>
+                <div class="cell-toggle-btn">좌클릭: 판정 | 우클릭: 삭제</div>
+            `;
+        }
+
+        // 서버에서 직접 분석 완료된 결과 수신 시 슬롯 등록
+        function registerAnalysisDirectly(imgB64, analysis, durationMs) {
+            // 이미 등록된 이미지와 동일한지 확인 (중복 등록 방지)
+            const exists = testCells.some(c => c.image_b64 === imgB64);
+            if (exists) return;
+
+            const emptyIdx = testCells.findIndex(c => c.image_b64 === null);
+            if (emptyIdx === -1) return;
+
+            const model = document.getElementById('select-model').value;
+            testCells[emptyIdx] = {
+                index: emptyIdx + 1,
+                image_b64: imgB64,
+                model: model,
+                object: analysis.object || 'Unknown',
+                category: analysis.category || 'Others',
+                duration_ms: durationMs || 0,
+                is_correct: true,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            renderCell(emptyIdx);
+            updateSummary();
+            updateLogTable();
+        }
+
+        // 드래그 앤 드롭 핸들러
+        function handleDragStart(e, index) {
+            if (!testCells[index].image_b64) {
+                e.preventDefault();
+                return;
+            }
+            draggedCellIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', index);
+            setTimeout(() => {
+                const el = document.getElementById(`grid-cell-${index}`);
+                if (el) el.classList.add('dragging');
+            }, 0);
+        }
+
+        function handleDragOver(e, index) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e, index) {
+            e.preventDefault();
+            if (draggedCellIndex === null || draggedCellIndex === index) return;
+            const el = document.getElementById(`grid-cell-${index}`);
+            if (el) el.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e, index) {
+            const el = document.getElementById(`grid-cell-${index}`);
+            if (el) el.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, targetIndex) {
+            e.stopPropagation();
+            e.preventDefault();
+            const el = document.getElementById(`grid-cell-${targetIndex}`);
+            if (el) el.classList.remove('drag-over');
+
+            if (draggedCellIndex === null || draggedCellIndex === targetIndex) return;
+
+            // 두 슬롯 데이터 맞교환 (Swap)
+            const srcIdx = draggedCellIndex;
+            const srcData = { ...testCells[srcIdx] };
+            const tgtData = { ...testCells[targetIndex] };
+
+            // 인덱스 번호는 위치에 고정 유지
+            srcData.index = targetIndex + 1;
+            tgtData.index = srcIdx + 1;
+
+            testCells[targetIndex] = srcData;
+            testCells[srcIdx] = tgtData;
+
+            renderCell(srcIdx);
+            renderCell(targetIndex);
+            updateSummary();
+            updateLogTable();
+            return false;
+        }
+
+        function handleDragEnd(e, index) {
+            const el = document.getElementById(`grid-cell-${index}`);
+            if (el) el.classList.remove('dragging');
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('drag-over'));
+            draggedCellIndex = null;
+        }
+
+        // 우클릭 컨텍스트 메뉴 표시
+        function showContextMenu(e, index) {
+            contextTargetIndex = index;
+            const menu = document.getElementById('custom-context-menu');
+            if (!menu) return;
+
+            menu.style.display = 'block';
+            
+            // 윈도우 바운더리 보호
+            const menuW = 180;
+            const menuH = 90;
+            let posX = e.clientX;
+            let posY = e.clientY;
+
+            if (posX + menuW > window.innerWidth) posX = window.innerWidth - menuW - 10;
+            if (posY + menuH > window.innerHeight) posY = window.innerHeight - menuH - 10;
+
+            menu.style.left = `${posX}px`;
+            menu.style.top = `${posY}px`;
+        }
+
+        function hideContextMenu() {
+            const menu = document.getElementById('custom-context-menu');
+            if (menu) menu.style.display = 'none';
+            contextTargetIndex = null;
+        }
+
+        // 컨텍스트 메뉴 동작: 토글
+        function menuToggleAccuracy() {
+            if (contextTargetIndex !== null) {
+                toggleCellAccuracy(contextTargetIndex);
+            }
+            hideContextMenu();
+        }
+
+        // 컨텍스트 메뉴 동작: 셀 삭제
+        function menuDeleteCell() {
+            if (contextTargetIndex !== null) {
+                deleteCellData(contextTargetIndex);
+            }
+            hideContextMenu();
+        }
+
+        // 특정 셀 데이터 초기화/삭제
+        function deleteCellData(index) {
+            const cell = testCells[index];
+            if (!cell.image_b64) return;
+
+            testCells[index] = {
+                index: index + 1,
+                image_b64: null,
+                model: '',
+                object: '',
+                category: '',
+                duration_ms: 0,
+                is_correct: true,
+                timestamp: ''
+            };
+            renderCell(index);
+            updateSummary();
+            updateLogTable();
+        }
+
+        // 외부 클릭 시 컨텍스트 메뉴 닫기
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#custom-context-menu')) {
+                hideContextMenu();
+            }
+        });
+
+        // 사용자가 셀을 클릭하여 성공/실패 여부를 토글
+        function toggleCellAccuracy(index) {
+            const cell = testCells[index];
+            if (!cell.image_b64) return;
+            cell.is_correct = !cell.is_correct;
+            renderCell(index);
+            updateSummary();
+            updateLogTable();
+        }
+
+        // 통계 갱신
+        function updateSummary() {
+            const filledCells = testCells.filter(c => c.image_b64 !== null);
+            const total = filledCells.length;
+            const success = filledCells.filter(c => c.is_correct).length;
+            const fail = total - success;
+            const acc = total > 0 ? ((success / total) * 100).toFixed(1) : 0.0;
+            
+            let totalDur = 0;
+            filledCells.forEach(c => totalDur += c.duration_ms);
+            const avgDur = total > 0 ? Math.round(totalDur / total) : 0;
+
+            document.getElementById('val-total-count').innerText = `${total} / 25`;
+            document.getElementById('val-success-count').innerText = success;
+            document.getElementById('val-fail-count').innerText = fail;
+            document.getElementById('val-accuracy').innerText = `${acc}%`;
+            document.getElementById('val-avg-duration').innerText = `${avgDur} ms`;
+        }
+
+        // 로그 테이블 갱신
+        function updateLogTable() {
+            const tbody = document.getElementById('test-log-tbody');
+            const filled = testCells.filter(c => c.image_b64 !== null);
+            if (filled.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">기록된 테스트 결과가 없습니다. 테스트를 실행하세요.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            filled.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>#${c.index}</strong></td>
+                    <td><span class="tag-model">${c.model}</span></td>
+                    <td style="color: #f1f5f9; font-weight: 600;">${c.object}</td>
+                    <td><span class="mat-badge">${c.category}</span></td>
+                    <td style="font-family: monospace; color: #38bdf8;">${c.duration_ms} ms</td>
+                    <td><span style="font-weight: 700; color: ${c.is_correct ? '#22c55e' : '#ef4444'};">${c.is_correct ? '성공' : '실패'}</span></td>
+                    <td style="color: #64748b; font-size: 0.75rem;">${c.timestamp}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 최신 수신 이미지 표시 업데이트
+        function updateLivePreview(imgB64, metaInfo = '') {
+            const imgEl = document.getElementById('preview-active-frame');
+            const phEl = document.getElementById('preview-placeholder-text');
+            const metaEl = document.getElementById('preview-meta-text');
+            const dotEl = document.getElementById('stream-status-dot');
+            const statusText = document.getElementById('stream-status-text');
+
+            if (imgB64) {
+                if (!imgB64.startsWith('data:image')) {
+                    imgB64 = 'data:image/jpeg;base64,' + imgB64;
+                }
+                currentSelectedImageBase64 = imgB64;
+                imgEl.src = imgB64;
+                imgEl.style.display = 'block';
+                phEl.style.display = 'none';
+                dotEl.style.background = '#22c55e';
+                statusText.innerText = '카메라 센서 영상 수신 완료';
+                metaEl.innerText = metaInfo || `영상 대기 중 | ${new Date().toLocaleTimeString()}`;
+            }
+        }
+
+        // 서버에 현재 캐시된 최신 이미지 조회
+        async function fetchLatestServerImage() {
+            try {
+                const res = await fetch('/api/test/latest-image');
+                const data = await res.json();
+                if (data.status === 'success' && data.has_image) {
+                    updateLivePreview(data.image_b64, `서버 캐시 영상 로드됨 (${data.size_kb} KB)`);
+                }
+            } catch (e) {
+                console.error('최신 이미지 로드 실패:', e);
+            }
+        }
+
+        // 현재 대기 중인 미리보기 영상을 빈 슬롯에 분석 및 등록
+        function addCurrentPreviewToGrid() {
+            if (!currentSelectedImageBase64) {
+                alert('현재 대기 중인 카메라 영상이 없습니다. 먼저 사진을 촬영하거나 업로드하세요.');
+                return;
+            }
+            runSingleTest(currentSelectedImageBase64);
+        }
+
+        // SSE 실시간 스트림 연결
+        function initStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // 서버의 실제 엔드포인트 /api/status/stream 연결
+            eventSource = new EventSource('/api/status/stream');
+            eventSource.onopen = () => {
+                document.getElementById('stream-status-dot').style.background = '#eab308';
+                document.getElementById('stream-status-text').innerText = '스트림 연결됨 (실시간 센서 대기)';
+            };
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'update' && msg.image_b64) {
+                        const imgB64 = msg.image_b64.startsWith('data:image') 
+                            ? msg.image_b64 
+                            : 'data:image/jpeg;base64,' + msg.image_b64;
+                        
+                        const meta = msg.metadata || {};
+                        const analysis = msg.analysis || {};
+                        const metaStr = `센서: ${meta.sensor || 'UDP'} | 크기: ${meta.size_kb || 0} KB | 시각: ${meta.timestamp || new Date().toLocaleTimeString()}`;
+                        updateLivePreview(imgB64, metaStr);
+
+                        // 서버에서 이미 분석이 완료된 패킷 수신 시 슬롯 등록
+                        if (analysis.category && analysis.category !== 'Analyzing...' && analysis.object !== 'Analyzing...') {
+                            registerAnalysisDirectly(imgB64, analysis, meta.duration_ms || 0);
+                            return;
+                        }
+
+                        // 원시 프레임 수신 시 자동 등록 모드(Auto-Add)이면 벤치마크 API 실행
+                        const autoAdd = document.getElementById('auto-register-chk').checked;
+                        if (autoAdd && !isBenchmarkingInProgress) {
+                            runSingleTest(imgB64);
+                        }
+                    }
+                } catch (e) {
+                    console.error('SSE 메시지 파싱 오류:', e);
+                }
+            };
+
+            eventSource.onerror = () => {
+                document.getElementById('stream-status-dot').style.background = '#ef4444';
+                document.getElementById('stream-status-text').innerText = '스트림 재연결 중... (폴링 대체 가동)';
+            };
+        }
+
+        // 보조 폴링: SSE 끊김 대비 2초마다 최신 영상 확인
+        setInterval(() => {
+            fetchLatestServerImage();
+        }, 2000);
+
+        // 파일 업로드 처리
+        document.getElementById('upload-image-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                updateLivePreview(evt.target.result, `로컬 파일 로드됨: ${file.name}`);
+                alert('로컬 이미지가 로드되었습니다. "모델 추론 실행"을 누르거나 자동 등록 모드를 사용하세요.');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ImageSender 촬영 트리거
+        async function triggerMcuCapture() {
+            const btn = document.getElementById('btn-capture-now');
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg><span>촬영 요청 중...</span>`;
+
+            try {
+                const res = await fetch('/api/imagesendermcu/command', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: 'capture'})
+                });
+                if (res.ok) {
+                    document.getElementById('stream-status-text').innerText = '촬영 명령 전송 완료. 센서 패킷 수신 대기 중...';
+                } else {
+                    alert('ImageSender 촬영 명령 전송 실패');
+                }
+            } catch(e) {
+                alert('촬영 명령 통신 오류: ' + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // 단일 추론 테스트 실행 (specificImageB64가 있으면 해당 이미지 우선 사용)
+        async function runSingleTest(specificImageB64 = null) {
+            if (isBenchmarkingInProgress) return;
+
+            // 빈 슬롯 탐색
+            const emptyIdx = testCells.findIndex(c => c.image_b64 === null);
+            if (emptyIdx === -1) {
+                alert('25개의 모든 슬롯이 찼습니다. 그리드를 초기화하거나 기존 슬롯을 수정하세요.');
+                return;
+            }
+
+            const targetImg = specificImageB64 || currentSelectedImageBase64;
+            const model = document.getElementById('select-model').value;
+            const btn = document.getElementById('btn-run-test');
+            
+            isBenchmarkingInProgress = true;
+            btn.disabled = true;
+            btn.innerText = `[#${emptyIdx+1}] AI 추론 중...`;
+
+            try {
+                const payload = {
+                    model_name: model,
+                    image_b64: targetImg // null이면 백엔드가 last_raw_image 사용
+                };
+
+                const res = await fetch('/api/test/benchmark', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const finalImgB64 = data.image_b64.startsWith('data:image') 
+                        ? data.image_b64 
+                        : 'data:image/jpeg;base64,' + data.image_b64;
+
+                    testCells[emptyIdx] = {
+                        index: emptyIdx + 1,
+                        image_b64: finalImgB64,
+                        model: model,
+                        object: (data.analysis && data.analysis.object) ? data.analysis.object : 'Unknown',
+                        category: (data.analysis && data.analysis.category) ? data.analysis.category : 'Others',
+                        duration_ms: data.duration_ms || 0,
+                        is_correct: true, // 기본 성공으로 등록, 사용자가 셀 클릭으로 실패 토글 가능
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+                    renderCell(emptyIdx);
+                    updateSummary();
+                    updateLogTable();
+                    persistToLocalStorage(); // F5 새로고침 대비 영구 보존
+                } else {
+                    alert('추론 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch(e) {
+                alert('테스트 요청 중 통신 오류: ' + e);
+            } finally {
+                isBenchmarkingInProgress = false;
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg><span>현재 이미지로 모델 추론 실행</span>`;
+            }
+        }
+
+        // 그리드 리셋
+        function resetMosaicGrid() {
+            if (confirm('모든 5x5 테스트 그리드 및 결과 기록을 초기화하시겠습니까?')) {
+                initGrid();
+                updateLogTable();
+                localStorage.removeItem(STORAGE_KEY_MOSAIC);
+                document.getElementById('mosaic-result-preview').style.display = 'none';
+            }
+        }
+
+        // 5x5 바둑식 종합 이미지 생성 (보고서용 합성 이미지)
+        async function generateReportMosaic() {
+            const filled = testCells.filter(c => c.image_b64 !== null);
+            if (filled.length === 0) {
+                alert('합성할 테스트 이미지가 없습니다. 먼저 테스트를 실행하세요.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-generate-mosaic');
+            btn.disabled = true;
+            btn.innerText = '이미지 합성 중...';
+
+            try {
+                const res = await fetch('/api/test/generate-mosaic', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({cells: testCells})
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const preview = document.getElementById('mosaic-result-preview');
+                    const img = document.getElementById('mosaic-final-img');
+                    const dl = document.getElementById('mosaic-download-link');
+                    
+                    img.src = data.mosaic_image_b64;
+                    dl.href = data.mosaic_image_b64;
+                    preview.style.display = 'block';
+                    preview.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('합성 실패: ' + data.error);
+                }
+            } catch(e) {
+                alert('이미지 합성 통신 오류: ' + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg><span>5x5 바둑식 보고서 이미지 생성/저장</span>`;
+            }
+        }
+
+        // 합성 이미지 다운로드 실행
+        function downloadMosaicImage() {
+            const img = document.getElementById('mosaic-final-img');
+            if (!img || !img.src || img.src.length < 50) {
+                alert('다운로드할 합성 이미지가 생성되지 않았습니다.');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+            const filename = `ARD_AI_Accuracy_Report_5x5_${timestamp}.jpg`;
+
+            const dl = document.getElementById('mosaic-download-link');
+            dl.href = img.src;
+            dl.download = filename;
+            dl.click();
+        }
+
+        // --- 대한기계학회 Table 5 & Table 6 벤치마크 및 렌더링 로직 ---
+        const TARGET_META = {
+            "Object A": { name: "플라스틱 병", sub: "Fig. 17/A", expected: "Plastic" },
+            "Object B": { name: "금속 폐기물", sub: "Fig. 17/B", expected: "Metal" },
+            "Object C": { name: "오염/훼손된 물체", sub: "Fig. 17/C", expected: "Others" }
+        };
+
+        // Table 5 & 6 렌더링
+        function renderReportTables() {
+            // Table 5 렌더링
+            const t5 = document.getElementById('table-5-tbody');
+            const modelName = document.getElementById('select-model')?.value || 'gemini-2.5-flash-lite';
+            t5.innerHTML = '';
+
+            const keys = ["Object A", "Object B", "Object C"];
+            keys.forEach((k, idx) => {
+                const tr = document.createElement('tr');
+                const meta = TARGET_META[k];
+                const d = reportCycleData[k] || { runs: [], timings: [] };
+                const runs = d.runs || [];
+
+                // 1~5차 시간 값
+                let runCells = '';
+                for (let r = 0; r < 5; r++) {
+                    const val = runs[r] !== undefined ? `${runs[r].ai_ms} ms` : '-';
+                    runCells += `<td>${val}</td>`;
+                }
+
+                // 평균 계산
+                const avg = runs.length > 0 
+                    ? Math.round(runs.reduce((acc, cur) => acc + cur.ai_ms, 0) / runs.length)
+                    : 0;
+
+                // 성공률 계산
+                const successCount = runs.filter(r => r.category === meta.expected).length;
+                const acc = runs.length > 0 ? ((successCount / runs.length) * 100).toFixed(1) : '100.0';
+
+                let modelCell = '';
+                if (idx === 0) {
+                    modelCell = `<td rowspan="3" class="highlight" style="vertical-align: middle;">Gemini 2.5 Flash</td>`;
+                }
+
+                tr.innerHTML = `
+                    ${modelCell}
+                    <td style="text-align: left; padding-left: 12px;"><strong>${meta.name}</strong> <span style="font-size: 0.72rem; color: #94a3b8;">(${meta.sub})</span></td>
+                    ${runCells}
+                    <td class="highlight">${avg > 0 ? avg + ' ms' : '-'}</td>
+                    <td class="success-val">${runs.length > 0 ? acc + '%' : '100.0%'}</td>
+                `;
+                t5.appendChild(tr);
+            });
+
+            // Table 6 렌더링
+            const t6 = document.getElementById('table-6-tbody');
+            t6.innerHTML = '';
+            keys.forEach(k => {
+                const tr = document.createElement('tr');
+                const meta = TARGET_META[k];
+                const d = reportCycleData[k] || { runs: [], timings: [] };
+                const timings = d.timings || [];
+
+                if (timings.length === 0) {
+                    tr.innerHTML = `
+                        <td style="text-align: left; padding-left: 12px;"><strong>${meta.name}</strong> <span style="font-size: 0.72rem; color: #94a3b8;">(${meta.sub})</span></td>
+                        <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td class="highlight">-</td>
+                    `;
+                } else {
+                    // 평균값 산출
+                    const cnt = timings.length;
+                    const avg_pc = Math.round(timings.reduce((a, c) => a + c.pc_to_mcu_ms, 0) / cnt);
+                    const avg_cam = Math.round(timings.reduce((a, c) => a + c.camera_mcu_ms, 0) / cnt);
+                    const avg_ai = Math.round(timings.reduce((a, c) => a + c.transmission_ai_ms, 0) / cnt);
+                    const avg_drive = Math.round(timings.reduce((a, c) => a + c.drive_mcu_ms, 0) / cnt);
+                    const avg_home = Math.round(timings.reduce((a, c) => a + c.homing_ms, 0) / cnt);
+                    const avg_total = avg_pc + avg_cam + avg_ai + avg_drive + avg_home;
+
+                    tr.innerHTML = `
+                        <td style="text-align: left; padding-left: 12px;"><strong>${meta.name}</strong> <span style="font-size: 0.72rem; color: #94a3b8;">(${meta.sub})</span></td>
+                        <td>${avg_pc} ms</td>
+                        <td>${avg_cam} ms</td>
+                        <td>${avg_ai} ms</td>
+                        <td>${avg_drive} ms</td>
+                        <td>${avg_home} ms</td>
+                        <td class="highlight">${avg_total} ms (${(avg_total / 1000).toFixed(2)}s)</td>
+                    `;
+                }
+                t6.appendChild(tr);
+            });
+        }
+
+        // Cycle Benchmark 실행 (단일 또는 5회 연속)
+        async function runCycleBenchmark(isFiveRuns = false) {
+            const targetObj = document.getElementById('report-target-obj').value;
+            const modelName = document.getElementById('select-model').value;
+            const statusEl = document.getElementById('cycle-bench-status');
+            const totalRuns = isFiveRuns ? 5 : 1;
+
+            const runsData = reportCycleData[targetObj].runs;
+            const timingsData = reportCycleData[targetObj].timings;
+
+            if (isFiveRuns) {
+                reportCycleData[targetObj].runs = [];
+                reportCycleData[targetObj].timings = [];
+            }
+
+            statusEl.style.color = '#38bdf8';
+
+            for (let i = 0; i < totalRuns; i++) {
+                statusEl.innerText = `[${targetObj}] ${i + 1}/${totalRuns}차 공정 계측 중...`;
+                try {
+                    const res = await fetch('/api/test/cycle-benchmark', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            object_type: targetObj,
+                            model_name: modelName,
+                            image_b64: currentSelectedImageBase64
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        const t = data.timings;
+                        reportCycleData[targetObj].runs.push({
+                            ai_ms: t.ai_inference_only_ms,
+                            category: data.analysis.category,
+                            object: data.analysis.object
+                        });
+                        reportCycleData[targetObj].timings.push(t);
+                        renderReportTables();
+                        persistToLocalStorage();
+                    } else {
+                        alert(`계측 오류: ${data.error}`);
+                        break;
+                    }
+                } catch (e) {
+                    alert(`통신 오류: ${e}`);
+                    break;
+                }
+                if (isFiveRuns && i < totalRuns - 1) {
+                    await new Promise(r => setTimeout(r, 600)); // 0.6초 텀
+                }
+            }
+
+            statusEl.style.color = '#22c55e';
+            statusEl.innerText = `[${targetObj}] 계측 완료! (저장됨)`;
+        }
+
+        // 보고서 테이블 초기화
+        function resetReportCycleData() {
+            if (confirm('대한기계학회 Table 5 & Table 6의 모든 측정 수치를 초기화하시겠습니까?')) {
+                reportCycleData = {
+                    "Object A": { runs: [], timings: [] },
+                    "Object B": { runs: [], timings: [] },
+                    "Object C": { runs: [], timings: [] }
+                };
+                renderReportTables();
+                localStorage.removeItem(STORAGE_KEY_REPORT);
+                document.getElementById('cycle-bench-status').innerText = '초기화 완료';
+            }
+        }
+
+        // 보고서 마크다운 복사
+        function copyReportMarkdown() {
+            let md = "### [Table 5] 멀티모달 AI 모델별 재질 분류 정확도 및 추론 소요 시간\n";
+            md += "| AI 모델 | 목표 사물 | 1차(ms) | 2차(ms) | 3차(ms) | 4차(ms) | 5차(ms) | 평균 소요 시간(ms) | 식별 성공률(%) |\n";
+            md += "|---|---|---|---|---|---|---|---|---|\n";
+
+            ["Object A", "Object B", "Object C"].forEach(k => {
+                const meta = TARGET_META[k];
+                const d = reportCycleData[k] || { runs: [], timings: [] };
+                const runs = d.runs || [];
+                const rVals = [0,1,2,3,4].map(i => runs[i] ? runs[i].ai_ms : '-');
+                const avg = runs.length > 0 ? Math.round(runs.reduce((a,c)=>a+c.ai_ms,0)/runs.length) : '-';
+                const acc = runs.length > 0 ? ((runs.filter(r=>r.category===meta.expected).length/runs.length)*100).toFixed(1) : '100.0';
+                md += `| Gemini 2.5 Flash | ${meta.name} (${meta.sub}) | ${rVals.join(' | ')} | ${avg} | ${acc}% |\n`;
+            });
+
+            md += "\n### [Table 6] 선별 공정의 단계별 소요 시간 및 전체 처리량 분석 (단위: ms)\n";
+            md += "| 목표 사물 | PC-MCU 통신 | 이미지센서 MCU 동작시간 | MCU-PC 통신 및 AI 추론시간 | DriveMCU 통신 및 구동시간 | 초기화시간 | 총 소요시간 |\n";
+            md += "|---|---|---|---|---|---|---|\n";
+
+            ["Object A", "Object B", "Object C"].forEach(k => {
+                const meta = TARGET_META[k];
+                const d = reportCycleData[k] || { runs: [], timings: [] };
+                const t = d.timings || [];
+                if (t.length > 0) {
+                    const cnt = t.length;
+                    const pc = Math.round(t.reduce((a,c)=>a+c.pc_to_mcu_ms,0)/cnt);
+                    const cam = Math.round(t.reduce((a,c)=>a+c.camera_mcu_ms,0)/cnt);
+                    const ai = Math.round(t.reduce((a,c)=>a+c.transmission_ai_ms,0)/cnt);
+                    const drv = Math.round(t.reduce((a,c)=>a+c.drive_mcu_ms,0)/cnt);
+                    const hm = Math.round(t.reduce((a,c)=>a+c.homing_ms,0)/cnt);
+                    const tot = pc + cam + ai + drv + hm;
+                    md += `| ${meta.name} (${meta.sub}) | ${pc} | ${cam} | ${ai} | ${drv} | ${hm} | ${tot} (${(tot/1000).toFixed(2)}s) |\n`;
+                } else {
+                    md += `| ${meta.name} (${meta.sub}) | - | - | - | - | - | - |\n`;
+                }
+            });
+
+            navigator.clipboard.writeText(md).then(() => {
+                alert('대한기계학회 보고서 양식(마크다운 표)이 클립보드에 복사되었습니다!\n보고서 파일에 Ctrl+V로 붙여넣기 하세요.');
+            });
+        }
+
+        // 보고서 CSV 내보내기
+        function exportReportCSV() {
+            let csv = "Category,Object,Run1_ms,Run2_ms,Run3_ms,Run4_ms,Run5_ms,Average_ms,Accuracy\n";
+            ["Object A", "Object B", "Object C"].forEach(k => {
+                const meta = TARGET_META[k];
+                const runs = (reportCycleData[k] || {}).runs || [];
+                const rVals = [0,1,2,3,4].map(i => runs[i] ? runs[i].ai_ms : 0);
+                const avg = runs.length > 0 ? Math.round(runs.reduce((a,c)=>a+c.ai_ms,0)/runs.length) : 0;
+                const acc = runs.length > 0 ? ((runs.filter(r=>r.category===meta.expected).length/runs.length)*100).toFixed(1) : 100.0;
+                csv += `Table5,${meta.name},${rVals.join(',')},${avg},${acc}%\n`;
+            });
+
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ARD_Report_Table5_6_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        // 초기 로드 시 그리드 구성 및 실시간 스트림 시작
+        window.addEventListener('DOMContentLoaded', () => {
+            initGrid();
+            loadFromLocalStorage(); // F5 새로고침 후 기존 데이터 복원
+            fetchLatestServerImage();
+            initStream();
+            renderReportTables();
+        });
+    </script>
+</body>
+</html>
+

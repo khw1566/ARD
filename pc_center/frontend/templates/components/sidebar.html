@@ -12,12 +12,9 @@
                                 Model <span id="open-pricing-modal" style="cursor: pointer; color: var(--primary);">ⓘ</span>
                             </label>
                             <select id="model_name">
-                                <option value="gemini-3.1-flash-lite-preview" {{ 'selected' if config.model_name == 'gemini-3.1-flash-lite-preview' }}>gemini-3.1-flash-lite-preview</option>
-                                <option value="gemini-3-flash-preview" {{ 'selected' if config.model_name == 'gemini-3-flash-preview' }}>gemini-3-flash-preview</option>
-                                <option value="gemini-2.5-flash" {{ 'selected' if config.model_name == 'gemini-2.5-flash' }}>gemini-2.5-flash</option>
-                                <option value="gemini-2.5-flash-lite" {{ 'selected' if config.model_name == 'gemini-2.5-flash-lite' }}>gemini-2.5-flash-lite</option>
-                                <option value="gemini-2.0-flash-lite" {{ 'selected' if config.model_name == 'gemini-2.0-flash-lite' }}>gemini-2.0-flash-lite</option>
-                                <option value="gemini-2.0-flash" {{ 'selected' if config.model_name == 'gemini-2.0-flash' }}>gemini-2.0-flash</option>
+                                <option value="gemini-2.5-flash-lite" {{ 'selected' if config.model_name == 'gemini-2.5-flash-lite' or not config.model_name }}>gemini-2.5-flash-lite (Default/Fast)</option>
+                                <option value="gemini-2.5-flash" {{ 'selected' if config.model_name == 'gemini-2.5-flash' }}>gemini-2.5-flash (Standard)</option>
+                                <option value="gemini-3.1-flash-lite" {{ 'selected' if config.model_name == 'gemini-3.1-flash-lite' }}>gemini-3.1-flash-lite (Next-Gen)</option>
                             </select>
                         </div>
                         <div class="input-group" style="margin-bottom: 10px;">
@@ -42,11 +39,12 @@
                             <span id="cam-warning-msg" style="display:block; margin-top:5px; font-size:0.75rem; color:#facc15;"></span>
                         </div>
                         <div class="input-group" style="margin-bottom: 10px;">
-                            <label>JPEG Quality: <span id="quality-val" style="color: var(--primary); display:none;">{{ config.imagesendermcu.jpeg_quality }}</span></label>
+                            <label>JPEG Quality (압축률): <span id="quality-val" style="color: var(--primary); display:none;">{{ config.imagesendermcu.jpeg_quality }}</span></label>
                             <div class="input-with-number">
                                 <input type="range" id="jpeg_quality" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}">
                                 <input type="number" id="jpeg_quality-num" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}">
                             </div>
+                            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:3px;">* 수치가 낮을수록 고화질(저압축), 높을수록 고압축(저용량)</span>
                         </div>
                         <div class="input-group" style="margin-bottom: 10px;">
                             <label for="hmi_mcu_ip">HMI MCU IP (Receiver)</label>
@@ -97,10 +95,6 @@
                         <div class="result-item">
                             <label data-i18n="material_label">재질:</label>
                             <span id="object-material">-</span>
-                        </div>
-                        <div class="result-item">
-                            <label data-i18n="coords_label">좌표 (X, Y):</label>
-                            <span id="object-coords">-</span>
                         </div>
                         <div class="result-item">
                             <label data-i18n="updated_label">최근 업데이트:</label>
@@ -907,6 +901,87 @@
                                         <strong>LEFT/RIGHT:</strong> X Axis Control
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="sorting-tab" class="tab-content active">
+                    <div class="card status-card" style="border-left: 4px solid var(--primary);">
+                        <h2 style="color: var(--primary); margin-top: 0; margin-bottom: 12px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                <polyline points="2 17 12 22 22 17"></polyline>
+                                <polyline points="2 12 12 17 22 12"></polyline>
+                            </svg>
+                            <span>수동식 자동 선별 관제 상태</span>
+                        </h2>
+                        
+                        <div class="result-item" style="margin-bottom: 8px;">
+                            <label>시퀀스 상태:</label>
+                            <span id="side-sorting-status" style="font-weight: bold; color: var(--primary);">대기 중 (IDLE)</span>
+                        </div>
+                        <div class="result-item" style="margin-bottom: 8px;">
+                            <label>진행 단계:</label>
+                            <span id="side-sorting-step">STEP 0 / 5</span>
+                        </div>
+                        <div class="result-item" style="margin-bottom: 8px;">
+                            <label>식별 객체:</label>
+                            <span id="side-sorting-object" style="font-weight: bold; color: #f8fafc;">-</span>
+                        </div>
+                        <div class="result-item" style="margin-bottom: 8px;">
+                            <label>분류 재질:</label>
+                            <span id="side-sorting-material">-</span>
+                        </div>
+                        <div class="result-item" style="margin-bottom: 8px;">
+                            <label>목표 배출 방위각:</label>
+                            <span id="side-sorting-target-yaw" style="color: var(--primary); font-weight: bold;">0°</span>
+                        </div>
+                        <div class="result-item" style="margin-bottom: 12px;">
+                            <label>목표 덤핑 경사각:</label>
+                            <span id="side-sorting-dump-roll" style="color: var(--secondary); font-weight: bold;">45°</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div style="margin-top: 10px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px;">
+                                <span>선별 공정 진행률</span>
+                                <span id="side-sorting-progress-pct">0%</span>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                                <div id="side-sorting-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                            <button id="side-sorting-start-btn" class="btn-primary" style="height: 42px; background: #0284c7 !important; color: #ffffff !important; border: 1px solid #38bdf8 !important; font-weight: bold; border-radius: 6px;">
+                                선별 시퀀스 시작 (Start)
+                            </button>
+                            <button id="side-sorting-home-btn" class="btn-primary" style="height: 38px; background: #334155 !important; border: 1px solid #64748b !important; color: #f8fafc !important; font-weight: 600; border-radius: 6px;">
+                                디스크 원점 복귀 (Homing)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bin Allocation Guide Card -->
+                    <div class="card status-card" style="margin-top: 15px;">
+                        <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;">레일 중심 4분할 배출함 가이드</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem;">
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                                <strong style="color: #fbbf24;">1. 금속/캔 (Metal)</strong>
+                                <div style="color: #94a3b8; margin-top: 2px;">우측 전방 (+15mm / 90°)</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                <strong style="color: #4ade80;">2. 종이/팩 (Paper)</strong>
+                                <div style="color: #94a3b8; margin-top: 2px;">좌측 전방 (+15mm / 270°)</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                <strong style="color: #60a5fa;">3. 플라스틱 (Plastic)</strong>
+                                <div style="color: #94a3b8; margin-top: 2px;">좌측 후방 (-15mm / 270°)</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.3);">
+                                <strong style="color: #cbd5e1;">4. 유리/기타 (Others)</strong>
+                                <div style="color: #94a3b8; margin-top: 2px;">우측 후방 (-15mm / 90°)</div>
                             </div>
                         </div>
                     </div>
