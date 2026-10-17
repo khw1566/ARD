@@ -1,0 +1,9 @@
+dependencies:
+  idf:
+    version: ">=5.5.0"
+  # Same ESP-Hosted release as ImageSenderMCU_P4, so its C6 slave image can be reused.
+  espressif/esp_hosted: "2.12.2"
+  espressif/esp_wifi_remote: "1.6.5"
+  espressif/esp_lcd_jd9165: "2.0.2"
+  espressif/esp_lcd_touch_gt911: "1.2.1"
+  lvgl/lvgl: "9.2.2"

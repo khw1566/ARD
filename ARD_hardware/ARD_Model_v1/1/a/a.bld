@@ -1,0 +1,157 @@
+<template_study>
+ <study_name>a</study_name>
+ <active_config></active_config>
+ <new_mode>1</new_mode>
+ <template_design>
+  <design_name>설계 1</design_name>
+  <config_name>A</config_name>
+  <cadfile_name>C:/Users/work/AppData/Local/Temp/Autodesk CFD 2026/A\A.cfdsmt</cadfile_name>
+  <config_update>0</config_update>
+  <cad_launcher>CP_ASM_INVENTOR_IMPORT</cad_launcher>
+  <cad_model>CP_ASM_INVENTOR_IMPORT</cad_model>
+  <length_unit>0</length_unit>
+  <cloned_from></cloned_from>
+  <template_scenario>
+   <scenario_name>시나리오 1</scenario_name>
+   <template_setting>
+    <setting_name>2 ABS (Molded)</setting_name>
+    <setting_type>8</setting_type>
+    <assigned_material>
+     <id>0</id>
+     <database>기본값</database>
+     <part_count>0</part_count>
+     <is_referenced>false</is_referenced>
+     <material type="solid">
+      <name>ABS (Molded)</name>
+      <read_only>true</read_only>
+      <units>MKS</units>
+      <source> Autodesk supplied material </source>
+      <property type="x_conductivity">
+       <property type="conductivity">
+        <variation type="constant">
+         <value units="w/m-k">0.153</value>
+        </variation>
+       </property>
+      </property>
+      <property type="y_conductivity">
+       <property type="conductivity">
+        <variation type="same_as_kxx"/>
+       </property>
+      </property>
+      <property type="z_conductivity">
+       <property type="conductivity">
+        <variation type="same_as_kxx"/>
+       </property>
+      </property>
+      <property type="density">
+       <variation type="constant">
+        <value units="g/cm3">1.05</value>
+       </variation>
+      </property>
+      <property type="specific_heat">
+       <variation type="constant">
+        <value units="j/g-k">2.05</value>
+       </variation>
+      </property>
+      <property type="emissivity">
+       <variation type="constant">
+        <value>0.469</value>
+       </variation>
+      </property>
+      <property type="transmissivity">
+       <variation type="constant">
+        <value>0</value>
+       </variation>
+      </property>
+      <property type="resistivity">
+       <variation type="constant">
+        <value units="ohm-cm">1.65e+15</value>
+       </variation>
+      </property>
+      <property type="roughness">
+       <variation type="constant">
+        <value units="m">0</value>
+       </variation>
+      </property>
+      <color>255,0,0</color>
+     </material>
+     <material_environment fixed_value="yes" pressure_units="pa" reference_pressure="101325" reference_temperature="293" temperature_units="kelvin" use_external="yes"/>
+     <material_suppress>0</material_suppress>
+     <tag_names>Part1.솔리드1^!CFD_VOLUME-1~~</tag_names>
+    </assigned_material>
+   </template_setting>
+   <template_setting>
+    <setting_name>Iterations</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>8~~100</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Flow</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>1~~1</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Heat transfer</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>5~~0</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Compressible</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>2~~0</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Turbulence</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>3~~1~100~0.05~3</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Advection</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>4~~17</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Gravity</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>6~~0~0~0~0</content_value>
+    </setting_content>
+   </template_setting>
+   <template_setting>
+    <setting_name>Radiation</setting_name>
+    <setting_type>10</setting_type>
+    <setting_content>
+     <content_name></content_name>
+     <content_type>10</content_type>
+     <content_value>7~~0</content_value>
+    </setting_content>
+   </template_setting>
+  </template_scenario>
+ </template_design>
+</template_study>

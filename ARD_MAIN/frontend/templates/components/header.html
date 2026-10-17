@@ -1,0 +1,229 @@
+        <header class="main-header">
+            <div class="header-left">
+                <div class="logo-area" style="display: flex; flex-direction: column; gap: 6px;">
+                    <h1 data-i18n="app_title" style="margin: 0;">ARD Control Center</h1>
+                    <button id="server-shutdown-btn" class="btn-primary shutdown-btn-animated">
+                        <div class="shutdown-ring-container">
+                            <svg class="shutdown-ring-svg" viewBox="0 0 32 32">
+                                <circle class="shutdown-ring-bg" cx="16" cy="16" r="14" fill="none"></circle>
+                                <circle class="shutdown-ring-progress" cx="16" cy="16" r="14" fill="none"></circle>
+                            </svg>
+                            <svg class="shutdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                        </div>
+                        <span data-i18n="shutdown_server">EXIT & SHUTDOWN</span>
+                    </button>
+                </div>
+
+                <!-- Settings Sandwich Dropdown Menu -->
+                <div class="header-menu-container" id="header-settings-menu-container">
+                    <button id="header-menu-trigger" class="sandwich-btn" aria-haspopup="true" aria-expanded="false">
+                        <div class="sandwich-icon">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span data-i18n="menu_btn">메뉴</span>
+                    </button>
+                    <div class="header-dropdown-menu" id="header-dropdown-menu">
+                        <button id="lang-toggle" class="dropdown-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                            <span>KO / EN 언어 전환</span>
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button id="stats-modal-btn" class="dropdown-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                            <span data-i18n="stats_btn">통신 및 API 통계</span>
+                        </button>
+                        <button id="hw-modal-btn" class="dropdown-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                            <span data-i18n="hw_btn">PC 하드웨어 & 네트워크</span>
+                        </button>
+                        <button id="terminal-modal-btn" class="dropdown-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                            <span data-i18n="terminal_btn">내부 터미널 콘솔 (팝업)</span>
+                        </button>
+                        <a href="/settings" target="_blank" class="dropdown-item" style="text-decoration: none;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span data-i18n="settings_page_btn">프로그램 통합 설정창 (/settings)</span>
+                        </a>
+                        <a href="/test" target="_blank" class="dropdown-item" style="text-decoration: none;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span>AI 실험실 & 정확도 측정 (/test)</span>
+                        </a>
+                        <a href="/terminal" target="_blank" class="dropdown-item" style="text-decoration: none;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            <span data-i18n="terminal_open_page">터미널 새 탭 열기 (/terminal)</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button id="sidebar-toggle" class="dropdown-item" onclick="toggleSidebar()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span>설정 패널 열기/닫기</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sorting Control & Dashboard Status Box -->
+            <div class="status-box tab-active-box" id="sorting-control-box" style="cursor: pointer; border: 1px solid rgba(56, 189, 248, 0.25);" onclick="switchTab('sorting-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <div class="status-label" style="color: var(--primary); font-weight: bold;" data-i18n="sorting_dashboard_title">자동 선별 관제</div>
+                </div>
+                <div class="status-value">
+                    <span class="indicator status-online" id="sorting-status-indicator"></span> 
+                    <span class="val status-online" id="sorting-status-badge">READY</span>
+                </div>
+                <div class="status-meta">
+                    <span class="status-detail" id="sorting-current-step-mini" style="font-weight: 600; color: #f8fafc;">대기 중</span>
+                    <div class="meta-row">
+                        <span id="sorting-mcu-sync">3D 동기화: ON</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Board Status Boxes with multiline metadata -->
+            <div class="status-box status-box-offline" id="imagesendermcu-box" style="cursor: pointer;" onclick="switchTab('imagesendermcu-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <div class="status-label" data-i18n="imagesender_board">영상 송신 보드</div>
+                </div>
+                <div class="status-value"><span class="indicator status-offline" id="imagesendermcu-status"></span> <span class="val status-offline" id="imagesendermcu-status-text" data-i18n="offline">OFFLINE</span></div>
+                <div class="status-meta">
+                    <span id="imagesendermcu-ip-display" class="status-detail" title="Click to sync IP" style="cursor: pointer; display: none;">IP: --</span>
+                    <div class="meta-row">
+                        <div class="signal-container" id="imagesendermcu-signal-visual">
+                            <div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div>
+                        </div>
+                        <span id="imagesendermcu-rssi">RSSI: -dBm</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="temp-container"><div class="temp-fill" id="imagesendermcu-temp-fill"></div></div>
+                        <span id="imagesendermcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-box status-box-offline" id="hmi_mcu-box" style="cursor: pointer;" onclick="switchTab('hmi_mcu-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    <div class="status-label" data-i18n="hmi_board">HMI UI 보드</div>
+                </div>
+                <div class="status-value"><span class="indicator status-offline" id="hmi_mcu-status"></span> <span class="val status-offline" id="hmi_mcu-status-text" data-i18n="offline">OFFLINE</span></div>
+                <div class="status-meta">
+                    <span id="hmi_mcu-ip-display" class="status-detail" title="Click to sync IP" style="cursor: pointer; display: none;">IP: --</span>
+                    <div class="meta-row">
+                        <div class="signal-container" id="hmi_mcu-signal-visual">
+                            <div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div>
+                        </div>
+                        <span id="hmi_mcu-rssi">RSSI: -dBm</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="temp-container"><div class="temp-fill" id="hmi_mcu-temp-fill"></div></div>
+                        <span id="hmi_mcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-box status-box-offline" id="drivemcu-box" style="cursor: pointer;" onclick="switchTab('drivemcu-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <div class="status-label" data-i18n="drive_board">모터 구동 보드</div>
+                </div>
+                <div class="status-value"><span class="indicator status-offline" id="drivemcu-status"></span> <span class="val status-offline" id="drivemcu-status-text" data-i18n="offline">OFFLINE</span></div>
+                <div class="status-meta">
+                    <span id="drivemcu-ip-display" class="status-detail" title="Click to sync IP" style="cursor: pointer; display: none;">IP: --</span>
+                    <div class="meta-row">
+                        <div class="signal-container" id="drivemcu-signal-visual">
+                            <div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div>
+                        </div>
+                        <span id="drivemcu-rssi">RSSI: -dBm</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="temp-container"><div class="temp-fill" id="drivemcu-temp-fill"></div></div>
+                        <span id="drivemcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-box status-box-offline" id="controlmcu-box" style="cursor: pointer;" onclick="switchTab('controlmcu-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <div class="status-label" data-i18n="control_board">제어 메인 보드</div>
+                </div>
+                <div class="status-value"><span class="indicator status-offline" id="controlmcu-status"></span> <span class="val status-offline" id="controlmcu-status-text" data-i18n="offline">OFFLINE</span></div>
+                <div class="status-meta">
+                    <span id="controlmcu-ip-display" class="status-detail" title="Click to sync IP" style="cursor: pointer; display: none;">IP: --</span>
+                    <div class="meta-row">
+                        <div class="signal-container" id="controlmcu-signal-visual">
+                            <div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div>
+                        </div>
+                        <span id="controlmcu-rssi">RSSI: -dBm</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="temp-container"><div class="temp-fill" id="controlmcu-temp-fill"></div></div>
+                        <span id="controlmcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-box status-box-offline" id="robot3axismcu-box" style="cursor: pointer;" onclick="switchTab('robot3axismcu-tab')">
+                <div class="status-brand">
+                    <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <div class="status-label" data-i18n="robot3axis_board">3축 로봇 보드</div>
+                </div>
+                <div class="status-value"><span class="indicator status-offline" id="robot3axismcu-status"></span> <span class="val status-offline" id="robot3axismcu-status-text">OFFLINE</span></div>
+                <div class="status-meta">
+                    <span id="robot3axismcu-ip-display" class="status-detail" style="display: none;">IP: --</span>
+                    <div class="meta-row">
+                        <div class="signal-container" id="robot3axismcu-signal-visual">
+                            <div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div><div class="sig-bar"></div>
+                        </div>
+                        <span id="robot3axismcu-rssi">RSSI: -dBm</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="temp-container"><div class="temp-fill" id="robot3axismcu-temp-fill"></div></div>
+                        <span id="robot3axismcu-temp"><span data-i18n="temp_label">온도</span>: --°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Info & Mode Switch Box -->
+            <div class="server-info-box">
+                <div class="server-ip-line">
+                    <span style="color: var(--primary); font-weight: bold;">PC IP:</span>
+                    <span id="server-ip-display" class="ip-val">{{ server_ip }}</span>
+                </div>
+                <div class="server-gps-line">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <span id="gps-coords-display">Waiting for GPS...</span>
+                    <a id="gps-map-btn" href="#" target="_blank" class="btn-primary" style="padding: 1px 5px; font-size: 0.65rem; border-radius: 4px; display: none; text-decoration: none; background: #27ae60;">MAP</a>
+                </div>
+                <!-- Mode Switch -->
+                <div class="mode-switch-container">
+                    <span class="mode-label mode-label-test">TEST</span>
+                    <label class="switch">
+                        <input type="checkbox" id="mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="mode-label mode-label-auto">AUTO</span>
+                </div>
+            </div>
+        </header>

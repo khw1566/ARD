@@ -1,0 +1,24 @@
+menu "ARD DriveMCU"
+
+    config ARD_ENABLE_TOF
+        bool "Enable VL53L0X ToF sensor"
+        default n
+        help
+            Same default as the PlatformIO build (ARD_ENABLE_TOF=0): no ToF reads, the rail
+            runs open loop. Enabling only reads and reports the distance.
+
+    config ARD_ENABLE_RAIL_PID
+        bool "Allow ToF rail PID (mzm1)"
+        depends on ARD_ENABLE_TOF
+        default n
+        help
+            Rail PID is blocked for now (2026-10-16 decision): mzm1 is rejected even with the
+            ToF enabled. PID parameters (mzt/mzp/mzi/mzd) are still stored.
+
+    config ARD_DEFAULT_SERVER
+        string "Default PC server host"
+        default "192.168.0.35"
+        help
+            Used until a server is saved from the setup portal (/network).
+
+endmenu

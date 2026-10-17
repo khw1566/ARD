@@ -1,0 +1,19 @@
+CONFIG_IDF_TARGET="esp32s3"
+
+# ESP32-S3 N16R8 IPEX: 16 MB QIO flash.
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+# PSRAM stays OFF on purpose: the 3-position toggle is wired to GPIO35/36,
+# which the octal PSRAM bus would take over. The Arduino build had it off too.
+# CONFIG_SPIRAM is not set
+
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=6144
+# Basic-auth header of the settings page plus browser headers
+CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+# 32 ms voice packets arrive in bursts after Wi-Fi hiccups.
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=16
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y

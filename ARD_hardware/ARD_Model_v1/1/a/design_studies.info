@@ -1,0 +1,7 @@
+<cfd_design_studies user_name="work" version="26.0.70">
+ <design_study folder="C:/Users/work/Desktop/ARD_v1/ARD_hardware/ARD_Model_v1/1/a" instance_id="id_not_defined" name="a" study_id="1a299e23-e18b-44c8-bde8-a4e471bc050c">
+  <design launcher_type="CP_ASM_INVENTOR_IMPORT" lock_status="false" model_id="A.cfdsmt" name="설계 1">
+   <analysis name="시나리오 1"/>
+  </design>
+ </design_study>
+</cfd_design_studies>

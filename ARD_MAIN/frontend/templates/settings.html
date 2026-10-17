@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARD Unified System Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=9">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: var(--bg-color, #000000);
+            color: var(--text-main, #ffffff);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--card-bg, #111111);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .settings-header h1 {
+            font-size: 1.15rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary, #ffffff);
+            font-weight: 600;
+        }
+
+        .settings-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-nav-links a {
+            color: var(--text-dim, #888888);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+        }
+
+        .settings-nav-links a:hover {
+            color: var(--text-main, #ffffff);
+            border-color: var(--primary, #ffffff);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .settings-tabs-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 24px 0 24px;
+            background: var(--card-bg, #111111);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+
+        .settings-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim, #888888);
+            padding: 8px 16px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-tab-btn:hover {
+            color: var(--text-main, #ffffff);
+        }
+
+        .settings-tab-btn.active {
+            color: var(--primary, #ffffff);
+            border-bottom-color: var(--primary, #ffffff);
+        }
+
+        /* Compact layout for Fit-to-Screen (No Page Drag/Scroll) */
+        .settings-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 18px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .settings-view {
+            display: none;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .settings-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-view > .card {
+            flex: 1;
+            margin-bottom: 0 !important;
+            padding: 14px 18px !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        /* Responsive 2-column layout for Hardware & Network monitoring */
+        .hw-split-layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 340px) 1fr;
+            gap: 14px;
+            align-items: stretch;
+            flex: 1;
+            min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .hw-split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hw-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .hw-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .hw-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        @media (max-width: 800px) {
+            .hw-charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hw-chart-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 120px;
+            flex: 1;
+        }
+
+        .hw-canvas-container {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            min-height: 80px;
+            max-height: 100%;
+        }
+
+        /* Telemetry Stream Bar under ASCII Banner */
+        .telemetry-stream-bar {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .telemetry-mcu-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .mcu-live-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim, #888888);
+            transition: all 0.2s ease;
+        }
+
+        .mcu-live-chip.online {
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #ffffff;
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .mcu-pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-dim, #888888);
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .mcu-pulse-dot.pulse {
+            background: var(--success, #22c55e);
+            box-shadow: 0 0 8px var(--success, #22c55e);
+            transform: scale(1.25);
+        }
+
+        .telemetry-chart-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 4px 10px;
+        }
+
+        .telemetry-chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim, #888888);
+            white-space: nowrap;
+        }
+
+        .telemetry-mode-toggle {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--primary, #0696D7);
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .telemetry-mode-toggle:hover {
+            background: rgba(6, 150, 215, 0.2);
+            border-color: var(--primary, #0696D7);
+        }
+
+        .telemetry-canvas-box {
+            width: 200px;
+            height: 38px;
+            position: relative;
+        }
+
+        .auto-refresh-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-dim, #888888);
+        }
+
+        .auto-refresh-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success, #22c55e);
+            box-shadow: 0 0 8px var(--success, #22c55e);
+            display: inline-block;
+        }
+
+        /* Color customizer styles */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .color-card {
+            background: var(--card-bg, #111111);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .color-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .color-card-info label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main, #ffffff);
+        }
+
+        .color-card-info span {
+            font-size: 0.75rem;
+            color: var(--text-dim, #888888);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .color-picker-input {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .preset-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+            margin-bottom: 24px;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary, #ffffff);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .live-preview-box {
+            background: var(--card-bg, #111111);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-elements-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* ARD System ASCII Art Banner */
+        .ard-ascii-banner-wrapper {
+            background: linear-gradient(135deg, rgba(20, 24, 33, 0.95), rgba(11, 15, 25, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-left: 3px solid var(--primary, #0696D7);
+            border-radius: 6px;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .ard-ascii-pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.65rem;
+            line-height: 1.1;
+            color: var(--primary, #0696D7);
+            text-shadow: 0 0 8px rgba(6, 150, 215, 0.35);
+            letter-spacing: 0.04em;
+            white-space: pre;
+            user-select: none;
+        }
+
+        .ard-ascii-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 220px;
+        }
+
+        .ard-ascii-meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.72rem;
+            color: var(--secondary, #94a3b8);
+            font-family: 'JetBrains Mono', monospace;
+            width: fit-content;
+        }
+
+        .ard-ascii-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main, #ffffff);
+            letter-spacing: 0.02em;
+        }
+
+        .ard-ascii-desc {
+            font-size: 0.72rem;
+            color: var(--text-dim, #888888);
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+    <header class="settings-header">
+        <h1>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span data-i18n="settings_page_title">ARD 시스템 통합 설정</span>
+        </h1>
+        <div class="settings-nav-links">
+            <div class="auto-refresh-badge">
+                <span class="auto-refresh-dot" id="auto-refresh-indicator"></span>
+                <span id="auto-refresh-label">AUTO 2s</span>
+            </div>
+            <button id="toggle-autorefresh-btn" class="preset-btn" style="padding: 5px 10px; font-size: 0.75rem;">자동갱신 ON</button>
+            <button id="lang-btn-settings" class="preset-btn" style="padding: 5px 10px; font-size: 0.75rem;">KO / EN</button>
+            <a href="/" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>대시보드 메인</span>
+            </a>
+            <a href="/terminal" target="_blank">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                <span>터미널 콘솔</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Sub Navigation Tabs -->
+    <nav class="settings-tabs-bar">
+        <button class="settings-tab-btn active" data-target="tab-theme">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 10 10 0 0 0 0-20"></path></svg>
+            <span data-i18n="tab_settings_theme">스타일/색상 설정</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-stats">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span data-i18n="tab_settings_stats">통신 및 패킷 통계</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-network">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+            <span data-i18n="tab_settings_network">PC 하드웨어 & 네트워크</span>
+        </button>
+        <button class="settings-tab-btn" data-target="tab-general">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span data-i18n="tab_settings_general">일반/하드웨어 설정</span>
+        </button>
+    </nav>
+
+    <main class="settings-body">
+        <!-- ARD System ASCII Art Banner Header -->
+        <div class="ard-ascii-banner-wrapper">
+            <pre class="ard-ascii-pre">
+ █████╗ ██████╗ ██████╗ 
+██╔══██╗██╔══██╗██╔══██╗
+███████║██████╔╝██║  ██║
+██╔══██║██╔══██╗██║  ██║
+██║  ██║██║  ██║██████╔╝
+╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+  AUTONOMOUS ROBOT DYNAMICS</pre>
+            <div class="ard-ascii-meta">
+                <div class="ard-ascii-meta-badge">
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--primary, #0696D7); box-shadow:0 0 6px var(--primary, #0696D7);"></span>
+                    SYSTEM CORE [v2.4.0-CAD]
+                </div>
+                <div class="ard-ascii-title">ARD 통합 시스템 엔지니어링 콘솔</div>
+                <div class="ard-ascii-desc">Multi-MCU 패킷 텔레메트리, AI 시각/음성 분석 엔진 및 실시간 동기화 제어 센터</div>
+            </div>
+
+            <!-- Real-time MCU Connection & Packet Flow Stream Bar -->
+            <div class="telemetry-stream-bar">
+                <div class="telemetry-mcu-badges">
+                    <span style="font-size: 0.72rem; color: var(--primary, #0696D7); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-right: 2px;">MCU STATUS:</span>
+                    <div class="mcu-live-chip" id="chip-imagesendermcu" title="영상 송신 보드 (ImageSenderMCU)">
+                        <span class="mcu-pulse-dot" id="dot-imagesendermcu"></span>
+                        <span>CAM</span>
+                        <span id="txt-imagesendermcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-hmi_mcu" title="HMI 디스플레이 제어 보드 (HMI MCU)">
+                        <span class="mcu-pulse-dot" id="dot-hmi_mcu"></span>
+                        <span>HMI</span>
+                        <span id="txt-hmi_mcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-drivemcu" title="모터 주행 구동 보드 (DriveMCU)">
+                        <span class="mcu-pulse-dot" id="dot-drivemcu"></span>
+                        <span>DRIVE</span>
+                        <span id="txt-drivemcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-controlmcu" title="메인 통합 제어 및 음성 제어 보드 (ControlMCU)">
+                        <span class="mcu-pulse-dot" id="dot-controlmcu"></span>
+                        <span>CTRL</span>
+                        <span id="txt-controlmcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                    <div class="mcu-live-chip" id="chip-robot3axismcu" title="3축 로봇 매니퓰레이터 보드 (Robot3AxisMCU)">
+                        <span class="mcu-pulse-dot" id="dot-robot3axismcu"></span>
+                        <span>3AXIS</span>
+                        <span id="txt-robot3axismcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
+                    </div>
+                </div>
+
+                <!-- Live Sparkline Chart for Heartbeat & Control Signals -->
+                <div class="telemetry-chart-wrap">
+                    <div class="telemetry-chart-legend">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span><span style="color:#22c55e;">●</span> HB: <span id="telemetry-hb-count" style="color:#ffffff; font-weight:bold;">0</span></span>
+                            <button id="telemetry-mode-btn" class="telemetry-mode-toggle" title="누적(Total) / 초당 신호수(Rate/s) 모드 전환">초당(Rate)</button>
+                        </div>
+                        <div><span style="color:#38bdf8;">●</span> CTRL: <span id="telemetry-ctrl-count" style="color:#ffffff; font-weight:bold;">0</span></div>
+                    </div>
+                    <div class="telemetry-canvas-box">
+                        <canvas id="telemetry-live-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. STYLE & COLOR TAB -->
+        <section id="tab-theme" class="settings-view active">
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2 data-i18n="theme_setting_title" style="margin: 0; font-size: 1.05rem;">UI 스타일 및 색상 커스텀</h2>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">대시보드 메인 및 터미널 화면 실시간 동기화</span>
+                </div>
+
+                <!-- Color Presets -->
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" data-i18n="theme_preset_label">색상 테마 프리셋</div>
+                <div class="preset-container" style="margin-top: 0; margin-bottom: 12px; gap: 8px;">
+                    <button class="preset-btn" onclick="applyColorPreset('autodesk')" style="border-color: #0696D7; color: #0696D7; font-weight: bold; padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_autodesk">오토데스크 CAD 전문가 모드 (Autodesk CAD)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('monochrome')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_monochrome">모노크롬 (기본 B&W)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('ocean')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_ocean">오션 딥블루 (Ocean)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('cyberpunk')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_cyberpunk">사이버 네온 (Cyberpunk)</button>
+                    <button class="preset-btn" onclick="applyColorPreset('emerald')" style="padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_preset_emerald">에메랄드 포레스트 (Emerald)</button>
+                    <button class="preset-btn" onclick="resetColorTheme()" style="border-color: var(--accent); color: var(--accent); padding: 6px 12px; font-size: 0.78rem;" data-i18n="theme_reset_btn">색상 초기화</button>
+                </div>
+
+                <!-- Custom Color Pickers -->
+                <div class="color-grid" style="gap: 10px; margin-bottom: 12px;">
+                    <div class="color-card" style="padding: 10px 14px;">
+                        <div class="color-card-info">
+                            <label style="font-size: 0.82rem;" data-i18n="theme_primary_color">기본 강조 색상 (Primary)</label>
+                            <span id="label-primary-val" style="font-size: 0.72rem;">#ffffff</span>
+                        </div>
+                        <input type="color" id="picker-primary" class="color-picker-input" style="width: 34px; height: 34px;">
+                    </div>
+
+                    <div class="color-card" style="padding: 10px 14px;">
+                        <div class="color-card-info">
+                            <label style="font-size: 0.82rem;" data-i18n="theme_secondary_color">보조 강조 색상 (Secondary)</label>
+                            <span id="label-secondary-val" style="font-size: 0.72rem;">#94a3b8</span>
+                        </div>
+                        <input type="color" id="picker-secondary" class="color-picker-input" style="width: 34px; height: 34px;">
+                    </div>
+
+                    <div class="color-card" style="padding: 10px 14px;">
+                        <div class="color-card-info">
+                            <label style="font-size: 0.82rem;" data-i18n="theme_bg_color">배경 색상 (Background)</label>
+                            <span id="label-bg-val" style="font-size: 0.72rem;">#000000</span>
+                        </div>
+                        <input type="color" id="picker-bg" class="color-picker-input" style="width: 34px; height: 34px;">
+                    </div>
+
+                    <div class="color-card" style="padding: 10px 14px;">
+                        <div class="color-card-info">
+                            <label style="font-size: 0.82rem;" data-i18n="theme_card_bg">카드/패널 배경 (Card Surface)</label>
+                            <span id="label-card-val" style="font-size: 0.72rem;">#111111</span>
+                        </div>
+                        <input type="color" id="picker-card" class="color-picker-input" style="width: 34px; height: 34px;">
+                    </div>
+                </div>
+
+                <!-- Live Preview Card -->
+                <div class="live-preview-box" style="padding: 12px 16px; margin-top: 4px;">
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin-bottom: 6px;">UI 컴포넌트 실시간 미리보기</div>
+                    <div class="preview-elements-row" style="margin-top: 4px; gap: 10px;">
+                        <button class="btn-primary" style="width: auto; padding: 5px 14px; font-size: 0.8rem;">Primary Button</button>
+                        <button class="preset-btn" style="padding: 5px 14px; font-size: 0.8rem;">Secondary Button</button>
+                        <span class="status-badge" style="background: rgba(255,255,255,0.08); border: 1px solid var(--primary); color: var(--primary); padding: 3px 8px; border-radius: 4px; font-size: 0.72rem;">Accent Badge</span>
+                        <input type="text" value="Text Field Sample" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); padding: 5px 10px; border-radius: 4px; font-size: 0.78rem;" readonly>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. STATS TAB -->
+        <section id="tab-stats" class="settings-view">
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 1.05rem;" data-i18n="stats_modal_title">시스템 통신 패킷 & API 동작 통계</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="tab-stats-refresh-btn" class="preset-btn" style="padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_refresh_btn">새로고침</button>
+                        <button id="tab-stats-reset-btn" class="preset-btn" style="border-color: var(--danger); color: var(--danger); padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_reset_btn">통계 초기화</button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="stats-kpi-grid" style="margin-bottom: 12px; gap: 10px;">
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
+                        <div class="stats-kpi-label" data-i18n="stats_uptime">서버 가동 시간</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-uptime">00:00:00</div>
+                        <div class="stats-kpi-sub" id="st-kpi-start-time">시작: -</div>
+                    </div>
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
+                        <div class="stats-kpi-label" data-i18n="stats_total_packets">총 MCU 패킷</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-mcu-total">0</div>
+                        <div class="stats-kpi-sub"><span data-i18n="stats_mcu_success_rate">MCU 성공률</span>: <span id="st-kpi-mcu-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                    </div>
+                    <div class="stats-kpi-card" style="padding: 10px 14px;">
+                        <div class="stats-kpi-label" data-i18n="stats_total_api">총 API/MCP 호출</div>
+                        <div class="stats-kpi-val" style="font-size: 1.35rem;" id="st-kpi-api-total">0</div>
+                        <div class="stats-kpi-sub"><span data-i18n="stats_api_success_rate">API/MCP 성공률</span>: <span id="st-kpi-api-rate" style="color: var(--success); font-weight: bold;">100%</span></div>
+                    </div>
+                </div>
+
+                <!-- MCU Table -->
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--primary); margin: 6px 0 6px 0;" data-i18n="stats_mcu_section">MCU별 패킷 통계</div>
+                <div style="overflow-x: auto; margin-bottom: 12px; max-height: 180px;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_board">보드 / 모듈명</th>
+                                <th data-i18n="stats_th_heartbeat">하트비트</th>
+                                <th data-i18n="stats_th_control">제어신호</th>
+                                <th data-i18n="stats_th_sensor">센서신호</th>
+                                <th data-i18n="stats_th_total_packets">누적 패킷</th>
+                                <th data-i18n="stats_th_errors">오류/실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 통신 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="st-mcu-tbody"></tbody>
+                    </table>
+                </div>
+
+                <!-- API Table -->
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--secondary); margin: 4px 0 6px 0;" data-i18n="stats_api_section">API 및 AI / MCP 동작 통계</div>
+                <div style="overflow-x: auto; max-height: 160px;">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="stats_th_api">API / 엔진</th>
+                                <th data-i18n="stats_th_calls">호출 횟수</th>
+                                <th data-i18n="stats_th_success">성공</th>
+                                <th data-i18n="stats_th_fail">실패</th>
+                                <th data-i18n="stats_th_rate">성공률</th>
+                                <th data-i18n="stats_th_last">최근 호출 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody id="st-api-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. NETWORK & HARDWARE TAB -->
+        <section id="tab-network" class="settings-view">
+            <div class="card status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2 style="margin: 0; font-size: 1.05rem;" data-i18n="hw_modal_title">제어 PC 하드웨어 & 네트워크 실시간 모니터링</h2>
+                    <button id="tab-hw-refresh-btn" class="preset-btn" style="padding: 5px 12px; font-size: 0.78rem;" data-i18n="stats_refresh_btn">새로고침</button>
+                </div>
+
+                <!-- 2-Column Split Layout for Maximum Horizontal Space Utilization -->
+                <div class="hw-split-layout">
+                    <!-- Left Column: KPI Metric Cards & System Spec Info -->
+                    <div class="hw-left-col">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="hw-kpi-card" style="padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_cpu_usage">CPU 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-cpu-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-cpu-sub">-</div>
+                            </div>
+                            <div class="hw-kpi-card" style="border-left: 3px solid #818cf8; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_ram_usage">RAM 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-ram-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-ram-sub">-</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="hw-kpi-card" style="border-left: 3px solid #34d399; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_gpu_usage">GPU 사용률</div>
+                                <div class="hw-kpi-val" style="font-size: 1.25rem;" id="tab-hw-gpu-val">0%</div>
+                                <div class="hw-kpi-sub" id="tab-hw-gpu-sub">-</div>
+                            </div>
+                            <div class="hw-kpi-card" style="border-left: 3px solid #fbbf24; padding: 8px 12px;">
+                                <div class="hw-kpi-label" style="font-size: 0.7rem;" data-i18n="hw_net_traffic">네트워크 전송/수신</div>
+                                <div class="hw-kpi-val" style="font-size: 0.95rem; line-height: 1.3;" id="tab-hw-net-val">↑ 0 KB/s<br>↓ 0 KB/s</div>
+                                <div class="hw-kpi-sub" id="tab-hw-net-sub">총 누적: ↑ 0 MB | ↓ 0 MB</div>
+                            </div>
+                        </div>
+
+                        <!-- System Specs Box -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px;" data-i18n="hw_section_spec">시스템 및 인터페이스 사양</div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_os">운영체제</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-os">-</div>
+                                </div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_cpu">프로세서</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-cpu">-</div>
+                                </div>
+                                <div class="hw-spec-item" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_ram">전체 메모리</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-ram">-</div>
+                                </div>
+                                <div class="hw-spec-item">
+                                    <div class="hw-spec-title" style="font-size: 0.75rem;" data-i18n="hw_spec_gpu">그래픽 장치</div>
+                                    <div class="hw-spec-desc" style="font-size: 0.75rem;" id="tab-hw-spec-gpu">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: 2x2 Performance History Graphs (최근 60초) -->
+                    <div class="hw-right-col">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin: 0;" data-i18n="hw_section_perf">작업 관리자 성능 그래프 (최근 60초 실시간)</div>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">1초 주기 시계열 측정</span>
+                        </div>
+                        <div class="hw-charts-grid" style="margin-top: 0;">
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>CPU (<span id="tab-hw-cpu-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #38bdf8;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-cpu"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>RAM (<span id="tab-hw-ram-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #818cf8;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-ram"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>GPU (<span id="tab-hw-gpu-chart-pct">0%</span>)</span>
+                                    <span class="hw-chart-badge" style="color: #34d399;">0 ~ 100%</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-gpu"></canvas>
+                                </div>
+                            </div>
+                            <div class="hw-chart-box">
+                                <div class="hw-chart-header">
+                                    <span>Network (KB/s)</span>
+                                    <span class="hw-chart-badge" style="color: #fbbf24;">↑ Tx / ↓ Rx</span>
+                                </div>
+                                <div class="hw-canvas-container">
+                                    <canvas id="tab-hw-chart-net"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. GENERAL CONFIG TAB -->
+        <section id="tab-general" class="settings-view">
+            <div class="card status-card">
+                <h2 data-i18n="settings_header" style="margin-bottom: 15px;">카메라 및 AI 전역 설정</h2>
+                <form id="general-config-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label for="cfg_api_key">Gemini API Key</label>
+                            <input type="password" id="cfg_api_key" value="{{ config.api_key }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_model_name">Model Name</label>
+                            <select id="cfg_model_name">
+                                <option value="gemini-2.5-flash-lite" {% if config.model_name == 'gemini-2.5-flash-lite' or not config.model_name %}selected{% endif %}>gemini-2.5-flash-lite (Default/Fast)</option>
+                                <option value="gemini-2.5-flash" {% if config.model_name == 'gemini-2.5-flash' %}selected{% endif %}>gemini-2.5-flash (Standard)</option>
+                                <option value="gemini-3.1-flash-lite" {% if config.model_name == 'gemini-3.1-flash-lite' %}selected{% endif %}>gemini-3.1-flash-lite (Next-Gen)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label for="cfg_camera_model">Camera Sensor</label>
+                            <select id="cfg_camera_model">
+                                <option value="OV3660" {% if config.imagesendermcu.camera_model == 'OV3660' %}selected{% endif %}>OV3660 (Primary 3MP)</option>
+                                <option value="OV5640" {% if config.imagesendermcu.camera_model == 'OV5640' %}selected{% endif %}>OV5640 (5MP)</option>
+                                <option value="OV2640" {% if config.imagesendermcu.camera_model == 'OV2640' %}selected{% endif %}>OV2640 (2MP)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_resolution">Stream Resolution</label>
+                            <select id="cfg_resolution">
+                                <option value="QSXGA" {% if config.imagesendermcu.resolution == 'QSXGA' %}selected{% endif %}>QSXGA (2592x1944)</option>
+                                <option value="UXGA" {% if config.imagesendermcu.resolution == 'UXGA' %}selected{% endif %}>UXGA (1600x1200 - 권장)</option>
+                                <option value="SXGA" {% if config.imagesendermcu.resolution == 'SXGA' %}selected{% endif %}>SXGA (1280x1024)</option>
+                                <option value="XGA" {% if config.imagesendermcu.resolution == 'XGA' %}selected{% endif %}>XGA (1024x768)</option>
+                                <option value="SVGA" {% if config.imagesendermcu.resolution == 'SVGA' %}selected{% endif %}>SVGA (800x600)</option>
+                                <option value="VGA" {% if config.imagesendermcu.resolution == 'VGA' %}selected{% endif %}>VGA (640x480)</option>
+                                <option value="CIF" {% if config.imagesendermcu.resolution == 'CIF' %}selected{% endif %}>CIF (400x296)</option>
+                                <option value="QVGA" {% if config.imagesendermcu.resolution == 'QVGA' %}selected{% endif %}>QVGA (320x240)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_transmission_mode">Transmission Mode</label>
+                            <select id="cfg_transmission_mode">
+                                <option value="UDP" {% if config.imagesendermcu.transmission_mode == 'UDP' %}selected{% endif %}>UDP (High Speed Packet)</option>
+                                <option value="TCP" {% if config.imagesendermcu.transmission_mode == 'TCP' %}selected{% endif %}>TCP (HTTP POST Reliable)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_jpeg_quality">JPEG Quality (1~63) <span id="cfg_jpeg_val" style="color:var(--text-muted); font-size:0.8rem;">({{ config.imagesendermcu.jpeg_quality }})</span></label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <input type="range" id="cfg_jpeg_quality" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}" style="flex:1;">
+                                <input type="number" id="cfg_jpeg_quality_num" min="1" max="63" value="{{ config.imagesendermcu.jpeg_quality }}" style="width:65px;">
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:3px;">* 낮을수록 고화질</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="input-group">
+                            <label for="cfg_img_ip">ImageSender IP</label>
+                            <input type="text" id="cfg_img_ip" value="{{ config.imagesendermcu_ip }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_drive_ip">DriveMCU IP</label>
+                            <input type="text" id="cfg_drive_ip" value="{{ config.drivemcu_ip }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="cfg_hmi_ip">HMI MCU IP</label>
+                            <input type="text" id="cfg_hmi_ip" value="{{ config.hmi_mcu_ip }}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 8px 24px;">설정 적용 및 서버 저장</button>
+                    <span id="cfg-save-msg" style="margin-left: 12px; font-size: 0.85rem; color: var(--success); display: none;">설정이 성공적으로 저장되었습니다.</span>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=1"></script>
+    <script>
+        // --- Live Sparkline Telemetry Chart for Banner ---
+        let cTelemetry = null;
+        let telemetryMode = 'rate'; // 'rate' (초당 송수신 수, PPS) or 'total' (누적 수)
+        let lastTelemetryTime = 0;
+        let lastHbTotal = 0;
+        let lastCtrlTotal = 0;
+
+        const telemetryHistory = {
+            labels: Array(20).fill(''),
+            heartbeats: Array(20).fill(0),
+            controls: Array(20).fill(0)
+        };
+
+        function toggleTelemetryMode() {
+            telemetryMode = (telemetryMode === 'rate') ? 'total' : 'rate';
+            const btn = document.getElementById('telemetry-mode-btn');
+            if (btn) {
+                btn.textContent = (telemetryMode === 'rate') ? '초당(Rate)' : '누적(Total)';
+                btn.style.color = (telemetryMode === 'rate') ? 'var(--primary, #0696D7)' : '#fbbf24';
+            }
+            // Reset buffer to avoid scale jump
+            telemetryHistory.heartbeats = Array(20).fill(0);
+            telemetryHistory.controls = Array(20).fill(0);
+            if (cTelemetry) {
+                cTelemetry.data.datasets[0].data = [...telemetryHistory.heartbeats];
+                cTelemetry.data.datasets[1].data = [...telemetryHistory.controls];
+                cTelemetry.update();
+            }
+        }
+
+        function initTelemetryChart() {
+            if (cTelemetry) return;
+            const canvas = document.getElementById('telemetry-live-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            cTelemetry = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: telemetryHistory.labels,
+                    datasets: [
+                        {
+                            label: 'HB',
+                            data: telemetryHistory.heartbeats,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'CTRL',
+                            data: telemetryHistory.controls,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: 0 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+
+            document.getElementById('telemetry-mode-btn')?.addEventListener('click', toggleTelemetryMode);
+        }
+
+        function updateTelemetryStream(data) {
+            initTelemetryChart();
+            let totalHb = 0;
+            let totalCtrl = 0;
+            const now = Date.now();
+
+            const mcus = ['imagesendermcu', 'hmi_mcu', 'drivemcu', 'controlmcu', 'robot3axismcu'];
+            mcus.forEach(key => {
+                const item = (data.mcu_stats && data.mcu_stats[key]) ? data.mcu_stats[key] : null;
+                const chip = document.getElementById(`chip-${key}`);
+                const dot = document.getElementById(`dot-${key}`);
+                const txt = document.getElementById(`txt-${key}`);
+
+                if (item) {
+                    totalHb += (item.heartbeat || 0);
+                    totalCtrl += (item.control_cmd || 0);
+
+                    const totalPkts = item.total_packets || 0;
+                    if (txt) txt.textContent = `${totalPkts.toLocaleString()} pkts`;
+
+                    // Check if recently active (last_timestamp exists)
+                    if (chip) chip.classList.add('online');
+                    if (dot) {
+                        dot.classList.add('pulse');
+                        setTimeout(() => dot.classList.remove('pulse'), 800);
+                    }
+                } else {
+                    if (chip) chip.classList.remove('online');
+                }
+            });
+
+            // Calculate rate (per second) if previous time exists
+            let hbRate = 0;
+            let ctrlRate = 0;
+            if (lastTelemetryTime > 0) {
+                const dtSec = Math.max((now - lastTelemetryTime) / 1000, 0.5);
+                hbRate = Math.max(0, Math.round((totalHb - lastHbTotal) / dtSec));
+                ctrlRate = Math.max(0, Math.round((totalCtrl - lastCtrlTotal) / dtSec));
+            }
+
+            lastTelemetryTime = now;
+            lastHbTotal = totalHb;
+            lastCtrlTotal = totalCtrl;
+
+            const hbEl = document.getElementById('telemetry-hb-count');
+            const ctrlEl = document.getElementById('telemetry-ctrl-count');
+
+            if (telemetryMode === 'rate') {
+                if (hbEl) hbEl.textContent = `${hbRate}/s`;
+                if (ctrlEl) ctrlEl.textContent = `${ctrlRate}/s`;
+            } else {
+                if (hbEl) hbEl.textContent = totalHb.toLocaleString();
+                if (ctrlEl) ctrlEl.textContent = totalCtrl.toLocaleString();
+            }
+
+            if (cTelemetry) {
+                const hbVal = (telemetryMode === 'rate') ? hbRate : totalHb;
+                const ctrlVal = (telemetryMode === 'rate') ? ctrlRate : totalCtrl;
+
+                telemetryHistory.heartbeats.push(hbVal);
+                telemetryHistory.heartbeats.shift();
+                telemetryHistory.controls.push(ctrlVal);
+                telemetryHistory.controls.shift();
+
+                cTelemetry.data.datasets[0].data = [...telemetryHistory.heartbeats];
+                cTelemetry.data.datasets[1].data = [...telemetryHistory.controls];
+                cTelemetry.update();
+            }
+        }
+
+        // --- Tab Switching & Auto-refresh Logic ---
+        const tabBtns = document.querySelectorAll('.settings-tab-btn');
+        const tabViews = document.querySelectorAll('.settings-view');
+
+        let activeTabId = 'tab-theme';
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+
+        function refreshActiveTab() {
+            if (!isAutoRefreshEnabled) return;
+            // Always refresh stats for top banner telemetry stream
+            loadStats();
+            if (activeTabId === 'tab-network') {
+                loadHw();
+            }
+        }
+
+        function setAutoRefresh(enabled) {
+            isAutoRefreshEnabled = enabled;
+            const indicator = document.getElementById('auto-refresh-indicator');
+            const label = document.getElementById('auto-refresh-label');
+            const toggleBtn = document.getElementById('toggle-autorefresh-btn');
+
+            if (isAutoRefreshEnabled) {
+                if (indicator) {
+                    indicator.style.background = 'var(--success, #22c55e)';
+                    indicator.style.boxShadow = '0 0 8px var(--success, #22c55e)';
+                }
+                if (label) label.textContent = 'AUTO 2s';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '자동갱신 ON';
+                    toggleBtn.style.color = '#ffffff';
+                }
+                if (!autoRefreshInterval) {
+                    autoRefreshInterval = setInterval(refreshActiveTab, 2000);
+                }
+            } else {
+                if (indicator) {
+                    indicator.style.background = 'var(--text-dim, #888888)';
+                    indicator.style.boxShadow = 'none';
+                }
+                if (label) label.textContent = 'PAUSED';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '자동갱신 OFF';
+                    toggleBtn.style.color = 'var(--text-dim, #888888)';
+                }
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        }
+
+        document.getElementById('toggle-autorefresh-btn')?.addEventListener('click', () => {
+            setAutoRefresh(!isAutoRefreshEnabled);
+        });
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabViews.forEach(v => v.classList.remove('active'));
+
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                activeTabId = targetId;
+                const targetView = document.getElementById(targetId);
+                if (targetView) targetView.classList.add('active');
+
+                // Immediate load when switching to dynamic tabs
+                if (targetId === 'tab-stats') {
+                    loadStats();
+                } else if (targetId === 'tab-network') {
+                    setTimeout(() => {
+                        initCharts();
+                        if (cCpu) cCpu.resize();
+                        if (cRam) cRam.resize();
+                        if (cGpu) cGpu.resize();
+                        if (cNet) cNet.resize();
+                        loadHw();
+                    }, 50);
+                }
+            });
+        });
+
+        // --- Color Customizer Bindings ---
+        const pickerPrimary = document.getElementById('picker-primary');
+        const pickerSecondary = document.getElementById('picker-secondary');
+        const pickerBg = document.getElementById('picker-bg');
+        const pickerCard = document.getElementById('picker-card');
+
+        function syncColorPickersUI() {
+            const currentTheme = window.ThemeManager.loadTheme();
+            if (pickerPrimary) pickerPrimary.value = rgbToHex(currentTheme['--primary'] || '#ffffff');
+            if (pickerSecondary) pickerSecondary.value = rgbToHex(currentTheme['--secondary'] || '#94a3b8');
+            if (pickerBg) pickerBg.value = rgbToHex(currentTheme['--bg-color'] || '#000000');
+            if (pickerCard) pickerCard.value = rgbToHex(currentTheme['--card-bg'] || '#111111');
+
+            document.getElementById('label-primary-val').textContent = pickerPrimary.value;
+            document.getElementById('label-secondary-val').textContent = pickerSecondary.value;
+            document.getElementById('label-bg-val').textContent = pickerBg.value;
+            document.getElementById('label-card-val').textContent = pickerCard.value;
+        }
+
+        function rgbToHex(colorStr) {
+            if (!colorStr) return '#000000';
+            if (colorStr.startsWith('#')) return colorStr.length === 4 ? '#' + colorStr[1]+colorStr[1]+colorStr[2]+colorStr[2]+colorStr[3]+colorStr[3] : colorStr;
+            return '#ffffff';
+        }
+
+        function onColorChange() {
+            const newTheme = {
+                '--primary': pickerPrimary.value,
+                '--secondary': pickerSecondary.value,
+                '--bg-color': pickerBg.value,
+                '--card-bg': pickerCard.value,
+                '--text-main': '#ffffff',
+                '--text-dim': '#94a3b8'
+            };
+            window.ThemeManager.saveTheme(newTheme);
+            syncColorPickersUI();
+        }
+
+        [pickerPrimary, pickerSecondary, pickerBg, pickerCard].forEach(input => {
+            if (input) input.addEventListener('input', onColorChange);
+        });
+
+        function applyColorPreset(presetName) {
+            window.ThemeManager.applyPreset(presetName);
+            syncColorPickersUI();
+        }
+
+        function resetColorTheme() {
+            window.ThemeManager.resetTheme();
+            syncColorPickersUI();
+        }
+
+        // --- Stats Loader & Renderer ---
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderStats(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderStats(data) {
+            updateTelemetryStream(data);
+            document.getElementById('st-kpi-uptime').textContent = data.uptime_formatted || '00:00:00';
+            document.getElementById('st-kpi-start-time').textContent = (currentLang === 'ko' ? '시작: ' : 'Started: ') + (data.server_start_time || '-');
+            document.getElementById('st-kpi-mcu-total').textContent = (data.total_mcu_packets || 0).toLocaleString();
+            document.getElementById('st-kpi-mcu-rate').textContent = (data.overall_mcu_success_rate ?? 100) + '%';
+            document.getElementById('st-kpi-api-total').textContent = (data.total_api_calls || 0).toLocaleString();
+            document.getElementById('st-kpi-api-rate').textContent = (data.overall_api_success_rate ?? 100) + '%';
+
+            // MCU Table
+            const mcuTbody = document.getElementById('st-mcu-tbody');
+            if (mcuTbody && data.mcu_stats) {
+                let html = '';
+                for (const [key, item] of Object.entries(data.mcu_stats)) {
+                    const total = item.total_packets || 0;
+                    const err = item.error_count || 0;
+                    const rate = item.success_rate ?? 100.0;
+                    html += `
+                        <tr>
+                            <td><strong>${item.name || key}</strong></td>
+                            <td>${(item.heartbeat || 0).toLocaleString()}</td>
+                            <td>${(item.control_cmd || 0).toLocaleString()}</td>
+                            <td>${(item.sensor_data || 0).toLocaleString()}</td>
+                            <td><strong>${total.toLocaleString()}</strong></td>
+                            <td style="color: ${err > 0 ? 'var(--danger)' : 'inherit'}">${err.toLocaleString()}</td>
+                            <td><span style="color: ${rate >= 95 ? 'var(--success)' : (rate >= 80 ? '#fbbf24' : 'var(--danger)')}; font-weight: bold;">${rate}%</span></td>
+                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_timestamp || '-'}</td>
+                        </tr>
+                    `;
+                }
+                mcuTbody.innerHTML = html;
+            }
+
+            // API Table
+            const apiTbody = document.getElementById('st-api-tbody');
+            if (apiTbody && data.api_stats) {
+                let html = '';
+                for (const [key, item] of Object.entries(data.api_stats)) {
+                    const total = item.call_count || 0;
+                    const succ = item.success_count || 0;
+                    const fail = item.fail_count || 0;
+                    const rate = item.success_rate ?? 100.0;
+                    html += `
+                        <tr>
+                            <td><strong>${item.name || key}</strong></td>
+                            <td>${total.toLocaleString()}</td>
+                            <td style="color: var(--success);">${succ.toLocaleString()}</td>
+                            <td style="color: ${fail > 0 ? 'var(--danger)' : 'inherit'}">${fail.toLocaleString()}</td>
+                            <td><span style="color: ${rate >= 95 ? 'var(--success)' : (rate >= 80 ? '#fbbf24' : 'var(--danger)')}; font-weight: bold;">${rate}%</span></td>
+                            <td style="font-size: 0.75rem; color: var(--text-dim);">${item.last_timestamp || '-'}</td>
+                        </tr>
+                    `;
+                }
+                apiTbody.innerHTML = html;
+            }
+        }
+
+        document.getElementById('tab-stats-refresh-btn')?.addEventListener('click', loadStats);
+        document.getElementById('tab-stats-reset-btn')?.addEventListener('click', async () => {
+            if (!confirm('누적 통계를 초기화하시겠습니까?')) return;
+            try {
+                const res = await fetch('/api/stats/reset', { method: 'POST' });
+                if (res.ok) {
+                    const d = await res.json();
+                    renderStats(d.stats);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        // --- Hardware & Network Loader & Charts ---
+        let cCpu = null, cRam = null, cGpu = null, cNet = null;
+
+        function initCharts() {
+            if (cCpu) return;
+            const opts = (unit = '%', max = 100) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: { display: false },
+                    y: {
+                        min: 0,
+                        max: max,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8', font: { size: 9 }, callback: (v) => v + unit }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            });
+
+            const ctxCpu = document.getElementById('tab-hw-chart-cpu')?.getContext('2d');
+            if (ctxCpu) {
+                cCpu = new Chart(ctxCpu, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'CPU', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxRam = document.getElementById('tab-hw-chart-ram')?.getContext('2d');
+            if (ctxRam) {
+                cRam = new Chart(ctxRam, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'RAM', data: [], borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxGpu = document.getElementById('tab-hw-chart-gpu')?.getContext('2d');
+            if (ctxGpu) {
+                cGpu = new Chart(ctxGpu, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'GPU', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.15)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+                    options: opts('%', 100)
+                });
+            }
+
+            const ctxNet = document.getElementById('tab-hw-chart-net')?.getContext('2d');
+            if (ctxNet) {
+                cNet = new Chart(ctxNet, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: 'Tx', data: [], borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 },
+                            { label: 'Rx', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: { display: false },
+                            y: { min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: (v) => v + 'K' } }
+                        },
+                        plugins: { legend: { display: true, position: 'top', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } } }
+                    }
+                });
+            }
+        }
+
+        let hwTimer = null;
+        async function loadHw() {
+            try {
+                const res = await fetch('/api/hardware/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderHw(data);
+            } catch (e) {
+                console.error('Hardware load error:', e);
+            }
+        }
+
+        function renderHw(data) {
+            initCharts();
+            const latest = data.latest || {};
+            const info = data.hardware_info || {};
+            const hist = data.history || {};
+
+            // Top KPI Cards
+            const cpuValEl = document.getElementById('tab-hw-cpu-val');
+            if (cpuValEl) cpuValEl.textContent = (latest.cpu_percent || 0) + '%';
+            const cpuSubEl = document.getElementById('tab-hw-cpu-sub');
+            if (cpuSubEl) cpuSubEl.textContent = `${latest.cpu_freq_mhz || 0} MHz | ${info.cpu_cores_logical || 0} Cores (${info.cpu_cores_physical || 0}P)`;
+
+            const ramValEl = document.getElementById('tab-hw-ram-val');
+            if (ramValEl) ramValEl.textContent = (latest.ram_percent || 0) + '%';
+            const ramSubEl = document.getElementById('tab-hw-ram-sub');
+            if (ramSubEl) ramSubEl.textContent = `${latest.ram_used_gb || 0} / ${latest.ram_total_gb || 0} GB`;
+
+            const gpuValEl = document.getElementById('tab-hw-gpu-val');
+            if (gpuValEl) gpuValEl.textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+            const gpuSubEl = document.getElementById('tab-hw-gpu-sub');
+            if (gpuSubEl) gpuSubEl.textContent = latest.gpu_name || info.gpu_name || 'Integrated Graphics';
+
+            const netValEl = document.getElementById('tab-hw-net-val');
+            if (netValEl) netValEl.textContent = `↑ ${latest.net_tx_kbs || 0} KB/s | ↓ ${latest.net_rx_kbs || 0} KB/s`;
+            const netSubEl = document.getElementById('tab-hw-net-sub');
+            if (netSubEl) netSubEl.textContent = (currentLang === 'ko' ? '총 누적: ' : 'Total: ') + `↑ ${latest.net_total_sent_mb || 0} MB | ↓ ${latest.net_total_recv_mb || 0} MB`;
+
+            // Specs
+            const specOsEl = document.getElementById('tab-hw-spec-os');
+            if (specOsEl) specOsEl.textContent = info.os_name || 'Windows';
+            const specCpuEl = document.getElementById('tab-hw-spec-cpu');
+            if (specCpuEl) specCpuEl.textContent = `${info.cpu_name || 'Intel Core'} (${info.cpu_cores_logical || 0} Cores)`;
+            const specRamEl = document.getElementById('tab-hw-spec-ram');
+            if (specRamEl) specRamEl.textContent = `${info.ram_total_gb || latest.ram_total_gb || 0} GB`;
+            const specGpuEl = document.getElementById('tab-hw-spec-gpu');
+            if (specGpuEl) specGpuEl.textContent = info.gpu_name || 'Integrated Graphics';
+
+            // Chart Data Update
+            const labels = hist.labels || [];
+            if (cCpu && hist.cpu) {
+                cCpu.data.labels = labels;
+                cCpu.data.datasets[0].data = hist.cpu;
+                cCpu.update('none');
+                const cpuPctEl = document.getElementById('tab-hw-cpu-chart-pct');
+                if (cpuPctEl) cpuPctEl.textContent = (latest.cpu_percent || 0) + '%';
+            }
+            if (cRam && hist.ram) {
+                cRam.data.labels = labels;
+                cRam.data.datasets[0].data = hist.ram;
+                cRam.update('none');
+                const ramPctEl = document.getElementById('tab-hw-ram-chart-pct');
+                if (ramPctEl) ramPctEl.textContent = (latest.ram_percent || 0) + '%';
+            }
+            if (cGpu && hist.gpu) {
+                cGpu.data.labels = labels;
+                cGpu.data.datasets[0].data = hist.gpu;
+                cGpu.update('none');
+                const gpuPctEl = document.getElementById('tab-hw-gpu-chart-pct');
+                if (gpuPctEl) gpuPctEl.textContent = (latest.gpu_percent != null ? latest.gpu_percent : 0) + '%';
+            }
+            if (cNet && hist.net_tx && hist.net_rx) {
+                cNet.data.labels = labels;
+                cNet.data.datasets[0].data = hist.net_tx;
+                cNet.data.datasets[1].data = hist.net_rx;
+                cNet.update('none');
+            }
+        }
+
+        document.getElementById('tab-hw-refresh-btn')?.addEventListener('click', loadHw);
+
+        // --- General Config: Camera & JPEG Quality Input Sync ---
+        const cfgJpegSlider = document.getElementById('cfg_jpeg_quality');
+        const cfgJpegNum = document.getElementById('cfg_jpeg_quality_num');
+        const cfgJpegValText = document.getElementById('cfg_jpeg_val');
+        if (cfgJpegSlider && cfgJpegNum) {
+            cfgJpegSlider.addEventListener('input', () => {
+                cfgJpegNum.value = cfgJpegSlider.value;
+                if (cfgJpegValText) cfgJpegValText.textContent = `(Quality: ${cfgJpegSlider.value})`;
+            });
+            cfgJpegNum.addEventListener('input', () => {
+                let val = parseInt(cfgJpegNum.value) || 10;
+                if (val < 1) val = 1;
+                if (val > 63) val = 63;
+                cfgJpegSlider.value = val;
+                if (cfgJpegValText) cfgJpegValText.textContent = `(Quality: ${val})`;
+            });
+        }
+
+        // --- General Config Save ---
+        document.getElementById('general-config-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                api_key: document.getElementById('cfg_api_key').value,
+                model_name: document.getElementById('cfg_model_name').value,
+                camera_model: document.getElementById('cfg_camera_model').value,
+                resolution: document.getElementById('cfg_resolution').value,
+                transmission_mode: document.getElementById('cfg_transmission_mode')?.value || "UDP",
+                jpeg_quality: parseInt(document.getElementById('cfg_jpeg_quality')?.value || "10"),
+                imagesendermcu_ip: document.getElementById('cfg_img_ip').value,
+                drivemcu_ip: document.getElementById('cfg_drive_ip').value,
+                hmi_mcu_ip: document.getElementById('cfg_hmi_ip').value
+            };
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    const msg = document.getElementById('cfg-save-msg');
+                    msg.style.display = 'inline';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                }
+            } catch (err) {
+                alert('설정 저장 중 오류: ' + err.message);
+            }
+        });
+
+        // --- Multi-language (i18n) Logic ---
+        let currentLang = localStorage.getItem('ard_lang') || 'ko';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('ard_lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (window.translations && window.translations[lang] && window.translations[lang][key]) {
+                    el.textContent = window.translations[lang][key];
+                }
+            });
+
+            const langBtn = document.getElementById('lang-btn-settings');
+            if (langBtn) {
+                langBtn.textContent = lang === 'ko' ? 'ENGLISH UI' : '한국어 UI';
+            }
+        }
+
+        document.getElementById('lang-btn-settings')?.addEventListener('click', () => {
+            updateLanguage(currentLang === 'ko' ? 'en' : 'ko');
+        });
+
+        // Initialize pickers, language, and start auto-refresh on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            syncColorPickersUI();
+            updateLanguage(currentLang);
+            initTelemetryChart();
+            loadStats();
+            setAutoRefresh(true);
+        });
+    </script>
+</body>
+</html>

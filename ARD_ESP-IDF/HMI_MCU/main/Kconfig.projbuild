@@ -1,0 +1,37 @@
+menu "ARD HMI"
+
+    config HMI_DEFAULT_SERVER
+        string "Default PC server host"
+        default "192.168.0.35"
+        help
+            IPv4, DNS name or name.local of the PC running the ARD server (port 5000).
+            Used until a server is saved on the board's /network settings page.
+
+    config HMI_STATUS_POLL_MS
+        int "Status poll interval (ms)"
+        range 500 30000
+        default 3000
+
+    config HMI_LCD_INVERT
+        bool "Invert panel colours (INVON)"
+        default y
+        help
+            The ESP32-2432S028 ILI9341 panel needs inversion; the Arduino build
+            called tft.invertDisplay(true).
+
+    config HMI_Z_STEP_BUTTONS
+        bool "Enable OpenLoop Z step +/- buttons"
+        default n
+        help
+            The PC server forwards "mzs+N" to DriveMCU, and DriveMCU treats any
+            "mzs<value>" as a new Z steps/mm calibration. Leave this off until the
+            server stops forwarding the step command.
+
+    config HMI_RAIL_PID
+        bool "Enable ToF rail PID buttons (PID on/off, target)"
+        default n
+        help
+            ToF-based Z rail PID control is locked for now. When off, the Z Rail
+            page shows ToF and the current mode read-only and keeps only HOME.
+
+endmenu

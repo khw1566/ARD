@@ -1,0 +1,38 @@
+# Old PlatformIO code has its own repository (khw1566/ARD, branch main)
+/ARD_software/
+
+# Scratch work and build logs
+/tmp/
+*.log
+
+# ESP-IDF build output and downloaded components
+build/
+managed_components/
+sdkconfig.old
+
+# Python / PyInstaller
+__pycache__/
+*.pyc
+dist/
+*.spec
+.server.lock
+
+# Secrets
+.env
+.env.*
+
+# Media downloads
+*.wav
+*.mp3
+/ARD_MAIN/backend/MusicData/
+
+# Inventor: simulation (FEA/CFD) result caches and automatic backups
+AIP/
+OldVersions/
+*.lck
+
+# OS / IDE
+.vscode/
+Thumbs.db
+desktop.ini
+*.lnk

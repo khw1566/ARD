@@ -1,0 +1,107 @@
+menu "ARD JC1060P470C"
+
+    menu "Display panel"
+        choice ARD_PANEL_VARIANT
+            prompt "JC1060P470C panel revision"
+            default ARD_PANEL_V1
+            help
+                Both use the JD9165 driver but a different glass and init table.
+                A "V2" printed after the material number on the rear label means V2.
+                Wrong choice: white screen or a vertical noise band (see README).
+
+            config ARD_PANEL_V1
+                bool "V1 (no V2 mark on the label)"
+            config ARD_PANEL_V2
+                bool "V2 (2026 batch, 'V2' on the label)"
+        endchoice
+
+        config ARD_PIN_LCD_RST
+            int "LCD reset GPIO (-1 = none)"
+            default 0
+            help
+                GPIO0 per the JC1060P470C_I_W_Y schematic as quoted by the ESPHome board profiles.
+                UNVERIFIED on a real board.
+
+        config ARD_PIN_BACKLIGHT
+            int "Backlight PWM GPIO"
+            default 23
+
+        config ARD_BACKLIGHT_ACTIVE_LOW
+            bool "Backlight PWM is inverted"
+            default n
+            help
+                Community configs disagree (one inverts GPIO23, one does not). If the screen is
+                dark at high brightness and bright at low, flip this.
+
+        config ARD_TOUCH_SWAP_XY
+            bool "Touch: swap X/Y"
+            default n
+        config ARD_TOUCH_MIRROR_X
+            bool "Touch: mirror X"
+            default n
+        config ARD_TOUCH_MIRROR_Y
+            bool "Touch: mirror Y"
+            default n
+    endmenu
+
+    menu "Expansion header pins (motors, buzzer, GPS)"
+        comment "Defaults use the 2x13 header GPIOs; check them against your wiring."
+
+        config ARD_PIN_STEP_X
+            int "X STEP"
+            default 32
+        config ARD_PIN_DIR_X
+            int "X DIR"
+            default 33
+        config ARD_PIN_STEP_Y
+            int "Y STEP"
+            default 45
+        config ARD_PIN_DIR_Y
+            int "Y DIR"
+            default 46
+        config ARD_PIN_STEP_Z
+            int "Z (rail) STEP"
+            default 47
+        config ARD_PIN_DIR_Z
+            int "Z (rail) DIR"
+            default 20
+        config ARD_PIN_EN_X
+            int "X EN (active low). Also drives Y/Z when their EN is -1"
+            default 1
+        config ARD_PIN_EN_Y
+            int "Y EN (-1 = shared with X EN)"
+            default -1
+        config ARD_PIN_EN_Z
+            int "Z EN (-1 = shared with X EN)"
+            default -1
+        config ARD_PIN_BUZZER
+            int "Passive buzzer (-1 = none)"
+            default 2
+        config ARD_PIN_GPS_RX
+            int "GPS RX (board input, from GPS TX) (-1 = no GPS)"
+            default 3
+        config ARD_PIN_GPS_TX
+            int "GPS TX (board output, to GPS RX)"
+            default 4
+    endmenu
+
+    config ARD_ENABLE_TOF
+        bool "Enable VL53L0X ToF sensor (rail PID)"
+        default n
+        help
+            Same default as DriveMCU: the rail runs open loop and mzm1 is rejected.
+
+    config ARD_DEFAULT_SERVER
+        string "Default PC server host"
+        default "192.168.0.35"
+        help
+            Used until a server is saved from the setup portal (/network).
+
+    config ARD_ENABLE_GAMEPAD
+        bool "BLE HID gamepad over the ESP32-C6"
+        default y
+        depends on BT_NIMBLE_ENABLED
+        help
+            Uses the C6 Bluetooth controller through ESP-Hosted (VHCI) with the NimBLE host on the P4.
+
+endmenu
