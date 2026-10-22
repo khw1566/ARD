@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "hmi_net.h"
 #include "hmi_ui.h"
+#include "hmi_setup.h"
 #include "lcd.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
@@ -39,19 +40,31 @@ static const gfx_target_t lcd_target = {
 static void ui_task(void *arg) {
     int hits = 0, misses = 0;
     bool down = false;
+    bool setup = !ard_network_connected(), wifi_qr = true, held = false;
+    TickType_t pressed_at = 0;
+    if (setup) hmi_setup_show(&lcd_target, wifi_qr);
     while (true) {
         int x, y;
         if (touch_read(&x, &y)) {
             misses = 0;
             if (!down && ++hits >= 2) {
                 down = true;
-                hmi_ui_touch(x, y);
+                pressed_at = xTaskGetTickCount(); held = false;
+                if (setup) {
+                    if (y >= 282) {
+                        if (x < 120) { wifi_qr = !wifi_qr; hmi_setup_show(&lcd_target, wifi_qr); }
+                        else { setup = false; hmi_ui_start(); }
+                    }
+                } else hmi_ui_touch(x, y);
+            }
+            if (down && !held && y < 28 && xTaskGetTickCount() - pressed_at >= pdMS_TO_TICKS(1200)) {
+                held = true; setup = true; wifi_qr = true; hmi_setup_show(&lcd_target, wifi_qr);
             }
         } else {
             hits = 0;
             if (down && ++misses >= 3) down = false;
         }
-        hmi_ui_tick();
+        if (!setup) hmi_ui_tick();
         vTaskDelay(pdMS_TO_TICKS(15));
     }
 }

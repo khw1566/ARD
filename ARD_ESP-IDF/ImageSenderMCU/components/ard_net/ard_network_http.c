@@ -22,6 +22,8 @@ static bool authorize(httpd_req_t *req) {
     return false;
 }
 
+#include "ard_wifi_http.h"
+
 static esp_err_t send_escaped(httpd_req_t *req, const char *text) {
     for (; *text; ++text) {
         const char *escaped = NULL;
@@ -38,9 +40,9 @@ static esp_err_t send_escaped(httpd_req_t *req, const char *text) {
 static esp_err_t page(httpd_req_t *req) {
     if (!authorize(req)) return ESP_OK;
     const ard_network_settings_t *settings = ard_network_settings();
-    const char *keys[] = {"{{HOST}}", "{{STATUS}}", "{{TOKEN}}", "{{SSID}}", "{{SERVER}}"};
+    const char *keys[] = {"{{HOST}}", "{{STATUS}}", "{{TOKEN}}", "{{SSID}}", "{{SERVER}}", "{{PASSWORD}}"};
     const char *values[] = {ard_network_hostname(), ard_network_connected() ? "LAN / Wi-Fi 연결됨" : "Wi-Fi 미연결 · 설정 AP 사용 가능",
-                            ard_network_token(), settings->ssid, settings->server};
+                            ard_network_token(), settings->ssid, settings->server, settings->password};
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
     const char *cursor = ARD_PORTAL_PAGE;
@@ -49,7 +51,7 @@ static esp_err_t page(httpd_req_t *req) {
         if (!next) { if (httpd_resp_sendstr_chunk(req, cursor) != ESP_OK) return ESP_FAIL; break; }
         if (httpd_resp_send_chunk(req, cursor, next - cursor) != ESP_OK) return ESP_FAIL;
         bool matched = false;
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 6; ++i) {
             if (!strncmp(next, keys[i], strlen(keys[i]))) {
                 if (send_escaped(req, values[i]) != ESP_OK) return ESP_FAIL;
                 cursor = next + strlen(keys[i]); matched = true; break;
@@ -94,6 +96,10 @@ static esp_err_t save(httpd_req_t *req) {
 esp_err_t ard_network_register_http(httpd_handle_t server) {
     httpd_uri_t get = {.uri = "/network", .method = HTTP_GET, .handler = page};
     httpd_uri_t post = {.uri = "/network/save", .method = HTTP_POST, .handler = save};
+    httpd_uri_t scan = {0};
+    scan.uri = "/network/scan"; scan.method = HTTP_GET; scan.handler = scan_page;
+    esp_err_t scan_err = httpd_register_uri_handler(server, &scan);
+    if (scan_err != ESP_OK) return scan_err;
     esp_err_t err = httpd_register_uri_handler(server, &get);
     return err == ESP_OK ? httpd_register_uri_handler(server, &post) : err;
 }

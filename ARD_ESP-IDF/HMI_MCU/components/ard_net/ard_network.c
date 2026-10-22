@@ -1,4 +1,6 @@
 #include "ard_network.h"
+#include "ard_wifi.h"
+#include "ard_setup_qr.h"
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -63,6 +65,7 @@ void ard_network_restart_later(void) {
 }
 
 void ard_network_print_setup(void) {
+    ard_setup_qr_print();
     ESP_LOGI(TAG, "AP: %s | Password: %s | Login: admin", hostname, password);
     ESP_LOGI(TAG, "Setup: http://192.168.4.1/network or http://%s.local/network", hostname);
     ESP_LOGI(TAG, "SSID: %s | PC server: %s", settings.ssid[0] ? settings.ssid : "(not set)", settings.server);
@@ -88,8 +91,7 @@ static void wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
         sta_ready = false;
         taskEXIT_CRITICAL(&state_lock);
         ESP_LOGW(TAG, "Wi-Fi lost IP");
-    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START && settings.ssid[0]) {
-        esp_wifi_connect();
+
     }
 }
 
@@ -151,7 +153,7 @@ static void resolve_server(void) {
 }
 
 static void network_task(void *arg) {
-    int64_t last_retry = esp_timer_get_time(), last_resolve = 0;
+    int64_t last_resolve = 0;
     bool was_ready = false;
     while (true) {
         int64_t now = esp_timer_get_time();
@@ -162,11 +164,7 @@ static void network_task(void *arg) {
         bool ready = ard_network_connected();
         if (ready && !was_ready) last_resolve = now - RESOLVE_US; // resolve right after connecting
         was_ready = ready;
-        if (wifi_ok && !ready && settings.ssid[0] && now - last_retry >= RETRY_US) {
-            last_retry = now;
-            ESP_LOGI(TAG, "Reconnecting to %s", settings.ssid);
-            esp_wifi_connect();
-        }
+        if (wifi_ok) ard_wifi_tick();
         if (ready && now - last_resolve >= RESOLVE_US) {
             last_resolve = now;
             resolve_server();
@@ -227,6 +225,10 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
     if ((err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, wifi_event, NULL)) != ESP_OK) return err;
     err = start_wifi();
     wifi_ok = err == ESP_OK;
+    if (wifi_ok) {
+        esp_err_t profile_err = ard_wifi_init(&settings);
+        if (profile_err != ESP_OK) ESP_LOGE(TAG, "Wi-Fi history init failed: %s", esp_err_to_name(profile_err));
+    }
     if (!wifi_ok) ESP_LOGE(TAG, "Wi-Fi init failed: %s", esp_err_to_name(err));
     if (mdns_init() == ESP_OK) {
         mdns_hostname_set(hostname);
@@ -236,6 +238,7 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
         mdns_txt_item_t role_txt[] = {{"role", role}};
         mdns_service_txt_set("_ard", "_tcp", role_txt, 1);
     } else ESP_LOGE(TAG, "mDNS init failed; use the AP IP");
+    ard_setup_qr_init(hostname, password);
     ard_network_print_setup();
     if (xTaskCreate(network_task, "ard_network", 4096, NULL, 3, NULL) != pdPASS) return ESP_ERR_NO_MEM;
     return err;

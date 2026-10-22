@@ -10,6 +10,38 @@
 ```
 `idf.py menuconfig` → **ARD HMI** 메뉴: 기본 PC 서버, 상태 폴링 주기, 패널 색 반전, Z STP 버튼 사용 여부.
 
+`build.ps1`은 SDK의 `tools.json`에 지정된 도구 버전과 이 PC의 설치 경로를 사용합니다.
+기본 도구 위치는 `C:\Espressif\tools` 또는 사용자 `.espressif`이며, 이전 PC의 사용자 경로가 필요하지 않습니다.
+`-IdfPath`, `-ToolsPath`, `-PythonEnv`로 경로를 지정할 수 있습니다. 기존 빌드 폴더를 보존하며 별도로 검증하려면 `-BuildDir build-codex-check`를 사용하세요.
+
+## QEMU 화면 및 연결 로직 검증
+
+`test/sim`은 실제 `gfx.c`, `hmi_ui.c`, `hmi_setup.c`, QR 생성 코드를 ESP32 에뮬레이터에서 실행합니다.
+네트워크 백엔드는 고정된 시험 데이터를 공급합니다. 실제 RF, 패널 SPI, 터치 컨트롤러를 검증하는 구성은 아닙니다.
+
+저장소 루트에서 QEMU를 준비하고 실행합니다. QEMU 경로는 `--qemu`, ESP-IDF Python 경로는 `--python`으로 바꿀 수 있습니다.
+
+```powershell
+tar -xf C:/Espressif/dist/qemu-xtensa-softmmu-esp_develop_9.2.2_20260417-x86_64-w64-mingw32.tar.xz -C tmp
+npm.cmd install --prefix tmp/hmi-sim-tools --no-audit --no-fund --ignore-scripts jsqr@1.4.0
+```
+
+HMI 프로젝트 폴더에서 시뮬레이션 펌웨어를 빌드합니다.
+
+```powershell
+.\build.ps1 -ProjectDir .\test\sim -BuildDir build
+```
+
+다시 저장소 루트에서 실행합니다.
+
+```powershell
+python -u ARD_ESP-IDF/HMI_MCU/test/sim/run_sim.py
+```
+
+연결 관리 코드의 7개 단위 테스트, 두 QR의 내용 판독, 페이지 이동 및 QR 화면 복귀를 검사합니다.
+화면 PNG와 QEMU 로그는 `results/261022_HMI_sim`에 생성합니다. `--output`으로 다른 경로를 지정할 수 있습니다.
+시뮬레이션용 펌웨어는 검증 전용이므로 실물 보드에 업로드하지 마세요.
+
 ## 네트워크 설정
 기존 ArdNetwork와 같습니다. `ard-hmi-xxxxxx` AP(비밀번호 `ARD-xxxxxx!`)에 접속해
 `http://192.168.4.1/network`(로그인 `admin` / AP 비밀번호)에서 Wi-Fi와 PC 서버를 저장합니다.

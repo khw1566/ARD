@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include "ard_network.h"
+#include "ard_setup_qr.h"
 #include "board.h"
 #include "bsp_display.h"
 #include "commands.h"
@@ -266,6 +267,55 @@ void pairPad(lv_event_t *) { gamepad_pair(); }
 void forgetPad(lv_event_t *) { gamepad_forget(); }
 void modeToggle(lv_event_t *) { controls_set_mode(controls_status().mode == MODE_DRIVE ? MODE_ROBOT : MODE_DRIVE); }
 
+lv_obj_t *qrPanel, *qrImage, *qrTitle, *qrNote;
+lv_image_dsc_t qrDsc;
+uint16_t *qrPixels;
+bool qrWifi = true;
+
+void closeSetupQr(lv_event_t *) { lv_obj_add_flag(qrPanel, LV_OBJ_FLAG_HIDDEN); }
+
+void updateSetupQr() {
+    const uint8_t *qr = ard_setup_qr(qrWifi)->modules;
+    const int modules = ard_qrcodegen_getSize(qr), side = (modules + 8) * 4;
+    if (!modules || side > 208) { lv_label_set_text(qrNote, "QR unavailable; use 192.168.4.1/network"); return; }
+    for (int y = 0; y < side; ++y)
+        for (int x = 0; x < side; ++x)
+            qrPixels[y * side + x] = ard_qrcodegen_getModule(qr, x / 4 - 4, y / 4 - 4) ? 0 : 0xffff;
+    qrDsc = {};
+    qrDsc.header.magic = LV_IMAGE_HEADER_MAGIC;
+    qrDsc.header.cf = LV_COLOR_FORMAT_RGB565;
+    qrDsc.header.w = side; qrDsc.header.h = side; qrDsc.header.stride = side * 2;
+    qrDsc.data = reinterpret_cast<uint8_t *>(qrPixels); qrDsc.data_size = side * side * 2;
+    lv_image_set_src(qrImage, &qrDsc);
+    lv_obj_invalidate(qrImage);
+    lv_label_set_text(qrTitle, qrWifi ? "1. Join setup Wi-Fi" : "2. Open setup page");
+    lv_label_set_text_fmt(qrNote, "AP: %s\nPassword: %s\nLogin: admin / AP password\n%s",
+                          ard_network_hostname(), ard_network_password(), ARD_SETUP_URL);
+}
+
+void nextSetupQr(lv_event_t *) { qrWifi = !qrWifi; updateSetupQr(); }
+
+void showSetupQr(lv_event_t *) {
+    if (!qrPanel) {
+        qrPixels = static_cast<uint16_t *>(heap_caps_malloc(208 * 208 * 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+        if (!qrPixels) return;
+        // Leave the permanent E-STOP bar above the popup accessible.
+        qrPanel = panel(lv_layer_top(), 620, 470);
+        lv_obj_set_pos(qrPanel, 202, 70);
+        lv_obj_set_flex_flow(qrPanel, LV_FLEX_FLOW_COLUMN);
+        qrTitle = label(qrPanel, "Setup QR", &lv_font_montserrat_28, kAccent);
+        qrImage = lv_image_create(qrPanel);
+        qrNote = label(qrPanel, "", &lv_font_montserrat_16);
+        lv_obj_t *buttons = grid(qrPanel, 570, 56);
+        lv_obj_set_flex_flow(buttons, LV_FLEX_FLOW_ROW);
+        button(buttons, "Next QR", kAccent, nextSetupQr, nullptr, 200, 48);
+        button(buttons, "Close", kMuted, closeSetupQr, nullptr, 200, 48);
+    }
+    qrWifi = true;
+    updateSetupQr();
+    lv_obj_remove_flag(qrPanel, LV_OBJ_FLAG_HIDDEN);
+}
+
 void buildSystem(lv_obj_t *tab) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
@@ -273,6 +323,7 @@ void buildSystem(lv_obj_t *tab) {
     lv_obj_set_flex_flow(net, LV_FLEX_FLOW_COLUMN);
     label(net, "Network", &lv_font_montserrat_28, kAccent);
     ui.netInfo = label(net, "---", &lv_font_montserrat_16);
+    button(net, "Setup QR", kAccent, showSetupQr, nullptr, 200, 40);
     label(net, "Brightness", &lv_font_montserrat_16, kMuted);
     ui.brightness = lv_slider_create(net);
     lv_obj_set_width(ui.brightness, 400);
@@ -479,7 +530,7 @@ void refresh(lv_timer_t *) {
     case TAB_SYSTEM: {
         const ard_network_settings_t *s = ard_network_settings();
         lv_label_set_text_fmt(ui.netInfo,
-                              "SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nAP password: %s\n"
+                              "Configured SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nAP password: %s\n"
                               "http://192.168.4.1/network",
                               s->ssid[0] ? s->ssid : "(not set)", ip, s->server, server, ard_network_hostname(),
                               ard_network_password());

@@ -1,0 +1,3743 @@
+{
+  "tracked_files": 741,
+  "total_bytes": 558019965,
+  "extensions": {
+    ".iam": 42,
+    ".ipt": 460,
+    ".idw": 9,
+    ".pdf": 21,
+    ".stl": 177,
+    ".bld": 1,
+    ".cfdst": 1,
+    ".info": 1,
+    ".cfdes": 1,
+    ".geolog": 1,
+    ".tsl": 1,
+    ".xvs": 1,
+    ".jpg": 2,
+    ".cfdsc": 1,
+    ".gcode": 1,
+    ".mp4": 3,
+    ".gif": 5,
+    ".png": 7,
+    ".txt": 2,
+    ".zip": 1,
+    ".7z": 1,
+    ".bmp": 1,
+    ".xlsx": 1
+  },
+  "mismatches": [],
+  "files": [
+    {
+      "path": "3축직교로봇 및 그리퍼.iam",
+      "bytes": 2343424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_Model_v1.iam",
+      "bytes": 4353536,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_Model_v2.iam",
+      "bytes": 2795520,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/3-axis parallel link robot/Object/120PI Turntable.ipt",
+      "bytes": 272384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/3-axis parallel link robot/Object/300PI Turntable.ipt",
+      "bytes": 270336,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/3-axis parallel link robot/Object/8PI ShaftEnd Holder.ipt",
+      "bytes": 228352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/3축직교로봇.idw",
+      "bytes": 925184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/3축직교로봇.pdf",
+      "bytes": 321467,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/0325.idw",
+      "bytes": 1139712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/0325.pdf",
+      "bytes": 282797,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/0402.iam",
+      "bytes": 1872896,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/0402.stl",
+      "bytes": 6481484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/A.ipt",
+      "bytes": 1827840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/A.stl",
+      "bytes": 639484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/B.ipt",
+      "bytes": 1876992,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/B.stl",
+      "bytes": 649384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/B_v2.stl",
+      "bytes": 73084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/a.bld",
+      "bytes": 5083,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/a.cfdst",
+      "bytes": 24832,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/design_studies.info",
+      "bytes": 427,
+      "matches_github_ard_v1": true,
+      "raw_bytes_differ": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/설계 1.cfdes",
+      "bytes": 18415872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/설계 1.geolog",
+      "bytes": 10344,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/설계 1.tsl",
+      "bytes": 5722296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/시나리오 1/prep_auto.xvs",
+      "bytes": 35076,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/시나리오 1/thumbnail.jpg",
+      "bytes": 25627,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/1/a/설계 1/시나리오 1/시나리오 1.cfdsc",
+      "bytes": 598272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2.iam",
+      "bytes": 1882624,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2.stl",
+      "bytes": 6947884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2B_set.iam",
+      "bytes": 1776128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2B_set_rali.iam",
+      "bytes": 2281472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2B_set_rali.stl",
+      "bytes": 9644984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2B_set_rali_v2.iam",
+      "bytes": 2838016,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/2B_set_rali_v2.stl",
+      "bytes": 16115284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/5_Co.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/5_v2.ipt",
+      "bytes": 254464,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/5pi40pin.ipt",
+      "bytes": 81408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/C.ipt",
+      "bytes": 352768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/C.stl",
+      "bytes": 232384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/C_v2.ipt",
+      "bytes": 264192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/C_v2.stl",
+      "bytes": 73884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/D.ipt",
+      "bytes": 223232,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/D.stl",
+      "bytes": 42684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/IS 6761 - M3 x 20 - 0.5.ipt",
+      "bytes": 168448,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/JIS B 1111 (H) - M4x25 - CU2 - H(3).ipt",
+      "bytes": 253952,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/JIS B 1181 - A_B M3.ipt",
+      "bytes": 159744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 1003 - M 4 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 2023 - 6004 - 20 x 42 x 12 - 9.36.ipt",
+      "bytes": 218112,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 2023 - 685 - 5 x 11 x 3 - 0.458.ipt",
+      "bytes": 209920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 2023 - 6906 - 30 x 47 x 9 - 7.868.ipt",
+      "bytes": 221696,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/KS B 2023 - 693 - 3 x 8 x 3 - 0.293.ipt",
+      "bytes": 211968,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Load cell support.ipt",
+      "bytes": 253440,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/M/a.ipt",
+      "bytes": 359936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/M/a.stl",
+      "bytes": 110884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/NEMA17.ipt",
+      "bytes": 436736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/8T_ScrewShaft.ipt",
+      "bytes": 249856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/8T_Shaft.ipt",
+      "bytes": 87040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/8T_TimingBelt_Pulley.ipt",
+      "bytes": 288768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/HC-SR04.ipt",
+      "bytes": 236544,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/IRremote_ReceivingSensor.ipt",
+      "bytes": 357376,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/ISO 4762 - M5 x 10ISO.ipt",
+      "bytes": 185344,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/JIS B 1521 SKF (B) - SKF 623-RS1.ipt",
+      "bytes": 274944,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/JIS B 1521 SKF (D) - SKF 608-Z.ipt",
+      "bytes": 265216,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 2 x 16.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 175616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1012 - B  M 2.ipt",
+      "bytes": 121856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1012 - B  M 3.ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1023 - A  M 2 x 5 - H(1).ipt",
+      "bytes": 248320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/KS B 1326 - 3x7 - 101.ipt",
+      "bytes": 105472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/LeadWay.ipt",
+      "bytes": 225792,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/LeadWay_MIR.ipt",
+      "bytes": 151040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/LeadWay_MIR1.ipt",
+      "bytes": 151040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/LimitedSwitch.ipt",
+      "bytes": 326144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/LimitedSwitch_MIR.ipt",
+      "bytes": 167424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/NEMA17.ipt",
+      "bytes": 499712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/PIR_sensor.ipt",
+      "bytes": 333312,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/SG90.ipt",
+      "bytes": 300032,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/T8_BellowsCoulping.ipt",
+      "bytes": 348672,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/T8_LeadNut.ipt",
+      "bytes": 239104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/T8_LeadNut_MIR.ipt",
+      "bytes": 137216,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/box big.ipt",
+      "bytes": 210432,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/box.ipt",
+      "bytes": 212992,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/로드셀 센서.ipt",
+      "bytes": 203264,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Object/플랫폼.iam",
+      "bytes": 1391104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-1.ipt",
+      "bytes": 373248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-1.stl",
+      "bytes": 144434,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-1_v2.ipt",
+      "bytes": 282624,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-1_v2.stl",
+      "bytes": 170284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-2.ipt",
+      "bytes": 292352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/R-2.stl",
+      "bytes": 103484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/RALI1.ipt",
+      "bytes": 515072,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/RALI1.stl",
+      "bytes": 157884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/Sensor unit.iam",
+      "bytes": 599552,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/UR_rail_LeadNutHolder_v1.ipt",
+      "bytes": 329728,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/UR_rail_R_LinearWayCopler_v3.ipt",
+      "bytes": 284672,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/a.iam",
+      "bytes": 1746944,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/as5600_holder.ipt",
+      "bytes": 679424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/as5600_holder.stl",
+      "bytes": 321784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/box.ipt",
+      "bytes": 277504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler.ipt",
+      "bytes": 206848,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler.stl",
+      "bytes": 77284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler/CE5_c1ipt.gcode",
+      "bytes": 6510116,
+      "matches_github_ard_v1": true,
+      "raw_bytes_differ": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler/c1ipt.ipt",
+      "bytes": 366592,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler/c1ipt.stl",
+      "bytes": 72084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler/c2.ipt",
+      "bytes": 371712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/coupler/c2.stl",
+      "bytes": 76534,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/e1.ipt",
+      "bytes": 224256,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/e1.stl",
+      "bytes": 16684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/e2.ipt",
+      "bytes": 293888,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/f.ipt",
+      "bytes": 355840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/gif와 영상/녹음 2026-03-19 162905.mp4",
+      "bytes": 3346335,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/gif와 영상/녹음 2026-03-19 164745.mp4",
+      "bytes": 3252756,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/gif와 영상/녹음 2026-03-19 173838.gif",
+      "bytes": 6809730,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/gif와 영상/녹음 2026-03-19 173927.gif",
+      "bytes": 9460509,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/gif와 영상/시현영상.mp4",
+      "bytes": 40421523,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/hol.ipt",
+      "bytes": 336384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/hol.stl",
+      "bytes": 138184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/lj12.ipt",
+      "bytes": 277504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/magnet_as5600.ipt",
+      "bytes": 102400,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/new.stl",
+      "bytes": 6786384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/stand.ipt",
+      "bytes": 314880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/stand_side.ipt",
+      "bytes": 384512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/로드셀 정적분석.iam",
+      "bytes": 308736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/접시.ipt",
+      "bytes": 172032,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/ARD_Model_v1/접시.stl",
+      "bytes": 116584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/disk.ipt",
+      "bytes": 342528,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/disk.stl",
+      "bytes": 258884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/hou.ipt",
+      "bytes": 477696,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/hou.stl",
+      "bytes": 245784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/s1_v2.ipt",
+      "bytes": 241664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/s1_v2.stl",
+      "bytes": 62184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/s2_v2.ipt",
+      "bytes": 251904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300208M4_v1/s2_v2.stl",
+      "bytes": 53084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/gear.ipt",
+      "bytes": 464384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/gear.stl",
+      "bytes": 326384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/hou.ipt",
+      "bytes": 482304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/hou.stl",
+      "bytes": 258184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/roter.ipt",
+      "bytes": 259072,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/roter.stl",
+      "bytes": 91884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s1.ipt",
+      "bytes": 213504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s1.stl",
+      "bytes": 57484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s1_v2.ipt",
+      "bytes": 241664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s1_v2.stl",
+      "bytes": 62184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s2.ipt",
+      "bytes": 203264,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s2.stl",
+      "bytes": 37884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s2_v2.ipt",
+      "bytes": 255488,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s2_v2.stl",
+      "bytes": 53834,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M4_v1/s_v2.ipt",
+      "bytes": 254464,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/CY300210M8.iam",
+      "bytes": 924672,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/CY300210M8.stl",
+      "bytes": 5910784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/JIS B 1354 - B - 8 x 40.ipt",
+      "bytes": 109056,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/JIS B 1521 - 6804 20x32x7x4.ipt",
+      "bytes": 237056,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/JIS B 1521 - 6806 30x42x7x4.7.ipt",
+      "bytes": 234496,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/KS B 2023 - 693 - 3 x 8 x 3 - 0.293.ipt",
+      "bytes": 211968,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/casing.ipt",
+      "bytes": 473088,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/casing.stl",
+      "bytes": 239584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/disk.ipt",
+      "bytes": 782848,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/disk.stl",
+      "bytes": 549284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/hou.ipt",
+      "bytes": 533504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/hou.stl",
+      "bytes": 260584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/roter.ipt",
+      "bytes": 329216,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/roter.stl",
+      "bytes": 104084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/roter_v2.ipt",
+      "bytes": 270336,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/roter_v2.stl",
+      "bytes": 109284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/s1_v2.ipt",
+      "bytes": 241664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210M8_v1/s2_v2.ipt",
+      "bytes": 251904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/gear.ipt",
+      "bytes": 388096,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/gear.stl",
+      "bytes": 277084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/hou.ipt",
+      "bytes": 482304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/hou.stl",
+      "bytes": 258184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/roter.ipt",
+      "bytes": 259072,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/roter.stl",
+      "bytes": 91884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s1.ipt",
+      "bytes": 213504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s1.stl",
+      "bytes": 57484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s1_v2.ipt",
+      "bytes": 241664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s1_v2.stl",
+      "bytes": 62184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s2.ipt",
+      "bytes": 203264,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s2.stl",
+      "bytes": 37884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s2_v2.ipt",
+      "bytes": 255488,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s2_v2.stl",
+      "bytes": 53834,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/CY300210_v1/s_v2.ipt",
+      "bytes": 254464,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/ANSI B18.2.4.5M - M6 x 1.ipt",
+      "bytes": 158720,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/ISO 4762 - M5 x 10ISO.ipt",
+      "bytes": 185344,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/JIS B 1176 - M4 x 12 - 0.7.ipt",
+      "bytes": 184320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/JIS B 1176 - M4 x 6 - 0.7.ipt",
+      "bytes": 186880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/JIS B 1181 - A_B M3.ipt",
+      "bytes": 159744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/JIS B 1181 - M4(7).ipt",
+      "bytes": 145408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/JIS B 1183 - M6x1(1).ipt",
+      "bytes": 227840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 2 x 16.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1012 - B  M 2.ipt",
+      "bytes": 121856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1012 - B  M 3.ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1023 - A  M 2 x 5 - H(1).ipt",
+      "bytes": 248320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Bolt Nut/KS B 1326 - 3x7 - 101.ipt",
+      "bytes": 105472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/16inch capacitive display.ipt",
+      "bytes": 160256,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/HC-SR04.ipt",
+      "bytes": 236544,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/IRremote_ReceivingSensor.ipt",
+      "bytes": 357376,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/LimitedSwitch.ipt",
+      "bytes": 326144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/LimitedSwitch_MIR.ipt",
+      "bytes": 167424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/NEMA17.ipt",
+      "bytes": 499712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/PIR_sensor.ipt",
+      "bytes": 333312,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/SG90.ipt",
+      "bytes": 300032,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/T8_BellowsCoulping.ipt",
+      "bytes": 348672,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Motor and electronic components/로드셀 센서.ipt",
+      "bytes": 203264,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/CDJ2B10_100/ANSI B18.2.4.5M - M8 x 1.25.ipt",
+      "bytes": 160768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/CDJ2B10_100/AS 1474 - M4(1).ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/CDJ2B10_100/CDJ2B10.iam",
+      "bytes": 286208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/CDJ2B10_100/CDJ2B10_Body.ipt",
+      "bytes": 262144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/CDJ2B10_100/Rod.ipt",
+      "bytes": 185856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/Endcap.ipt",
+      "bytes": 260608,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/J-CV-10/CV10_body.ipt",
+      "bytes": 358400,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/J-CV-10/J-CV-10.iam",
+      "bytes": 356352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/J-CV-10/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/J-CV-10/filter.ipt",
+      "bytes": 802816,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Pneumatic fitting/VPC6-M5.ipt",
+      "bytes": 328192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Angle Corner Brecket.ipt",
+      "bytes": 167424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Panel Bracket.ipt",
+      "bytes": 218624,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Pivot Joint/2020 Profile Pivot Joint.iam",
+      "bytes": 175104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Pivot Joint/2020 Profile Pivot Joint_하위.ipt",
+      "bytes": 153088,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Pivot Joint/Cylinder fixing parts_A parts.ipt",
+      "bytes": 150016,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Pivot Joint/Cylinder fixing parts_B parts.ipt",
+      "bytes": 159232,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-100mm.ipt",
+      "bytes": 161792,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-150mm.ipt",
+      "bytes": 170496,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-200mm.ipt",
+      "bytes": 159232,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-300mm.ipt",
+      "bytes": 157184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-500mm.ipt",
+      "bytes": 169984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-50mm.ipt",
+      "bytes": 167936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020 Profile Series/2020Profile-800mm.ipt",
+      "bytes": 154112,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020FootEnd/2020 FootEnd.iam",
+      "bytes": 161280,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020FootEnd/2020 FootEnd.ipt",
+      "bytes": 238592,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020FootEnd/2020 FootEnd_FOOT.ipt",
+      "bytes": 119808,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020FootEnd/2020 FootEnd_t8.ipt",
+      "bytes": 114176,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Profile/2020FootEnd/JIS B 1181 - M8(6).ipt",
+      "bytes": 144896,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/8T_ScrewShaft.ipt",
+      "bytes": 249856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/8T_Shaft.ipt",
+      "bytes": 87040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/8T_TimingBelt_Pulley.ipt",
+      "bytes": 288768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/JIS B 1521 SKF (B) - SKF 623-RS1.ipt",
+      "bytes": 274944,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/JIS B 1521 SKF (D) - SKF 608-Z.ipt",
+      "bytes": 265216,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/LeadWay.ipt",
+      "bytes": 225792,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/LeadWay_MIR.ipt",
+      "bytes": 151040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/LeadWay_MIR1.ipt",
+      "bytes": 151040,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/T8_LeadNut.ipt",
+      "bytes": 239104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/T8_LeadNut_MIR.ipt",
+      "bytes": 137216,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Common Objects/Shaft parts/flange joint 16pi (5 to 3).ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/BACK.ipt",
+      "bytes": 169472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/BACK.stl",
+      "bytes": 10684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/CB_V1.iam",
+      "bytes": 405504,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/U-volt.ipt",
+      "bytes": 380928,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/U-volt.stl",
+      "bytes": 202684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/bottom.ipt",
+      "bytes": 216064,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/bottom.stl",
+      "bytes": 30684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/side.ipt",
+      "bytes": 579072,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/side.stl",
+      "bytes": 140684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/top.ipt",
+      "bytes": 309248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Control Box_v1/top.stl",
+      "bytes": 63484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/HMI_v1/bor(1).ipt",
+      "bytes": 772096,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/HMI_v1/bor(1).stl",
+      "bytes": 219784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/HMI_v1/bor.ipt",
+      "bytes": 772096,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/HMI_v1/bor.stl",
+      "bytes": 219784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/H.ipt",
+      "bytes": 256512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/H.stl",
+      "bytes": 56684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 2 x 16.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 175616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 4 x 12.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1003 - M 5 x 16.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1012 - B  M 2.ipt",
+      "bytes": 121856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 1012 - B  M 3.ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 2023 - 608 - 8 x 22 x 7 - 3.25.ipt",
+      "bytes": 202752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/KS B 2023 - 685 - 5 x 11 x 3 - 0.458.ipt",
+      "bytes": 209920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/NEMA17.ipt",
+      "bytes": 440320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/PL121248v1.pdf",
+      "bytes": 321189,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/R2-v2.ipt",
+      "bytes": 388608,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/R2-v2.stl",
+      "bytes": 113084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/case.ipt",
+      "bytes": 758272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/case.stl",
+      "bytes": 268784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z16_H10.0_spur (1).ipt",
+      "bytes": 657408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z16_H10.0_spur (1).stl",
+      "bytes": 106384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z16_H10.0_spur.ipt",
+      "bytes": 673280,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z16_H10.0_spur.stl",
+      "bytes": 133584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z48_H10.0_spur.ipt",
+      "bytes": 3272192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/gear_M1.5_Z48_H10.0_spur.stl",
+      "bytes": 495484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/pl_v1.iam",
+      "bytes": 1359872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/pl_v1.stl",
+      "bytes": 3541484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/roter.ipt",
+      "bytes": 342016,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/roter.stl",
+      "bytes": 114284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/녹음 2026-03-27 214840.gif",
+      "bytes": 4683028,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248Drive_v1/스크린샷 2026-03-28 165627.png",
+      "bytes": 394261,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/H.ipt",
+      "bytes": 256512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/H.stl",
+      "bytes": 56684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 2 x 16.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 175616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 4 x 12.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1003 - M 5 x 16.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1012 - B  M 2.ipt",
+      "bytes": 121856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 1012 - B  M 3.ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 2023 - 608 - 8 x 22 x 7 - 3.25.ipt",
+      "bytes": 202752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/KS B 2023 - 685 - 5 x 11 x 3 - 0.458.ipt",
+      "bytes": 209920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/NEMA17.ipt",
+      "bytes": 440320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/PL121248v1.pdf",
+      "bytes": 321189,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/R2-v2.ipt",
+      "bytes": 525824,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/R2-v2.stl",
+      "bytes": 113084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/case.ipt",
+      "bytes": 758272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/case.stl",
+      "bytes": 268784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z16_H10.0_spur (1).ipt",
+      "bytes": 657408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z16_H10.0_spur (1).stl",
+      "bytes": 106384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z16_H10.0_spur.ipt",
+      "bytes": 673280,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z16_H10.0_spur.stl",
+      "bytes": 133584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z48_H10.0_spur.ipt",
+      "bytes": 3272192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/gear_M1.5_Z48_H10.0_spur.stl",
+      "bytes": 495484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/pl_v1.iam",
+      "bytes": 1359872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/pl_v1.stl",
+      "bytes": 3541484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/roter.ipt",
+      "bytes": 342016,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/roter.stl",
+      "bytes": 114284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/녹음 2026-03-27 214840.gif",
+      "bytes": 4683028,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v1/스크린샷 2026-03-28 165627.png",
+      "bytes": 394261,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/5_Co.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/5pi40pin.ipt",
+      "bytes": 81408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/H.ipt",
+      "bytes": 256512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/H.stl",
+      "bytes": 56684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 2 x 16.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 175616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 4 x 12.ipt",
+      "bytes": 183296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1003 - M 5 x 16.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1012 - B  M 2.ipt",
+      "bytes": 121856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 1012 - B  M 3.ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 2023 - 608 - 8 x 22 x 7 - 3.25.ipt",
+      "bytes": 202752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/KS B 2023 - 685 - 5 x 11 x 3 - 0.458.ipt",
+      "bytes": 209920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/NEMA17.ipt",
+      "bytes": 440320,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/PL121248v1.pdf",
+      "bytes": 321189,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/R2-v2.ipt",
+      "bytes": 525824,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/R2-v2.stl",
+      "bytes": 113084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/case.ipt",
+      "bytes": 419328,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/case.stl",
+      "bytes": 144784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z16_H10.0_spur (1).ipt",
+      "bytes": 1140224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z16_H10.0_spur (1).stl",
+      "bytes": 108084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z16_H10.0_spur.ipt",
+      "bytes": 634368,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z16_H10.0_spur.stl",
+      "bytes": 94284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z48_H10.0_spur.ipt",
+      "bytes": 3665408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/gear_M1.5_Z48_H10.0_spur.stl",
+      "bytes": 533784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v1.iam",
+      "bytes": 1254912,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v1.stl",
+      "bytes": 3541484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v2.iam",
+      "bytes": 786432,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v2.idw",
+      "bytes": 551936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v2.pdf",
+      "bytes": 153578,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v2.stl",
+      "bytes": 4510884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/pl_v2_page-0001.jpg",
+      "bytes": 553257,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/roter.ipt",
+      "bytes": 310784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/roter.stl",
+      "bytes": 108884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/녹음 2026-03-27 214840.gif",
+      "bytes": 4683028,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248m2Drive_v2/스크린샷 2026-03-28 165627.png",
+      "bytes": 394261,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PL121248v1.pdf",
+      "bytes": 321189,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/CDJ2B10_100/ANSI B18.2.4.5M - M8 x 1.25.ipt",
+      "bytes": 160768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/CDJ2B10_100/AS 1474 - M4(1).ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/CDJ2B10_100/CDJ2B10.iam",
+      "bytes": 286208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/CDJ2B10_100/CDJ2B10_Body.ipt",
+      "bytes": 262144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/CDJ2B10_100/Rod.ipt",
+      "bytes": 185856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/Endcap.ipt",
+      "bytes": 260608,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/J-CV-10/CV10_body.ipt",
+      "bytes": 358400,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/J-CV-10/J-CV-10.iam",
+      "bytes": 356352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/J-CV-10/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/J-CV-10/filter.ipt",
+      "bytes": 802816,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Pneumatic fitting/VPC6-M5.ipt",
+      "bytes": 328192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/5521DC Power Box.iam",
+      "bytes": 186880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/5521DC Power Box_A.ipt",
+      "bytes": 273920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/5521DC Power Box_A.stl",
+      "bytes": 59484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/5521DC Power Box_b.ipt",
+      "bytes": 231936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/5521DC Power Box_b.stl",
+      "bytes": 45884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Bottom Link Parts.ipt",
+      "bytes": 287744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Bottom Link Parts.stl",
+      "bytes": 83484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/CS.ipt",
+      "bytes": 443904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Camera guard.ipt",
+      "bytes": 445440,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Camera guard.stl",
+      "bytes": 128084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Cylinder fixing parts.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Cylinder fixing parts.stl",
+      "bytes": 53184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Cylinder-CAM fixing parts_v2.dwg.ipt",
+      "bytes": 816128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Cylinder-CAM fixing parts_v2.dwg.stl",
+      "bytes": 180684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Flange Bracket.ipt",
+      "bytes": 294912,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Flange Bracket.stl",
+      "bytes": 82484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Link Parts.ipt",
+      "bytes": 428544,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Link Parts.stl",
+      "bytes": 88384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Link Support Parts.ipt",
+      "bytes": 240640,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Link Support Parts.stl",
+      "bytes": 49884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/1.txt",
+      "bytes": 304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/JIS B 1181 - A_B M3.ipt",
+      "bytes": 159744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Object/flange joint 16pi (5 to 3).ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/CDJ2B10_100/ANSI B18.2.4.5M - M8 x 1.25.ipt",
+      "bytes": 160768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/CDJ2B10_100/AS 1474 - M4(1).ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/CDJ2B10_100/CDJ2B10.iam",
+      "bytes": 209408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/CDJ2B10_100/CDJ2B10_Body.ipt",
+      "bytes": 262144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/CDJ2B10_100/Rod.ipt",
+      "bytes": 185856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/Endcap.ipt",
+      "bytes": 260608,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Pneumatic fitting/VPC6-M5.ipt",
+      "bytes": 328192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper1_v1.iam",
+      "bytes": 710656,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1-1.png",
+      "bytes": 417749,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1.iam",
+      "bytes": 746496,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1.idw",
+      "bytes": 828416,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1.pdf",
+      "bytes": 321173,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1.png/PneumaticGripper_v1.1_1.png",
+      "bytes": 936731,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1.stl",
+      "bytes": 4626134,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.1O.iam",
+      "bytes": 887296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.iam",
+      "bytes": 723456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.idw",
+      "bytes": 781824,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/PneumaticGripper_v1.pdf",
+      "bytes": 328789,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/TONGS SE/O-RING_L.ipt",
+      "bytes": 880640,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/TONGS SE/O-RING_L.stl",
+      "bytes": 184884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/TONGS SE/O-RING_R.ipt",
+      "bytes": 757760,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/TONGS SE/O-RING_R.stl",
+      "bytes": 188884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Tongs_R.ipt",
+      "bytes": 436224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Tongs_R.stl",
+      "bytes": 73884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Tongs_l.ipt",
+      "bytes": 546304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/Tongs_l.stl",
+      "bytes": 82984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/rod-fixing parts.ipt",
+      "bytes": 711168,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/rod-fixing parts.stl",
+      "bytes": 157334,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/공압도.idw",
+      "bytes": 638464,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v1/공압도.pdf",
+      "bytes": 306053,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2-20260512T040043Z-3-001.zip",
+      "bytes": 17847651,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/5521DC Power Box.iam",
+      "bytes": 186880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/5521DC Power Box_A.ipt",
+      "bytes": 273920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/5521DC Power Box_A.stl",
+      "bytes": 59484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/5521DC Power Box_b.ipt",
+      "bytes": 231936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/5521DC Power Box_b.stl",
+      "bytes": 45884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Bottom Link Parts.ipt",
+      "bytes": 287744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Bottom Link Parts.stl",
+      "bytes": 83484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Cylinder fixing parts.ipt",
+      "bytes": 714240,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Cylinder fixing parts.stl",
+      "bytes": 244284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Flange Bracket.ipt",
+      "bytes": 294912,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Flange Bracket.stl",
+      "bytes": 82484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Link Parts.ipt",
+      "bytes": 428544,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Link Parts.stl",
+      "bytes": 88384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Link Support Parts.ipt",
+      "bytes": 240640,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Link Support Parts.stl",
+      "bytes": 49884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/1.txt",
+      "bytes": 304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/ANSI B18.2.4.5M - M6 x 1.ipt",
+      "bytes": 158720,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/JIS B 1181 - A_B M3.ipt",
+      "bytes": 159744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/JIS B 1183 - M6x1(1).ipt",
+      "bytes": 227840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/KS B 1003 - M 3 x 30.ipt",
+      "bytes": 176128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Object/flange joint 16pi (5 to 3).ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/CDJ2B10_100/ANSI B18.2.4.5M - M8 x 1.25.ipt",
+      "bytes": 160768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/CDJ2B10_100/AS 1474 - M4(1).ipt",
+      "bytes": 122880,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/CDJ2B10_100/CDJ2B10.iam",
+      "bytes": 209408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/CDJ2B10_100/CDJ2B10_Body.ipt",
+      "bytes": 262144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/CDJ2B10_100/Rod.ipt",
+      "bytes": 185856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/Endcap.ipt",
+      "bytes": 260608,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/PC6-M5.ipt",
+      "bytes": 313856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Pneumatic fitting/VPC6-M5.ipt",
+      "bytes": 328192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper1_v1.iam",
+      "bytes": 710656,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v1-1.png",
+      "bytes": 417749,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v1.iam",
+      "bytes": 734208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v1.idw",
+      "bytes": 781824,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v1.pdf",
+      "bytes": 328789,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v2.iam",
+      "bytes": 874496,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/PneumaticGripper_v2.stl",
+      "bytes": 7834184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/TONGS SE/O-RING_L.ipt",
+      "bytes": 1090560,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/TONGS SE/O-RING_L.stl",
+      "bytes": 204784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/TONGS SE/O-RING_R.ipt",
+      "bytes": 759296,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/TONGS SE/O-RING_R.stl",
+      "bytes": 188884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Tongs_R.ipt",
+      "bytes": 436224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Tongs_R.stl",
+      "bytes": 73884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Tongs_l.ipt",
+      "bytes": 546304,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/Tongs_l.stl",
+      "bytes": 82984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/rod-fixing parts.ipt",
+      "bytes": 1059328,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/PneumaticGripper_v2/rod-fixing parts.stl",
+      "bytes": 153084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Profile Skeleton.iam",
+      "bytes": 1064448,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project.7z",
+      "bytes": 52956942,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/24 Timing Belt Pulli.ipt",
+      "bytes": 400896,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/28BJY-48.ipt",
+      "bytes": 256512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/48 Timing Belt Pulli.ipt",
+      "bytes": 772096,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/5mm flange coupler.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/5pi pin.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/8T_ScrewShaft.ipt",
+      "bytes": 204800,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Al shaft 5pi-500mm.ipt",
+      "bytes": 183808,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/GT2 Timing Belt Fixation.ipt",
+      "bytes": 193536,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/GT2 Timing Belt Fixation.stl",
+      "bytes": 31084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/Head connection and motor stator.ipt",
+      "bytes": 285696,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/Head connection and motor stator.stl",
+      "bytes": 75384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/RA_v1.idw",
+      "bytes": 1278976,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/RA_v1.pdf",
+      "bytes": 556830,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/head stator.ipt",
+      "bytes": 391680,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Head/head stator.stl",
+      "bytes": 99684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/JIS B 1521 - 608 8x22x7x3.3.ipt",
+      "bytes": 202752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/JIS B 1521 - 623 3x10x4x0.630.ipt",
+      "bytes": 207872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/JIS B 1521 - 625 5x16x5x1.73.ipt",
+      "bytes": 211456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 1.6 x 2.5.ipt",
+      "bytes": 187904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 2 x 10.ipt",
+      "bytes": 178688,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 3 x 5.ipt",
+      "bytes": 184832,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1012 - C M8C.ipt",
+      "bytes": 158208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1028 - M2.5x5(1).ipt",
+      "bytes": 163840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/KS B 1028 - M3x5(1).ipt",
+      "bytes": 164352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/LeadWay.ipt",
+      "bytes": 225792,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/LimitedSwitch.ipt",
+      "bytes": 326144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/MPU-6050.ipt",
+      "bytes": 337408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Module Integrated Substrate.stl",
+      "bytes": 377484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/NEMA17.ipt",
+      "bytes": 408064,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Pneumatic fitting/PC6-M5.ipt",
+      "bytes": 273408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Power board.ipt",
+      "bytes": 327680,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/RA_v1 ([1차]).pdf",
+      "bytes": 10392325,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/RA_v1.bmp",
+      "bytes": 4089306,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/RA_v1.iam",
+      "bytes": 2493440,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/RA_v1.png",
+      "bytes": 576988,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/RA_v1.stl",
+      "bytes": 16228234,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Control Board.ipt",
+      "bytes": 402944,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Control Board.stl",
+      "bytes": 105484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Module Integrated Substrate.ipt",
+      "bytes": 763392,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar-tyA.ipt",
+      "bytes": 237056,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar-tyA.stl",
+      "bytes": 25384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar-tyB.ipt",
+      "bytes": 231424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar-tyB.stl",
+      "bytes": 22584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar.ipt",
+      "bytes": 224768,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Pillar.stl",
+      "bytes": 12684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Power board.ipt",
+      "bytes": 398336,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/Power board.stl",
+      "bytes": 139684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/TOP Board.ipt",
+      "bytes": 778240,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/TOP Board.stl",
+      "bytes": 338084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/signal machine-st.ipt",
+      "bytes": 198656,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/signal machine-st.stl",
+      "bytes": 30484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/signal machine.ipt",
+      "bytes": 342016,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/signal machine.stl",
+      "bytes": 55084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate/sub.iam",
+      "bytes": 282624,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate_DC jack hoder.ipt",
+      "bytes": 239104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Substrate_DC jack hoder.stl",
+      "bytes": 32884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Support fixing.stl",
+      "bytes": 136184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/T8Screws.ipt",
+      "bytes": 200192,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/T8_BellowsCoulping.ipt",
+      "bytes": 348672,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/T8_LeadNut.ipt",
+      "bytes": 239104,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/T8linear shaft.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/VL53L0X.ipt",
+      "bytes": 322560,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/X-axis disc support.ipt",
+      "bytes": 309248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/X-axis disc support.stl",
+      "bytes": 43684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/X-axis fixing plate.ipt",
+      "bytes": 738816,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/X-axis fixing plate.stl",
+      "bytes": 174184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis - pulley support plate.ipt",
+      "bytes": 551424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis - pulley support plate.stl",
+      "bytes": 198884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis End Leveler Mount.ipt",
+      "bytes": 308736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis End Leveler Mount.stl",
+      "bytes": 92784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis Support fixing.ipt",
+      "bytes": 441344,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis end.ipt",
+      "bytes": 215552,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis end.stl",
+      "bytes": 44284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis fixture.ipt",
+      "bytes": 371712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis fixture.stl",
+      "bytes": 121184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis rotation plate.ipt",
+      "bytes": 440832,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Y-axis rotation plate.stl",
+      "bytes": 144084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover parts/Z-axis mover 1.ipt",
+      "bytes": 1257472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover parts/Z-axis mover 1.stl",
+      "bytes": 230234,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover parts/Z-axis mover 2.ipt",
+      "bytes": 1193984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover parts/Z-axis mover 2.stl",
+      "bytes": 156134,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover.ipt",
+      "bytes": 1108480,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/Z-axis mover.stl",
+      "bytes": 284784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Clap-v1.iam",
+      "bytes": 334848,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Head connection and motor stator.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Head connection and motor stator.stl",
+      "bytes": 76884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Tongs_L.ipt",
+      "bytes": 687616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Tongs_L.stl",
+      "bytes": 111884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Tongs_R.ipt",
+      "bytes": 579072,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/Tongs_R.stl",
+      "bytes": 82584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/gear_M1.0_Z20_H10.0_O-0.10_spur.ipt",
+      "bytes": 718848,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/gear_M1.0_Z20_H10.0_O-0.10_spur.stl",
+      "bytes": 108384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/moter_holder.ipt",
+      "bytes": 449024,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/moter_holder.stl",
+      "bytes": 107784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/weight gasket.ipt",
+      "bytes": 296960,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/clap/weight gasket.stl",
+      "bytes": 78184,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/end of the z-axis.ipt",
+      "bytes": 560128,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/end of the z-axis.stl",
+      "bytes": 122884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/rali-x support.ipt",
+      "bytes": 296960,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/rali-x support.stl",
+      "bytes": 55084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/rali-x support_V2.ipt",
+      "bytes": 171008,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/z-axis bearing puller support.ipt",
+      "bytes": 251904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/RA_Project/z-axis bearing puller support.stl",
+      "bytes": 33084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/cam holder.ipt",
+      "bytes": 293888,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/cam holder.stl",
+      "bytes": 88084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand L_v3.ipt",
+      "bytes": 225280,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand L_v3.stl",
+      "bytes": 23484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand R_v3.ipt",
+      "bytes": 230912,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand R_v3.stl",
+      "bytes": 23484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand_v3.ipt",
+      "bytes": 301056,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/Rali_v2/stand_v3.stl",
+      "bytes": 85484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/T8_holder.ipt",
+      "bytes": 256512,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/T8_holder.stl",
+      "bytes": 53084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/UR_rail_LeadNutHolder_v1.ipt",
+      "bytes": 322048,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/UR_rail_R_LinearWayCopler_v3.ipt",
+      "bytes": 273408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/case.ipt",
+      "bytes": 266752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/liner608_holder.ipt",
+      "bytes": 294400,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/liner608_holder.stl",
+      "bytes": 150084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand.stl",
+      "bytes": 174384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand1.ipt",
+      "bytes": 994816,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand12.ipt",
+      "bytes": 278528,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand12.stl",
+      "bytes": 36884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand_v2.ipt",
+      "bytes": 351744,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/stand_v2.stl",
+      "bytes": 94484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/substrate.ipt",
+      "bytes": 379392,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/substrate.stl",
+      "bytes": 138484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/vl53_hoder.ipt",
+      "bytes": 249856,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/Rali_v1/vl53_hoder.stl",
+      "bytes": 48084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Front-Wheel Bracket.ipt",
+      "bytes": 399872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Front-Wheel Bracket.stl",
+      "bytes": 143584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/120PI Turntable.ipt",
+      "bytes": 272384,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/24 Timing Belt Pulli.ipt",
+      "bytes": 400896,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/300PI Turntable.ipt",
+      "bytes": 270336,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/48 Timing Belt Pulli.ipt",
+      "bytes": 772096,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/5mm flange coupler.ipt",
+      "bytes": 275456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/5pi pin.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/8PI ShaftEnd Holder.ipt",
+      "bytes": 228352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/8T_ScrewShaft.ipt",
+      "bytes": 204800,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/Al shaft 5pi-500mm.ipt",
+      "bytes": 183808,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/JIS B 1521 - 608 8x22x7x3.3.ipt",
+      "bytes": 202752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/JIS B 1521 - 623 3x10x4x0.630.ipt",
+      "bytes": 207872,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/JIS B 1521 - 625 5x16x5x1.73.ipt",
+      "bytes": 211456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 1.6 x 2.5.ipt",
+      "bytes": 187904,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 2 x 10.ipt",
+      "bytes": 178688,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 3 x 12.ipt",
+      "bytes": 181248,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 3 x 16.ipt",
+      "bytes": 179712,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 3 x 20.ipt",
+      "bytes": 177664,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 3 x 5.ipt",
+      "bytes": 184832,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1003 - M 4 x 16.ipt",
+      "bytes": 180224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1012 - C M8C.ipt",
+      "bytes": 158208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1028 - M2.5x5(1).ipt",
+      "bytes": 163840,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/KS B 1028 - M3x5(1).ipt",
+      "bytes": 164352,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/LeadWay.ipt",
+      "bytes": 225792,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/LimitedSwitch.ipt",
+      "bytes": 326144,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/MPU-6050.ipt",
+      "bytes": 337408,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/NEMA17.ipt",
+      "bytes": 408064,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/Object/VL53L0X.ipt",
+      "bytes": 322560,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/SCARA_v1/SCARA_V1.iam",
+      "bytes": 423424,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/2단 사이클로이드 감속기의 정적 및.pdf",
+      "bytes": 3308107,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/3차원 운동을 하는 볼 감속기의 응력해석.pdf",
+      "bytes": 5256103,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/볼 베어링을 사용하는직선 운동 가이드의 동적 특성 및 응용.pdf",
+      "bytes": 3393899,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/사이클로이드 감속기 엑셀문서.xlsx",
+      "bytes": 472383,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/사이클로이드 감속기 치형에 관한 연구.pdf",
+      "bytes": 5005950,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/사이클로이드 감속기의 에피트로코이드 치형에 관한연구.pdf",
+      "bytes": 3119326,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/BaseDATA/정밀구동용 사이클로이드 감속기의 .pdf",
+      "bytes": 978924,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/CASE.ipt",
+      "bytes": 743936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/CASE.stl",
+      "bytes": 229584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/CASE_T.ipt",
+      "bytes": 877568,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/CASE_T.stl",
+      "bytes": 289784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/DISK-1P.ipt",
+      "bytes": 296960,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/JIS B 1521 - 6806 30x42x7x4.7.ipt",
+      "bytes": 233984,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/KS B 1003 - M 3 x 10.ipt",
+      "bytes": 182272,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/KS B 1003 - M 3 x 25.ipt",
+      "bytes": 175616,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/KS B 1003 - M 3 x 6.ipt",
+      "bytes": 182784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/M3PIN.ipt",
+      "bytes": 94208,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/NEMA17.ipt",
+      "bytes": 436736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/DISK-1P.ipt",
+      "bytes": 296960,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/STA.ipt",
+      "bytes": 187392,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/disk-1_v2..ipt",
+      "bytes": 243200,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/disk-1_v2.ipt",
+      "bytes": 241152,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/disk-2_v2.ipt",
+      "bytes": 243200,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OLD/disk-3_v2.ipt",
+      "bytes": 244224,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OUTPUT.ipt",
+      "bytes": 809472,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OUTPUT.stl",
+      "bytes": 581484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OUTPUT_D.ipt",
+      "bytes": 351232,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/OUTPUT_D.stl",
+      "bytes": 230484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/STA.ipt",
+      "bytes": 187392,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/TRCR_V1.iam",
+      "bytes": 1145344,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/TRCR_V1.stl",
+      "bytes": 6683784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/case_s.ipt",
+      "bytes": 167936,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/case_s.stl",
+      "bytes": 83084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/dick_v3.ipt",
+      "bytes": 420864,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk-1_v2..ipt",
+      "bytes": 243200,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v3/dick2_v3.ipt",
+      "bytes": 524288,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v3/dick2_v3.stl",
+      "bytes": 280684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v3/dick3_v3.ipt",
+      "bytes": 523776,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v3/dick3_v3.stl",
+      "bytes": 280684,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v3/dick_v3.ipt",
+      "bytes": 420864,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick2_v3.ipt",
+      "bytes": 979456,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick2_v3.stl",
+      "bytes": 1106284,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick3_v3.ipt",
+      "bytes": 951808,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick3_v3.stl",
+      "bytes": 254884,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick_v3.ipt",
+      "bytes": 962560,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/disk_v4/dick_v3.stl",
+      "bytes": 331084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/hole_test.ipt",
+      "bytes": 273920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/hole_test.stl",
+      "bytes": 101084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/s1.stl",
+      "bytes": 42334,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/s2.stl",
+      "bytes": 62584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/s3.stl",
+      "bytes": 62584,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/s4.stl",
+      "bytes": 48634,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/shaft.ipt",
+      "bytes": 186368,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/shaft.stl",
+      "bytes": 42334,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/shafts.stl",
+      "bytes": 3342084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/side.ipt",
+      "bytes": 138752,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/side.stl",
+      "bytes": 69484,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/standard.ipt",
+      "bytes": 206336,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/hole_test(1).ipt",
+      "bytes": 273920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/hole_test(1).stl",
+      "bytes": 101084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/hole_test.ipt",
+      "bytes": 273920,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/hole_test.stl",
+      "bytes": 101084,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/top_test(1).ipt",
+      "bytes": 244736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/top_test(1).stl",
+      "bytes": 61784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/top_test.ipt",
+      "bytes": 244736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/test/top_test.stl",
+      "bytes": 61784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/top_test.ipt",
+      "bytes": 244736,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/TRCR_Project/TRCRv1/top_test.stl",
+      "bytes": 61784,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/기본틀.iam",
+      "bytes": 1330176,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/분류구조.idw",
+      "bytes": 1616896,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/분류구조.pdf",
+      "bytes": 451481,
+      "matches_github_ard_v1": true
+    },
+    {
+      "path": "ARD_hardware/분류구조1.pdf",
+      "bytes": 415433,
+      "matches_github_ard_v1": true
+    }
+  ],
+  "line_ending_only_differences": [
+    "ARD_hardware/ARD_Model_v1/1/a/design_studies.info",
+    "ARD_hardware/ARD_Model_v1/coupler/CE5_c1ipt.gcode"
+  ]
+}

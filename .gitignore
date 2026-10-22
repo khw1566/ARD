@@ -1,5 +1,6 @@
 # Old PlatformIO code has its own repository (khw1566/ARD, branch main)
 /ARD_software/
+/ARD/
 
 # Scratch work and build logs
 /tmp/

@@ -1,4 +1,6 @@
 #include "ard_network.h"
+#include "ard_wifi.h"
+#include "ard_setup_qr.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,8 +92,7 @@ void wifiEvent(void *, esp_event_base_t base, int32_t id, void *data) {
         staReady = false;
         taskEXIT_CRITICAL(&lock);
         if (was) ESP_LOGW(TAG, "STA disconnected; setup AP stays available");
-    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START && settings.ssid[0]) {
-        esp_wifi_connect();
+
     }
 }
 
@@ -157,7 +158,7 @@ void resolveServer() {
 }
 
 void networkTask(void *) {
-    int64_t lastRetry = esp_timer_get_time(), lastResolve = 0;
+    int64_t lastResolve = 0;
     bool wasConnected = false;
     for (;;) {
         const int64_t now = esp_timer_get_time();
@@ -168,10 +169,7 @@ void networkTask(void *) {
         if (restart && now >= restart) esp_restart();
         if (connected && !wasConnected) lastResolve = now - 30000000; // resolve immediately
         wasConnected = connected;
-        if (!connected && settings.ssid[0] && now - lastRetry >= 15000000) {
-            lastRetry = now;
-            esp_wifi_connect();
-        }
+        ard_wifi_tick();
         if (connected && now - lastResolve >= 30000000) {
             lastResolve = now;
             resolveServer();
@@ -249,6 +247,7 @@ void ard_network_restart_later(void) {
 }
 
 void ard_network_print_setup(void) {
+    ard_setup_qr_print();
     printf("[NET] AP: %s | Password: %s | Login: admin\n", hostname, password);
     printf("[NET] Setup: http://192.168.4.1/network or http://%s.local/network\n", hostname);
 }
@@ -270,8 +269,10 @@ esp_err_t ard_network_start(const char *role, const char *legacyNamespace, const
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, wifiEvent, nullptr));
     esp_err_t err = startWifi();
     if (err != ESP_OK) { ESP_LOGE(TAG, "Wi-Fi init failed: %s", esp_err_to_name(err)); return err; }
+    if ((err = ard_wifi_init(&settings)) != ESP_OK) return err;
     startMdns(role);
     if ((err = startHttp()) != ESP_OK) ESP_LOGE(TAG, "Setup portal failed: %s", esp_err_to_name(err));
+    ard_setup_qr_init(hostname, password);
     ard_network_print_setup();
     if (!settings.ssid[0]) ESP_LOGW(TAG, "No Wi-Fi saved yet: connect to the setup AP");
     return xTaskCreatePinnedToCore(networkTask, "ard_network", 4096, nullptr, 3, nullptr, 0) == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
