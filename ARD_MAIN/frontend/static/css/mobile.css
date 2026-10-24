@@ -1,0 +1,141 @@
+/* Mobile layout overrides. Desktop dashboard geometry stays in style.css. */
+.mobile-nav { display: none; }
+:where(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid var(--primary, #38bdf8);
+    outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+    html { scroll-padding-top: 16px; }
+    body { -webkit-text-size-adjust: 100%; }
+    .dashboard-page { overflow-x: clip; }
+    .dashboard-page .container {
+        height: auto;
+        max-height: none;
+        min-height: 100dvh;
+        overflow: visible;
+        padding: max(12px, env(safe-area-inset-top)) 12px calc(84px + env(safe-area-inset-bottom));
+    }
+    .dashboard-page header.main-header { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+    .dashboard-page header.main-header > .header-left { justify-content: space-between; min-width: 0; align-self: stretch; }
+    .dashboard-page h1 { font-size: clamp(1rem, 4.5vw, 1.4rem); white-space: normal; }
+    .dashboard-page .header-left .logo-area { gap: 4px !important; }
+    .dashboard-page .device-status-strip {
+        display: flex;
+        width: 100%; min-width: 0; max-width: 100%;
+        gap: 8px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        padding: 3px 2px 10px;
+    }
+    .dashboard-page .device-status-strip .status-box {
+        flex: 0 0 218px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 12px;
+        scroll-snap-align: start;
+    }
+    .dashboard-page .status-brand { flex-direction: row; min-width: 0; justify-content: flex-start; }
+    .dashboard-page .mcu-logo { width: 20px; height: 20px; flex-shrink: 0; }
+    .dashboard-page .status-label { font-size: 13px !important; }
+    .dashboard-page .status-meta { grid-column: 1 / -1; font-size: 12px; flex-direction: row; flex-wrap: wrap; }
+    .dashboard-page .status-meta .status-detail { overflow-wrap: anywhere; }
+    .dashboard-page .status-value { font-size: 12px !important; }
+    .dashboard-page header.main-header > .server-info-box { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px 14px; align-items: center; align-self: stretch; justify-content: space-between; }
+    .dashboard-page .server-gps-line { overflow-wrap: anywhere; }
+    .dashboard-page main { flex-direction: column; height: auto; overflow: visible; gap: 12px; }
+    .dashboard-page .left-col, .dashboard-page .scroll-panel {
+        flex: none !important; width: 100% !important; min-width: 0;
+        height: auto; max-height: none; overflow: visible; padding: 0;
+    }
+    .dashboard-page .scroll-panel.hidden { display: none; }
+    .dashboard-page .resizer { display: none; }
+    .dashboard-page .card { min-width: 0; }
+    .dashboard-page .sorting-toolbar { flex-direction: column; align-items: stretch !important; gap: 14px; }
+    .dashboard-page .sorting-actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+    .dashboard-page .sorting-actions > a { grid-column: 1 / -1; }
+    .dashboard-page .sorting-actions > * { justify-content: center; padding: 10px !important; height: auto !important; min-height: 48px; }
+    .dashboard-page .sorting-actions .btn-primary { white-space: normal !important; font-size: 14px !important; }
+    .dashboard-page .sorting-pipeline { grid-template-columns: repeat(5, 140px) !important; overflow-x: auto; }
+    .dashboard-page .sorting-monitor-grid { flex-direction: column !important; min-height: 0 !important; }
+    .dashboard-page .sorting-monitor-grid > div { flex: none !important; min-height: 310px; }
+    .dashboard-page #sorting-main-view { min-height: 0 !important; padding: 12px !important; }
+    .dashboard-page #sorting-three-container { height: 340px !important; flex: none !important; }
+    .dashboard-page #image-container, .dashboard-page #no-image { min-height: 300px !important; }
+    .dashboard-page #simulation-view, .dashboard-page #robot3axis-main-view {
+        flex-direction: column !important; min-height: 0 !important; height: auto !important;
+    }
+    .dashboard-page #three-container, .dashboard-page #robot3axis-three-container {
+        height: 360px !important; flex: none !important; min-width: 0;
+    }
+    .dashboard-page .sim-hud { width: 100% !important; max-width: none; border: 0 !important; }
+    .dashboard-page #hmi-sim-view canvas { max-width: 100% !important; height: auto !important; }
+    .dashboard-page .bottom-area { height: auto !important; flex-direction: column !important; gap: 12px !important; }
+    .dashboard-page #angle-monitor-card { flex: none !important; height: 200px !important; }
+    .dashboard-page .log-section { height: 240px !important; flex: none !important; }
+    .dashboard-page #log-container { overflow-wrap: anywhere; }
+    .dashboard-page #voice-media-container { min-width: 0; min-height: 0 !important; }
+    .dashboard-page .tabs { overflow-x: auto; }
+    .dashboard-page .tabs > * { flex-shrink: 0; }
+    .dashboard-page .header-dropdown-menu { position: absolute; right: 0; left: auto; width: min(320px, calc(100vw - 24px)); max-height: 70dvh; overflow-y: auto; }
+    .mobile-nav {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1100;
+        display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px; padding: 8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+        border-top: 1px solid var(--text-dim); background: var(--bg-color);
+    }
+    .mobile-nav button, .mobile-nav a {
+        display: grid; place-items: center; min-height: 48px; border: 0; border-radius: 8px;
+        background: transparent; color: var(--text-dim);
+        font-family: inherit; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer;
+    }
+    .mobile-nav [aria-current="page"] { background: rgba(56, 189, 248, .16); color: var(--primary); }
+    :where(.dashboard-page, .settings-page, .test-page) :where(button, .btn-primary, .dropdown-item, select) { min-height: 44px; touch-action: manipulation; }
+    :where(.dashboard-page, .settings-page, .terminal-page, .test-page) :where(input:not([type="checkbox"]):not([type="range"]), select, textarea) { font-size: 16px !important; max-width: 100%; }
+    :where(.dashboard-page, .settings-page, .test-page) :where(.modal-content) { width: calc(100vw - 24px) !important; max-height: 85dvh; overflow: auto; padding: 16px !important; }
+    .settings-page { height: auto; min-height: 100dvh; overflow: visible; }
+    .settings-page .settings-header { flex-wrap: wrap; gap: 12px; padding: 14px 12px; }
+    .settings-page .settings-header h1 { white-space: normal; }
+    .settings-page .settings-nav-links { flex-wrap: wrap; }
+    .settings-page .settings-nav-links a { min-height: 44px; }
+    .settings-page .settings-tabs-bar { overflow-x: auto; padding: 0 12px; }
+    .settings-page .settings-tab-btn { flex-shrink: 0; white-space: nowrap; }
+    .settings-page .settings-body { overflow: visible; padding: 12px; }
+    .settings-page .telemetry-mcu-badges { min-width: 0; }
+    .settings-page .telemetry-chart-wrap { width: 100%; flex-wrap: wrap; min-width: 0; }
+    .settings-page .telemetry-canvas-box { flex: 1; min-width: 100px; max-width: 100%; }
+    .settings-page .settings-view > .card { overflow: visible; padding: 14px !important; }
+    .settings-page .hw-split-layout, .settings-page .hw-charts-grid { grid-template-columns: minmax(0, 1fr); }
+    .settings-page .hw-chart-box { min-height: 190px; }
+    .settings-page .hw-canvas-container { min-height: 130px; }
+    .settings-page .settings-view [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+    .settings-page input[type="color"] { min-width: 44px; min-height: 44px; }
+    .terminal-page { height: 100dvh; }
+    .terminal-page .terminal-page-header { flex-wrap: wrap; gap: 8px; padding: 12px; }
+    .terminal-page .terminal-page-header h1 { font-size: 16px; white-space: normal; }
+    .terminal-page .terminal-header-links a { min-height: 44px; }
+    .terminal-page .terminal-main-container { padding: 12px; }
+    .terminal-page .term-quick-btn { min-height: 44px; }
+    .terminal-page .terminal-prompt-bar-full { padding: 8px; gap: 6px; }
+    .terminal-page .terminal-prompt-bar-full input { min-width: 0; }
+    .test-page { overflow-x: clip; }
+    .test-page header { flex-wrap: wrap; padding: 12px !important; }
+    .test-page h1 { white-space: normal; font-size: 18px; }
+    .test-page main { display: block; height: auto; overflow: visible; }
+    .test-page .test-container { padding: 12px; }
+    .test-page .card-panel { padding: 12px; min-width: 0; }
+    .test-page .nav-links { flex-wrap: wrap; }
+    .test-page .control-row > div { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+    .test-page select { width: 100%; min-width: 0; }
+    .test-page .panel-title { flex-wrap: wrap; }
+    .test-page .panel-title > svg { flex-shrink: 0; }
+    .mobile-table-scroll { max-width: 100%; overflow-x: auto; }
+    .test-page .report-table { display: block; max-width: 100%; overflow-x: auto; }
+    .test-page .cell-toggle-btn { opacity: 1; pointer-events: auto; }
+    .test-page [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

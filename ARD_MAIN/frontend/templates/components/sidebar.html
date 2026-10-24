@@ -241,7 +241,7 @@
                                 <input type="number" id="motor-steps-disk-num" min="10" max="5000" value="500" step="10">
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div class="disk-control-actions" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px;">
                             <button id="disk-fw-btn" class="btn-primary" data-i18n="forward_btn">Forward</button>
                             <button id="disk-bw-btn" class="btn-primary" style="background: var(--secondary);" data-i18n="backward_btn">Backward</button>
                             <button id="disk-cw-btn" class="btn-primary" style="background: #6366f1;" data-i18n="cw_btn">Rotate CW</button>

@@ -398,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Toggle Main Left-Col Views based on Tab ---
         const sortingView = document.getElementById('sorting-main-view');
-        const aiBenchmarkCard = document.getElementById('ai-accuracy-benchmark-card');
         const imageContainer = document.getElementById('image-container');
         const voiceMediaContainer = document.getElementById('voice-media-container');
         const simView = document.getElementById('simulation-view');
@@ -408,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset all to none
         if (sortingView) sortingView.style.display = 'none';
-        if (aiBenchmarkCard) aiBenchmarkCard.style.display = 'none';
         if (imageContainer) imageContainer.style.display = 'none';
         if (voiceMediaContainer) voiceMediaContainer.style.display = 'none';
         if (simView) { simView.style.display = 'none'; stopSim(); }
@@ -418,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (tabId === 'sorting-tab') {
             if (sortingView) sortingView.style.display = 'flex';
-            if (aiBenchmarkCard) aiBenchmarkCard.style.display = 'flex';
             if (typeof startSim === 'function') startSim();
         } else if (tabId === 'imagesendermcu-tab') {
             if (imageContainer) imageContainer.style.display = 'flex';
@@ -437,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const targetContent = document.getElementById(tabId);
         if (targetContent) targetContent.classList.add('active');
+        window.activeDashboardTab = tabId;
 
         // Update View sizes (Three.js etc)
         if (typeof onWindowResize === 'function') onWindowResize();
@@ -1308,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dumpRoll = status.dump_roll !== undefined ? status.dump_roll : (status.dump_angle || 45);
 
         if (sideStatus) sideStatus.textContent = status.is_running ? '동작 실행 중' : (status.step === 'error' ? '선별 중단/오류' : (status.step === 'complete' ? '선별 완료' : '대기 중 (IDLE)'));
-        if (sideStep) sideStep.textContent = `STEP ${status.step_num} / 5 (${status.step_desc})`;
+        if (sideStep) sideStep.textContent = `STEP ${status.step_num || 0} / 5 (${status.step_desc || '대기 중'})`;
         if (sideObj) sideObj.textContent = objName;
         if (sideMat) sideMat.textContent = matName;
         if (sideYaw) sideYaw.textContent = `${targetYaw}°`;
@@ -1333,7 +1331,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmedYaw = Number(status.current_yaw || 0);
         const confirmedRoll = Number(status.current_roll || 0);
         const confirmedRail = Number(status.current_rail_z || 0);
-        if (typeof window.setSortingAngles === 'function' && status.step !== 'error') {
+        if (typeof window.setSortingAngles === 'function' && status.step !== 'error' &&
+            (status.is_running || status.step === 'complete' || !window.currentMotorState)) {
             window.setSortingAngles(confirmedYaw, confirmedRoll, confirmedRail);
         }
         for (const [id, value, unit] of [
@@ -1347,212 +1346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.handleSortingUpdate = handleSortingUpdate;
     fetch('/api/sorting/status').then(res => res.json()).then(data => handleSortingUpdate(data.sorting)).catch(() => {});
-
-    // --- 대한기계학회 최종보고서 13p Table 5 대시보드 직접 계측 및 렌더링 로직 ---
-    const STORAGE_KEY_REPORT = 'ARD_REPORT_CYCLE_DATA_V2';
-    const TARGET_META = {
-        "Object A": { name: "플라스틱 병", sub: "Fig. 17/A", expected: "Plastic" },
-        "Object B": { name: "금속 폐기물", sub: "Fig. 17/B", expected: "Metal" },
-        "Object C": { name: "오염/훼손된 물체", sub: "Fig. 17/C", expected: "Others" }
-    };
-
-    let dashReportData = {
-        "Object A": { runs: [], timings: [] },
-        "Object B": { runs: [], timings: [] },
-        "Object C": { runs: [], timings: [] }
-    };
-
-    function loadDashReportData() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY_REPORT);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                ["Object A", "Object B", "Object C"].forEach(k => {
-                    if (parsed[k]) {
-                        dashReportData[k] = parsed[k];
-                    }
-                });
-            }
-        } catch (e) {
-            console.warn('대시보드 보고서 데이터 로드 실패:', e);
-        }
-    }
-
-    function persistDashReportData() {
-        try {
-            localStorage.setItem(STORAGE_KEY_REPORT, JSON.stringify(dashReportData));
-        } catch (e) {
-            console.warn('대시보드 보고서 데이터 저장 실패:', e);
-        }
-    }
-
-    function renderDashTable5() {
-        const tbody = document.getElementById('dash-table5-tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        const keys = ["Object A", "Object B", "Object C"];
-        keys.forEach((k, idx) => {
-            const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
-            tr.style.transition = 'background 0.2s';
-            tr.onmouseenter = () => tr.style.background = 'rgba(56,189,248,0.05)';
-            tr.onmouseleave = () => tr.style.background = 'transparent';
-
-            const meta = TARGET_META[k];
-            const d = dashReportData[k] || { runs: [], timings: [] };
-            const runs = d.runs || [];
-
-            let runCells = '';
-            for (let r = 0; r < 5; r++) {
-                const val = runs[r] !== undefined ? `${runs[r].ai_ms} ms` : '-';
-                runCells += `<td style="padding: 10px 4px; font-family: monospace; color: ${runs[r] !== undefined ? '#f8fafc' : '#64748b'}; border-right: 1px solid rgba(255,255,255,0.06);">${val}</td>`;
-            }
-
-            const avg = runs.length > 0 
-                ? Math.round(runs.reduce((acc, cur) => acc + cur.ai_ms, 0) / runs.length)
-                : 0;
-
-            const successCount = runs.filter(r => r.category === meta.expected).length;
-            const acc = runs.length > 0 ? ((successCount / runs.length) * 100).toFixed(1) : '100.0';
-
-            let modelCell = '';
-            if (idx === 0) {
-                modelCell = `<td rowspan="3" style="vertical-align: middle; font-weight: 600; color: #38bdf8; border-right: 1px solid rgba(255,255,255,0.08); background: rgba(56,189,248,0.03);">Gemini 2.5 Flash</td>`;
-            }
-
-            tr.innerHTML = `
-                ${modelCell}
-                <td style="text-align: left; padding: 10px 12px; border-right: 1px solid rgba(255,255,255,0.08);">
-                    <strong style="color: #f1f5f9;">${meta.name}</strong> 
-                    <span style="font-size: 0.72rem; color: #94a3b8;">(${meta.sub})</span>
-                </td>
-                ${runCells}
-                <td style="padding: 10px 8px; font-weight: 600; color: #38bdf8; font-family: monospace; border-right: 1px solid rgba(255,255,255,0.08);">${avg > 0 ? avg + ' ms' : '-'}</td>
-                <td style="padding: 10px 8px; font-weight: 700; color: #22c55e;">${runs.length > 0 ? acc + '%' : '100.0%'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    async function runDashBenchmark(isFiveRuns = false) {
-        const targetObjEl = document.getElementById('dash-target-obj');
-        const statusEl = document.getElementById('dash-bench-status');
-        const singleBtn = document.getElementById('dash-run-single-bench');
-        const fiveBtn = document.getElementById('dash-run-five-bench');
-        if (!targetObjEl || !statusEl) return;
-
-        const targetObj = targetObjEl.value;
-        const totalRuns = isFiveRuns ? 5 : 1;
-
-        if (isFiveRuns) {
-            dashReportData[targetObj].runs = [];
-            dashReportData[targetObj].timings = [];
-        }
-
-        statusEl.style.color = '#38bdf8';
-        if (singleBtn) singleBtn.disabled = true;
-        if (fiveBtn) fiveBtn.disabled = true;
-
-        for (let i = 0; i < totalRuns; i++) {
-            statusEl.innerText = `[${targetObj}] ${i + 1}/${totalRuns}차 AI 추론 계측 중...`;
-            try {
-                const res = await fetch('/api/test/cycle-benchmark', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        object_type: targetObj,
-                        model_name: 'gemini-2.5-flash-lite'
-                    })
-                });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    const t = data.timings;
-                    dashReportData[targetObj].runs.push({
-                        ai_ms: t.ai_inference_only_ms,
-                        category: data.analysis.category,
-                        object: data.analysis.object
-                    });
-                    dashReportData[targetObj].timings.push(t);
-                    renderDashTable5();
-                    persistDashReportData();
-                } else {
-                    alert(`계측 오류: ${data.error}`);
-                    break;
-                }
-            } catch (e) {
-                alert(`통신 오류: ${e}`);
-                break;
-            }
-            if (isFiveRuns && i < totalRuns - 1) {
-                await new Promise(r => setTimeout(r, 600));
-            }
-        }
-
-        statusEl.innerText = `[${targetObj}] 계측 완료`;
-        statusEl.style.color = '#22c55e';
-        if (singleBtn) singleBtn.disabled = false;
-        if (fiveBtn) fiveBtn.disabled = false;
-    }
-
-    // 마크다운 복사 이벤트
-    const copyBtn = document.getElementById('dash-copy-report-md');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-            let md = "### [Table 5] 멀티모달 AI 모델별 재질 분류 정확도 및 추론 소요 시간\n";
-            md += "| AI 모델 | 목표 사물 | 1차(ms) | 2차(ms) | 3차(ms) | 4차(ms) | 5차(ms) | 평균 소요 시간(ms) | 식별 성공률(%) |\n";
-            md += "|---|---|---|---|---|---|---|---|---|\n";
-
-            ["Object A", "Object B", "Object C"].forEach(k => {
-                const meta = TARGET_META[k];
-                const d = dashReportData[k] || { runs: [], timings: [] };
-                const runs = d.runs || [];
-                const rVals = [0,1,2,3,4].map(i => runs[i] ? runs[i].ai_ms : '-');
-                const avg = runs.length > 0 ? Math.round(runs.reduce((a,c)=>a+c.ai_ms,0)/runs.length) : '-';
-                const acc = runs.length > 0 ? ((runs.filter(r=>r.category===meta.expected).length/runs.length)*100).toFixed(1) : '100.0';
-                md += `| Gemini 2.5 Flash | ${meta.name} (${meta.sub}) | ${rVals.join(' | ')} | ${avg} | ${acc}% |\n`;
-            });
-
-            navigator.clipboard.writeText(md).then(() => {
-                alert('대한기계학회 Table 5 마크다운 표가 클립보드에 복사되었습니다!\n보고서에 Ctrl+V로 붙여넣기 하세요.');
-            });
-        });
-    }
-
-    // 초기화 버튼 이벤트
-    const resetBtn = document.getElementById('dash-reset-table5-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            if (confirm('Table 5 계측 데이터를 초기화하시겠습니까?')) {
-                dashReportData = {
-                    "Object A": { runs: [], timings: [] },
-                    "Object B": { runs: [], timings: [] },
-                    "Object C": { runs: [], timings: [] }
-                };
-                persistDashReportData();
-                renderDashTable5();
-                const statusEl = document.getElementById('dash-bench-status');
-                if (statusEl) {
-                    statusEl.innerText = '초기화 완료';
-                    statusEl.style.color = '#94a3b8';
-                }
-            }
-        });
-    }
-
-    // 계측 버튼 이벤트 등록
-    const singleBenchBtn = document.getElementById('dash-run-single-bench');
-    if (singleBenchBtn) {
-        singleBenchBtn.addEventListener('click', () => runDashBenchmark(false));
-    }
-    const fiveBenchBtn = document.getElementById('dash-run-five-bench');
-    if (fiveBenchBtn) {
-        fiveBenchBtn.addEventListener('click', () => runDashBenchmark(true));
-    }
-
-    // 초기 로드 시 렌더링
-    loadDashReportData();
-    renderDashTable5();
 
     // Start with default sorting tab active
     window.switchTab('sorting-tab');

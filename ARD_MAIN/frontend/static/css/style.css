@@ -2201,7 +2201,7 @@ header.main-header > .server-info-box {
     grid-row: 1 / span 2;
     align-self: center;
 }
-header.main-header > .status-box {
+header.main-header .status-box {
     min-width: 0;
     padding: 6px 10px;
 }
@@ -2233,4 +2233,92 @@ header.main-header > .status-box {
 /* Log box follows the bottom-area height (20vh, 130-200px) so short screens keep room for the main view. */
 #log-container {
     min-height: 0;
+}
+
+.device-status-strip { display: contents; }
+
+/* Keep the work area scrollable when the viewport or sidebar gets smaller. */
+.dashboard-page .container {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+}
+.dashboard-page header.main-header,
+.dashboard-page .bottom-area { flex-shrink: 0; }
+.dashboard-page main { height: auto; overflow: visible; }
+.dashboard-page .left-col {
+    min-width: 0;
+    overflow: visible;
+    container-type: inline-size;
+}
+.dashboard-page .scroll-panel {
+    height: max(480px, calc(100dvh - 190px));
+    max-height: max(480px, calc(100dvh - 190px));
+}
+.dashboard-page #sorting-main-view { flex: 1 0 auto !important; }
+.sorting-toolbar { flex-wrap: wrap; gap: 12px; }
+.sorting-toolbar > div { min-width: 0; }
+.sorting-actions { flex-wrap: wrap; }
+.sorting-actions > button { flex-shrink: 0; width: auto; margin: 0; }
+.disk-control-actions .btn-primary {
+    min-height: 44px;
+    height: auto;
+    white-space: normal !important;
+    font-size: 0.8rem !important;
+}
+.sorting-toolbar, .sorting-pipeline { flex-shrink: 0; }
+.sorting-pipeline-step { min-width: 0; overflow-wrap: anywhere; }
+.sorting-monitor-grid > div { min-width: 0; }
+#sorting-three-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    flex: 1 0 300px;
+}
+#sorting-three-container canvas, #three-container canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+.sorting-axis-readout { margin: 0 8px 8px; flex-shrink: 0; }
+.dashboard-page #simulation-view {
+    height: clamp(480px, calc(100dvh - 380px), 900px);
+    flex: 1 0 auto !important;
+}
+.dashboard-page #three-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    height: auto;
+    min-height: 360px;
+}
+.dashboard-page #simulation-view .sim-hud { height: auto; flex-shrink: 0; }
+.disk-rotation-monitor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    flex-shrink: 0;
+    color: var(--text-main);
+    border-top: 1px solid rgba(56, 189, 248, 0.2);
+    background: rgba(2, 6, 23, 0.3);
+}
+.disk-compass { width: 88px; height: 88px; flex-shrink: 0; overflow: visible; }
+.disk-compass-track, .disk-compass-ticks { fill: none; stroke: var(--text-dim); stroke-width: 1; }
+.disk-compass text { fill: var(--text-dim); font-size: 9px; }
+.disk-compass-face { fill: rgba(56, 189, 248, 0.08); stroke: var(--primary); }
+.disk-compass-pointer { fill: var(--primary); stroke: var(--primary); stroke-width: 2; }
+.disk-compass-hub { fill: var(--text-main); }
+.disk-rotation-details { display: flex; flex-direction: column; min-width: 0; line-height: 1.5; }
+.disk-rotation-title, .disk-rotation-details small { color: var(--text-dim); font-size: 0.7rem; }
+.disk-rotation-details strong { color: var(--primary); font-size: 1.15rem; }
+.disk-rotation-details [data-disk-motion] { font-size: 0.78rem; }
+@container (max-width: 680px) {
+    .sorting-monitor-grid { flex-direction: column; }
+    .sorting-monitor-grid > div { flex: none !important; min-height: 300px; }
+    #simulation-view { flex-direction: column !important; height: auto !important; }
+    #three-container { flex: none !important; height: 360px !important; }
+    #simulation-view .sim-hud { width: 100%; max-width: none; min-width: 0; }
 }

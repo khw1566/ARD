@@ -65,6 +65,15 @@
                 const origSize = parseFloat(el.dataset.origFontSize);
                 if (!origSize || isNaN(origSize)) return;
 
+                // On phones, wrap control labels instead of shrinking them.
+                if (window.matchMedia('(max-width: 1100px)').matches &&
+                    el.matches('.btn-primary, .tab-btn, .subtab-btn, .sandwich-btn')) {
+                    el.style.fontSize = `${Math.max(origSize, 14)}px`;
+                    el.style.whiteSpace = 'normal';
+                    delete el.dataset.fittedKey;
+                    return;
+                }
+
                 const text = el.textContent ? el.textContent.trim() : '';
                 const clientWidth = el.clientWidth;
                 if (!clientWidth) return;

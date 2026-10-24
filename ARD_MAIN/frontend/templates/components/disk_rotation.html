@@ -1,0 +1,19 @@
+<div class="disk-rotation-monitor" data-disk-rotation-monitor role="img" aria-label="디스크 회전 0도, 정지">
+    <svg class="disk-compass" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="37" class="disk-compass-track" />
+        <path d="M50 9v9 M91 50h-9 M50 91v-9 M9 50h9" class="disk-compass-ticks" />
+        <text x="50" y="8" text-anchor="middle">0°</text>
+        <g data-disk-pointer>
+            <circle cx="50" cy="50" r="27" class="disk-compass-face" />
+            <path d="M50 50V23 M50 20l-5 8h10z" class="disk-compass-pointer" />
+            <circle cx="50" cy="50" r="4" class="disk-compass-hub" />
+        </g>
+    </svg>
+    <div class="disk-rotation-details">
+        <span class="disk-rotation-title">디스크 회전 방향</span>
+        <strong data-disk-bearing>0.0°</strong>
+        <span data-disk-motion>정지</span>
+        <small>누적 <span data-disk-total>0.0°</span> · 기울기 <span data-disk-roll>0.0°</span></small>
+        <small>명령 스텝 기준 추정</small>
+    </div>
+</div>

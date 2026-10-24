@@ -8,8 +8,10 @@
             });
             if (!res.ok) throw new Error("Server responded with " + res.status);
             addLog('System', `Drive command sent: ${cmd}`);
+            return true;
         } catch (e) {
             addLog('System', `Motor command failed: ${e.message}`);
+            return false;
         }
     };
 
@@ -92,7 +94,7 @@
 
     document.getElementById('motor-global-stop')?.addEventListener('click', () => {
         sendMotorCmd('x');
-        stopSimAnimations();
+        stopSim();
     });
 
     // --- Differential Simulation Control ---
@@ -120,7 +122,12 @@
     // Z-axis specific targets for Rail
     let gearAngleZ = 0;
     let targetAngleZ = 0;
-    const SCREW_LEAD = 8.0; // T8 lead screw default 8mm/rev
+    const DEFAULT_RAIL_STEPS_PER_MM = 1000 / 23; // Same calibration as DriveMCU.
+    let appliedRailStepsPerMm = DEFAULT_RAIL_STEPS_PER_MM;
+    const RAIL_UNITS_PER_MM = 10.5 / 15;
+    let targetRailMm = 0, railMm = 0;
+    let yawAngle = 0, rollAngle = 0;
+    let targetYawAngle = 0, targetRollAngle = 0;
     
     // Predicted Displacement State
     let predictedState = {
@@ -211,13 +218,13 @@
         const height = container.clientHeight || 300;
         
         // 실물 사진(분류구조.jpg)과 일치하는 3/4 아이소메트릭 원거리 전체 조망 시점
-        camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 1000);
+        camera = new THREE.PerspectiveCamera(54, width / height, 0.1, 1000);
         camera.position.set(38, 34, 42);
         camera.lookAt(0, -1.5, 0);
 
         // --- Main Renderer ---
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0); 
         container.appendChild(renderer.domElement);
@@ -254,11 +261,11 @@
         differentialGroup.rotation.y = Math.PI / 2;
         carriageGroup.add(differentialGroup);
         
-        yawGroup = new THREE.Group();
-        yawGroup.position.y = 3.5; // Rotate at the actual shaft, not the world origin.
-        carriageGroup.add(yawGroup);
         carrierGroup = new THREE.Group();
-        yawGroup.add(carrierGroup); // Tilt in the already selected discharge direction.
+        carrierGroup.position.y = 3.5; // The tilt pivot stays at the transverse shaft.
+        carriageGroup.add(carrierGroup);
+        yawGroup = new THREE.Group();
+        carrierGroup.add(yawGroup); // Spin the disk about its own, possibly tilted, spindle.
 
         // Materials: 실물 '분류구조.jpg'와 완벽 일치 (White SLA/PLA 3D Printing Body)
         const matBodyWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.1 });
@@ -496,15 +503,14 @@
         // 2. 실물 베이지톤 입력 베벨 기어 2기 (Module 1.5 Bevel Gears)
         // 모터 높이에 맞추고 직경을 실물 비율(반지름 2.3)로 조정하여 상단 트레이 겹침 완전 방지
         const bevelGearGeom = new THREE.CylinderGeometry(1.2, 2.3, 1.4, 28);
-        gearX = new THREE.Mesh(bevelGearGeom, matBevelBeige);
+        // Bake the shaft alignment into the geometry. Animate only its spin axis.
+        gearX = new THREE.Mesh(bevelGearGeom.clone().rotateZ(-Math.PI / 2), matBevelBeige);
         addOutlines(gearX, 0xb08968);
-        gearX.rotation.z = -Math.PI / 2;
         gearX.position.set(-3.2, 3.5, 0);
         differentialGroup.add(gearX);
 
-        gearY = new THREE.Mesh(bevelGearGeom, matBevelBeige);
+        gearY = new THREE.Mesh(bevelGearGeom.clone().rotateZ(Math.PI / 2), matBevelBeige);
         addOutlines(gearY, 0xb08968);
-        gearY.rotation.z = Math.PI / 2;
         gearY.position.set(3.2, 3.5, 0);
         differentialGroup.add(gearY);
 
@@ -519,7 +525,7 @@
         bottomSpider = new THREE.Mesh(bevelGearGeom, matBevelBeige);
         addOutlines(bottomSpider, 0xb08968);
         bottomSpider.position.set(0, 0, 0);
-        carrierGroup.add(bottomSpider);
+        yawGroup.add(bottomSpider);
 
         // 5. 상단 수직 스핀들 및 턴테이블 트레이 (White Turntable Spindle & Dish Tray)
         // 스핀들이 기어 윗면 위로 충분히 솟아올라 트레이와 기어 간 간섭을 원천 차단
@@ -527,14 +533,27 @@
         const spindle = new THREE.Mesh(spindleGeom, matBodyWhite);
         spindle.position.set(0, 2.3, 0);
         addOutlines(spindle, 0x94a3b8);
-        carrierGroup.add(spindle);
+        yawGroup.add(spindle);
 
         // 실물 원형 투입/선별 트레이 (가장자리 턱이 있는 접시 형태, Y=7.5에 안전 배치)
         const diskGeom = new THREE.CylinderGeometry(8.5, 8.2, 0.8, 36);
         disk = new THREE.Mesh(diskGeom, matTray);
         addOutlines(disk, 0x38bdf8);
         disk.position.set(0, 4.0, 0);
-        carrierGroup.add(disk);
+        yawGroup.add(disk);
+
+        // A round, unmarked tray looks stationary even while it spins.
+        const rotationMarkMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
+        const rotationStripe = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 6), rotationMarkMat);
+        rotationStripe.position.set(0, 0.43, 3.3);
+        disk.add(rotationStripe);
+        const rotationArrow = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.4, 3), rotationMarkMat);
+        rotationArrow.rotation.x = Math.PI / 2;
+        rotationArrow.position.set(0, 0.46, 6.6);
+        disk.add(rotationArrow);
+        const rotationHub = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.04, 24), rotationMarkMat);
+        rotationHub.position.y = 0.44;
+        disk.add(rotationHub);
 
         // Grid/Floor
         const grid = new THREE.GridHelper(60, 24, 0x334155, 0x1e293b);
@@ -542,6 +561,20 @@
         scene.add(grid);
 
         window.addEventListener('resize', onWindowResize);
+        // Sidebar drags and tab changes resize the canvas without a window resize.
+        let resizePending = false;
+        const resizeObserver = new ResizeObserver(() => {
+            if (resizePending) return;
+            resizePending = true;
+            requestAnimationFrame(() => {
+                resizePending = false;
+                onWindowResize();
+            });
+        });
+        ['sorting-three-container', 'three-container', 'mini-three-container'].forEach(id => {
+            const mount = document.getElementById(id);
+            if (mount) resizeObserver.observe(mount);
+        });
 
         // --- 마우스 인터랙티브 궤도 회전 및 휠 줌 (Orbit & Zoom) 컨트롤 ---
         let isOrbiting = false;
@@ -549,18 +582,24 @@
         const dom = renderer.domElement;
         
         dom.style.cursor = 'grab';
-        dom.addEventListener('mousedown', (e) => {
+        dom.style.touchAction = 'pan-y';
+        dom.addEventListener('pointerdown', (e) => {
+            if (!e.isPrimary || e.button !== 0) return;
             isOrbiting = true;
             prevMouse = { x: e.clientX, y: e.clientY };
             dom.style.cursor = 'grabbing';
+            dom.setPointerCapture(e.pointerId);
         });
 
-        window.addEventListener('mouseup', () => {
+        const finishOrbit = () => {
             isOrbiting = false;
             if (dom) dom.style.cursor = 'grab';
-        });
+        };
+        dom.addEventListener('pointerup', finishOrbit);
+        dom.addEventListener('pointercancel', finishOrbit);
+        dom.addEventListener('lostpointercapture', finishOrbit);
 
-        window.addEventListener('mousemove', (e) => {
+        dom.addEventListener('pointermove', (e) => {
             if (!isOrbiting || !camera) return;
             const deltaX = (e.clientX - prevMouse.x) * 0.007;
             const deltaY = (e.clientY - prevMouse.y) * 0.007;
@@ -603,7 +642,7 @@
         if (!renderer) return;
         
         const activeTab = document.querySelector('.tab-btn.active') || document.querySelector('.tab-content.active');
-        const activeTabId = activeTab ? activeTab.id || activeTab.dataset?.tab : '';
+        const activeTabId = window.activeDashboardTab || (activeTab ? activeTab.dataset?.tab || activeTab.id : 'sorting-tab');
         const isTxTab = activeTabId === 'imagesendermcu-tab' || activeTabId === 'imagesendermcu-box';
         const isSortingTab = activeTabId === 'sorting-tab' || activeTabId === 'sorting-control-box';
         
@@ -615,6 +654,7 @@
                     sortContainer.appendChild(renderer.domElement);
                 }
                 camera.aspect = sortContainer.clientWidth / sortContainer.clientHeight;
+                camera.fov = fittedCameraFov(camera.aspect);
                 camera.updateProjectionMatrix();
                 renderer.setSize(sortContainer.clientWidth, sortContainer.clientHeight);
             }
@@ -638,6 +678,7 @@
                     container.appendChild(renderer.domElement);
                 }
                 camera.aspect = container.clientWidth / container.clientHeight;
+                camera.fov = fittedCameraFov(camera.aspect);
                 camera.updateProjectionMatrix();
                 renderer.setSize(container.clientWidth, container.clientHeight);
             }
@@ -649,11 +690,29 @@
     let targetAngleX = 0;
     let targetAngleY = 0;
 
+    const fittedCameraFov = aspect => 2 * Math.atan(Math.tan(27 * Math.PI / 180) * Math.max(1, 1.4 / aspect)) * 180 / Math.PI;
+    const railStepsPerMm = () => appliedRailStepsPerMm;
+    const setDiskTargets = (x, y) => {
+        targetAngleX = x;
+        targetAngleY = y;
+        targetYawAngle = (x + y) / 2;
+        targetRollAngle = (x - y) / 2;
+    };
+
     window.syncDriveSim = () => {
         if (!window.currentMotorState) return;
-        targetAngleX = window.currentMotorState.mx_deg * Math.PI / 180.0;
-        targetAngleY = window.currentMotorState.my_deg * Math.PI / 180.0;
-        targetAngleZ = window.currentMotorState.mz_deg * Math.PI / 180.0;
+        const state = window.currentMotorState;
+        // Partial sensor updates must not reset unrelated axes or introduce NaN.
+        const x = Number.isFinite(state.mx_deg) ? state.mx_deg * Math.PI / 180 : targetAngleX;
+        const y = Number.isFinite(state.my_deg) ? state.my_deg * Math.PI / 180 : targetAngleY;
+        setDiskTargets(x, y);
+        if (Number.isFinite(state.mz_deg)) targetAngleZ = state.mz_deg * Math.PI / 180;
+        if (Number.isFinite(state.mz_steps)) {
+            targetRailMm = state.mz_steps / railStepsPerMm();
+        } else if (Number.isFinite(state.mz_deg)) {
+            const ratio = Number(document.getElementById('gear_ratio_z')?.value) || 1;
+            targetRailMm = state.mz_deg * ratio / 1.8 / railStepsPerMm();
+        }
         if (typeof updateHUD === 'function') updateHUD();
     };
 
@@ -666,6 +725,16 @@
         if (yawEl) yawEl.textContent = predictedState.yaw.toFixed(1);
         if (mxEl) mxEl.textContent = predictedState.mx.toFixed(1);
         if (myEl) myEl.textContent = predictedState.my.toFixed(1);
+        for (const [id, value, unit] of [
+            ['sorting-3d-yaw', predictedState.yaw, '°'],
+            ['sorting-3d-roll', predictedState.roll, '°'],
+            ['sorting-3d-mz', railMm, ' mm'],
+            ['sorting-3d-mx', predictedState.mx, '°'],
+            ['sorting-3d-my', predictedState.my, '°']
+        ]) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = `${value.toFixed(1)}${unit}`;
+        }
         
         const mzEl = document.getElementById('hud-mz');
         if (mzEl) mzEl.textContent = predictedState.mz.toFixed(1);
@@ -701,18 +770,37 @@
         }
     };
 
+    const rotationDisplays = new WeakMap();
+    const updateDiskRotation = () => {
+        const remaining = targetYawAngle - yawAngle;
+        const moving = Math.abs(remaining) > 1e-4;
+        const motion = moving ? (remaining > 0 ? '시계 방향 (CW)' : '반시계 방향 (CCW)') : '정지';
+        const bearing = ((predictedState.yaw % 360) + 360) % 360;
+        document.querySelectorAll('[data-disk-rotation-monitor]').forEach(monitor => {
+            const displayKey = `${predictedState.yaw.toFixed(3)},${predictedState.roll.toFixed(1)},${motion}`;
+            if (rotationDisplays.get(monitor) === displayKey) return;
+            rotationDisplays.set(monitor, displayKey);
+            // Keep the unwrapped angle: 360-degree commands must visibly turn.
+            monitor.querySelector('[data-disk-pointer]').setAttribute('transform', `rotate(${predictedState.yaw} 50 50)`);
+            monitor.querySelector('[data-disk-bearing]').textContent = `${bearing.toFixed(1)}°`;
+            monitor.querySelector('[data-disk-total]').textContent = `${predictedState.yaw.toFixed(1)}°`;
+            monitor.querySelector('[data-disk-roll]').textContent = `${predictedState.roll.toFixed(1)}°`;
+            monitor.querySelector('[data-disk-motion]').textContent = motion;
+            monitor.setAttribute('aria-label', `디스크 회전 ${bearing.toFixed(1)}도, ${motion}, 기울기 ${predictedState.roll.toFixed(1)}도, 명령 스텝 기준 추정`);
+        });
+    };
+
     const animate = () => {
         animationId = requestAnimationFrame(animate);
         const delta = clock.getDelta();
         const blend = Math.min(delta * 5, 1);
         
-        // Lerp gear angles towards targets (smooth animation)
-        gearAngleX = THREE.MathUtils.lerp(gearAngleX, targetAngleX, blend);
-        gearAngleY = THREE.MathUtils.lerp(gearAngleY, targetAngleY, blend);
-        
-        // 미세 부동소수점 오차로 인한 그래프 깨짐 현상(1e-21 레벨) 방지용 스냅 로직 추가
-        if (Math.abs(gearAngleX - targetAngleX) < 1e-4) gearAngleX = targetAngleX;
-        if (Math.abs(gearAngleY - targetAngleY) < 1e-4) gearAngleY = targetAngleY;
+        // Interpolate output axes independently so pure yaw never leaks into tilt.
+        const approach = (current, target) => Math.abs(current - target) < 1e-4 ? target : THREE.MathUtils.lerp(current, target, blend);
+        yawAngle = approach(yawAngle, targetYawAngle);
+        rollAngle = approach(rollAngle, targetRollAngle);
+        gearAngleX = yawAngle + rollAngle;
+        gearAngleY = yawAngle - rollAngle;
         
         // Input gears rotate around X axis
         if (gearX) gearX.rotation.x = gearAngleX;
@@ -725,18 +813,17 @@
         // Lead screw spins with motor Z (Z축 길이방향 순수 축 자전)
         if (leadScrewMesh) leadScrewMesh.rotation.z = -gearAngleZ * 4;
 
-        // Carriage slider moves physically along Z rail track (-16 to +16 units)
-        // 1000 steps = 1800 deg = 30mm travel => map to 3D units
-        const carriageZPos = (gearAngleZ / (Math.PI * 10)) * 10.5;
+        railMm = approach(railMm, targetRailMm);
+        const carriageZPos = railMm * RAIL_UNITS_PER_MM;
         if (carriageGroup) carriageGroup.position.z = THREE.MathUtils.clamp(carriageZPos, -18, 18);
 
         // Mechanism Math
         // Report: opposite motor signs tilt the tray (Roll).
-        const rollDelta = (gearAngleX - gearAngleY) / 2;
+        const rollDelta = rollAngle;
         if (carrierGroup) carrierGroup.rotation.x = rollDelta;
 
-        // Same motor signs select the discharge bearing (Yaw).
-        const yawDelta = (gearAngleX + gearAngleY) / 2;
+        // Same motor signs spin only the output spindle and disk (Yaw).
+        const yawDelta = yawAngle;
         // Clockwise bearings: 90 degrees faces the bins at negative world X.
         if (yawGroup) yawGroup.rotation.y = -yawDelta;
 
@@ -747,9 +834,8 @@
         predictedState.yaw = THREE.MathUtils.radToDeg(yawDelta);
         
         predictedState.mz = THREE.MathUtils.radToDeg(gearAngleZ);
-        // Rail 이동 범위: 145mm ~ 175mm (30mm 가동 범위)
-        // 1000 steps * 1.8 deg = 1800 deg.
-        predictedState.z_mm = 145.0 + (predictedState.mz / 1800.0) * 30.0;
+        predictedState.z_mm = 145.0 + railMm;
+        predictedState.rail_mm = railMm;
 
         // Dynamic Bin Highlight Check (타겟 수거함에 캐리지와 선회각이 정렬되었을 때 은은하게 하이라이트)
         if (binMeshes && binMeshes.length > 0) {
@@ -776,6 +862,7 @@
         }
 
         updateHUD();
+        updateDiskRotation();
         
         // Throttle chart update to ~10Hz (once every 100ms)
         const now = performance.now();
@@ -786,7 +873,7 @@
         
         if (renderer) {
             const activeTab = document.querySelector('.tab-btn.active');
-            const isTxTab = activeTab && activeTab.dataset.tab === 'imagesendermcu-tab';
+            const isTxTab = window.activeDashboardTab === 'imagesendermcu-tab' || (activeTab && activeTab.dataset.tab === 'imagesendermcu-tab');
             
             if (isTxTab && miniCamera) {
                 renderer.render(scene, miniCamera);
@@ -891,10 +978,13 @@
         }
     });
 
-    document.getElementById('rail-steps-mm-apply-btn')?.addEventListener('click', () => {
-        const val = document.getElementById('rail-steps-mm-input').value;
-        sendMotorCmd(`mzs${val}`);
-        addLog('System', `Z-Axis Steps/mm Manual Set: ${val}`);
+    document.getElementById('rail-steps-mm-apply-btn')?.addEventListener('click', async () => {
+        const val = Number(document.getElementById('rail-steps-mm-input').value);
+        if (!Number.isFinite(val) || val <= 0) return;
+        if (await sendMotorCmd(`mzs${val}`)) {
+            appliedRailStepsPerMm = val;
+            addLog('System', `Z-Axis Steps/mm Manual Set: ${val}`);
+        }
     });
 
     document.getElementById('system-home-btn')?.addEventListener('click', () => {
@@ -1000,21 +1090,20 @@
         const yawRad = (yawDeg * Math.PI) / 180.0;
         const rollRad = (rollDeg * Math.PI) / 180.0;
         
-        targetAngleX = rollRad + yawRad;
-        targetAngleY = yawRad - rollRad;
+        setDiskTargets(rollRad + yawRad, yawRad - rollRad);
 
         // Open-loop rail displacement is relative to the sorting start center.
         const normalizedZMm = railZMm;
 
-        // ±15mm 가동 범위를 3D 이송 스크류 회전 각도(targetAngleZ)에 선형 매핑
-        // 15mm 이동 시 약 10.5 3D 단위 이동
-        targetAngleZ = (normalizedZMm / 15.0) * (Math.PI * 10);
+        targetRailMm = normalizedZMm;
+        const ratio = Number(document.getElementById('gear_ratio_z')?.value) || 1;
+        targetAngleZ = normalizedZMm * railStepsPerMm() * 1.8 / ratio * Math.PI / 180;
     };
 
     window.resetSortingAngles = () => {
-        targetAngleX = 0;
-        targetAngleY = 0;
+        setDiskTargets(0, 0);
         targetAngleZ = 0;
+        targetRailMm = 0;
     };
 
 

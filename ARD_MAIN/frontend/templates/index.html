@@ -2,9 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ARD Control Center</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=10">
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <style>
         /* Sub-tab styles */
@@ -56,8 +56,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <!-- Chart.js Library for Real-time Monitoring -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v=2">
 </head>
-<body class="dark-theme">
+<body class="dark-theme dashboard-page">
     <!-- Startup Splash Screen -->
     <div id="startup-overlay">
         <div class="splash-logo-container">
@@ -78,9 +79,9 @@
         <main>
             <section class="left-col">
                 <!-- Dedicated Waste Sorting Dashboard View -->
-                <div id="sorting-main-view" class="card" style="display: flex; flex-direction: column; min-height: 580px; flex: 1; background: #0b1120; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(56, 189, 248, 0.2); padding: 16px;">
+                <div id="sorting-main-view" class="card" style="display: flex; flex-direction: column; min-height: 0; flex: 1; background: #0b1120; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(56, 189, 248, 0.2); padding: 16px;">
                     <!-- Header Control Banner -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
+                    <div class="sorting-toolbar" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
@@ -95,14 +96,7 @@
                             </div>
                             <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">개루프 선별: 시작 전에 레일 중앙과 트레이 수평을 맞춰주세요. 위치 표시는 실행 스텝 기준입니다.</div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <a href="/test#report-benchmark-panel" class="btn-primary" style="height: 44px; padding: 0 16px; font-size: 0.88rem; font-weight: 600; background: #0f766e !important; color: #f8fafc !important; border: 1px solid #14b8a6 !important; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; text-decoration: none;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f8fafc !important;">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                <span>보고서 지연시간 측정 (Table 5 & 6)</span>
-                            </a>
+                        <div class="sorting-actions" style="display: flex; gap: 10px; align-items: center;">
                             <button id="sorting-start-btn" class="btn-primary" style="height: 44px; padding: 0 24px; font-size: 0.95rem; font-weight: bold; background: #0284c7 !important; color: #ffffff !important; border: 1px solid #38bdf8 !important; border-radius: 8px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); cursor: pointer;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: #ffffff !important;">
                                     <polygon points="5 3 19 12 5 21"></polygon>
@@ -120,7 +114,7 @@
                     </div>
 
                     <!-- 5-Step Process Pipeline Indicator -->
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+                    <div class="sorting-pipeline" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
                         <div id="pstep-1" class="sorting-pipeline-step active">
                             <div class="step-num">STEP 1</div>
                             <div class="step-title">촬영 및 수신</div>
@@ -149,7 +143,7 @@
                     </div>
 
                     <!-- Main Monitoring Split: Live Camera HUD & 3D Mechanism Sync -->
-                    <div style="display: flex; gap: 14px; flex: 1; min-height: 380px;">
+                    <div class="sorting-monitor-grid" style="display: flex; gap: 14px; flex: 1; min-height: 300px;">
                         <!-- Left: Live Camera Capture View -->
                         <div style="flex: 1; background: #020617; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column;">
                             <div style="position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(15,23,42,0.85); padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px;">
@@ -189,10 +183,11 @@
                             </div>
                             
                             <!-- Embedded Canvas Mount -->
-                            <div id="sorting-three-container" style="width: 100%; height: 100%; min-height: 280px; flex: 1;"></div>
+                            <div id="sorting-three-container"></div>
+                            {% include "components/disk_rotation.html" %}
 
                             <!-- 3D State Indicators -->
-                            <div style="position: absolute; bottom: 10px; left: 10px; right: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: rgba(2,6,23,0.85); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
+                            <div class="sorting-axis-readout" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: rgba(2,6,23,0.85); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
                                 <div style="text-align: center;">
                                     <span style="color: #94a3b8; display: block; font-size: 0.65rem;">선회각 (Yaw)</span>
                                     <strong style="color: var(--primary); font-size: 0.9rem;" id="sorting-3d-yaw">0.0°</strong>
@@ -215,90 +210,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- 대한기계학회 최종보고서 13p 전용: 물체 인식 및 재질 판별 정확도 / 추론 지연 시간 측정 패널 (Table 5) -->
-                <div id="ai-accuracy-benchmark-card" class="card" style="display: flex; flex-direction: column; background: #0b1120; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(56, 189, 248, 0.25); padding: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #38bdf8;">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <div>
-                                <h3 style="margin: 0; font-size: 1.05rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-                                    <span>물체 인식 및 재질 판별 정확도 / 추론 지연 시간 측정</span>
-                                    <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-weight: normal;">대한기계학회 보고서 13p Table 5</span>
-                                </h3>
-                                <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 2px;">
-                                    목표 사물 3종에 대한 실시간 AI 추론 시간(ms)과 식별 성공률(%)을 계측하여 보고서 양식으로 실시간 기록합니다.
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <button id="dash-copy-report-md" class="btn-primary" style="height: 36px; padding: 0 14px; font-size: 0.8rem; font-weight: 600; background: #1e293b !important; color: #f8fafc !important; border: 1px solid #475569 !important; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                <span>보고서 MD 복사</span>
-                            </button>
-                            <button id="dash-reset-table5-btn" class="btn-primary" style="height: 36px; padding: 0 12px; font-size: 0.8rem; font-weight: 500; background: #334155 !important; color: #cbd5e1 !important; border: 1px solid #475569 !important; border-radius: 6px; cursor: pointer;">
-                                초기화
-                            </button>
-                            <a href="/test#report-benchmark-panel" class="btn-primary" style="height: 36px; padding: 0 14px; font-size: 0.8rem; font-weight: 600; background: #0f766e !important; color: #f8fafc !important; border: 1px solid #14b8a6 !important; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                                <span>실험실(/test) 이동</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- 컨트롤 바: 사물 선택 및 계측 실행 -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.7); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 14px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 500;">측정 대상 사물:</span>
-                            <select id="dash-target-obj" style="background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; outline: none;">
-                                <option value="Object A">플라스틱 병 (Object A - Fig. 17/A)</option>
-                                <option value="Object B">금속 폐기물 (Object B - Fig. 17/B)</option>
-                                <option value="Object C">오염/훼손된 물체 (Object C - Fig. 17/C)</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button id="dash-run-single-bench" class="btn-primary" style="height: 38px; padding: 0 16px; font-size: 0.85rem; font-weight: 600; background: #0284c7 !important; color: #ffffff !important; border: 1px solid #38bdf8 !important; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                                <span>1회 추론 계측</span>
-                            </button>
-                            <button id="dash-run-five-bench" class="btn-primary" style="height: 38px; padding: 0 18px; font-size: 0.85rem; font-weight: bold; background: #059669 !important; color: #ffffff !important; border: 1px solid #10b981 !important; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon><polygon points="12 3 23 12 12 21 12 3"></polygon></svg>
-                                <span>5회 연속 자동 계측 (1~5차)</span>
-                            </button>
-                            <span id="dash-bench-status" style="font-size: 0.8rem; color: #94a3b8; margin-left: 6px;">대기 상태</span>
-                        </div>
-                    </div>
-
-                    <!-- Table 5 렌더링 뷰 -->
-                    <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.84rem;">
-                            <thead>
-                                <tr style="background: rgba(15, 23, 42, 0.95); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.12);">
-                                    <th rowspan="2" style="padding: 10px 8px; width: 14%; border-right: 1px solid rgba(255,255,255,0.08);">AI 모델</th>
-                                    <th rowspan="2" style="padding: 10px 8px; width: 22%; border-right: 1px solid rgba(255,255,255,0.08);">목표 사물 (Target Objects)</th>
-                                    <th colspan="5" style="padding: 6px 8px; border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); color: #38bdf8;">추론 소요 시간 (ms)</th>
-                                    <th rowspan="2" style="padding: 10px 8px; width: 12%; border-right: 1px solid rgba(255,255,255,0.08);">평균 소요 시간</th>
-                                    <th rowspan="2" style="padding: 10px 8px; width: 12%;">식별 성공률</th>
-                                </tr>
-                                <tr style="background: rgba(30, 41, 59, 0.7); color: #94a3b8; font-size: 0.76rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                                    <th style="padding: 6px 4px; border-right: 1px solid rgba(255,255,255,0.06);">1차</th>
-                                    <th style="padding: 6px 4px; border-right: 1px solid rgba(255,255,255,0.06);">2차</th>
-                                    <th style="padding: 6px 4px; border-right: 1px solid rgba(255,255,255,0.06);">3차</th>
-                                    <th style="padding: 6px 4px; border-right: 1px solid rgba(255,255,255,0.06);">4차</th>
-                                    <th style="padding: 6px 4px; border-right: 1px solid rgba(255,255,255,0.08);">5차</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-table5-tbody">
-                                <!-- JS 동적 렌더링 -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -333,12 +244,13 @@
                 {% include "components/voice_media.html" %}
 
 
-                <div id="simulation-view" style="display: none; position: relative; width: 100%; min-height: 600px; flex: 1; background: #0f172a; border-radius: 12px; overflow: hidden; flex-direction: row;">
+                <div id="simulation-view" style="display: none; position: relative; width: 100%; min-height: 0; flex: 1; background: #0f172a; border-radius: 12px; overflow: hidden; flex-direction: row;">
                     <!-- Three.js Canvas will be here -->
-                    <div id="three-container" style="flex: 1; height: 100%; position: relative;"></div>
+                    <div id="three-container"></div>
                     
                     <!-- Predicted Displacement HUD (Sidepanel style) -->
                     <div class="sim-hud">
+                        {% include "components/disk_rotation.html" %}
                         <table class="hud-table">
                             <thead>
                                 <tr>
@@ -596,6 +508,12 @@
         </div>
     </div>
 
+    <nav class="mobile-nav" aria-label="주요 화면">
+        <button type="button" data-mobile-tab="sorting-tab" aria-current="page">선별</button>
+        <button type="button" data-mobile-tab="imagesendermcu-tab">카메라</button>
+        <button type="button" data-mobile-tab="drivemcu-tab">구동</button>
+        <a href="/settings">설정</a>
+    </nav>
     {% include "components/modals.html" %}
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
@@ -604,10 +522,10 @@
     <script src="{{ url_for('static', filename='js/stats-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/hardware-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/audio-voice-controller.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=6"></script>
     <script src="{{ url_for('static', filename='js/robot3axis-controller.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/media-controller.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=7"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=8"></script>
     <script src="{{ url_for('static', filename='js/hmi-sim-fonts.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/hmi-simulator.js') }}?v=1"></script>
     <script>
@@ -662,5 +580,6 @@
             }
         }
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-ui.js') }}?v=1"></script>
 </body>
 </html>

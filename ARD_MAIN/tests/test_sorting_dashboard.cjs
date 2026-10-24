@@ -31,4 +31,8 @@ assert.equal(getElementById('sorting-status-badge').textContent,'ERROR');
 assert.equal(getElementById('sorting-start-btn').disabled,false);
 update({step:'complete',step_num:5,is_running:false});
 for(let i=1;i<=5;i++) assert.ok(getElementById(`pstep-${i}`).classes.has('completed'));
+context.window.currentMotorState={mx_deg:120,my_deg:60,mz_steps:650};
+const countBeforeIdle=poses.length;
+update({step:'idle',is_running:false,current_yaw:0,current_roll:0,current_rail_z:0});
+assert.equal(poses.length,countBeforeIdle,'idle sorting status must not reset manual axes');
 console.log('Sorting dashboard regression checks passed');
