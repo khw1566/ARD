@@ -1,0 +1,223 @@
+{
+  "date_kst": "2026-10-24",
+  "branch": "ard-v1",
+  "remote": "https://github.com/khw1566/ARD",
+  "remote_base_merged": "fad156609cacb08911115b871a9eee52582db975",
+  "main_preserved_at": "11c41835179a4d8c7c3db6e131866e593a78d55f",
+  "oldversions": {
+    "directories": 37,
+    "files": 239,
+    "logical_bytes": 136271192,
+    "tracked_files_before": 0,
+    "folders": [
+      {
+        "path": "ARD_hardware\\OldVersions",
+        "files": 4,
+        "bytes": 4193792
+      },
+      {
+        "path": "ARD_hardware\\3-axis parallel link robot\\Object\\OldVersions",
+        "files": 1,
+        "bytes": 275456
+      },
+      {
+        "path": "ARD_hardware\\ARD_Model_v1\\OldVersions",
+        "files": 42,
+        "bytes": 29263872
+      },
+      {
+        "path": "ARD_hardware\\ARD_Model_v1\\1\\OldVersions",
+        "files": 2,
+        "bytes": 3704832
+      },
+      {
+        "path": "ARD_hardware\\ARD_Model_v1\\coupler\\OldVersions",
+        "files": 1,
+        "bytes": 390144
+      },
+      {
+        "path": "ARD_hardware\\ARD_Model_v1\\M\\OldVersions",
+        "files": 1,
+        "bytes": 320000
+      },
+      {
+        "path": "ARD_hardware\\ARD_Model_v1\\Object\\OldVersions",
+        "files": 10,
+        "bytes": 3017216
+      },
+      {
+        "path": "ARD_hardware\\Common Objects\\Pneumatic fitting\\CDJ2B10_100\\OldVersions",
+        "files": 1,
+        "bytes": 269312
+      },
+      {
+        "path": "ARD_hardware\\Common Objects\\Pneumatic fitting\\J-CV-10\\OldVersions",
+        "files": 1,
+        "bytes": 797184
+      },
+      {
+        "path": "ARD_hardware\\Common Objects\\Profile\\OldVersions",
+        "files": 2,
+        "bytes": 373760
+      },
+      {
+        "path": "ARD_hardware\\Common Objects\\Profile\\2020 Profile Pivot Joint\\OldVersions",
+        "files": 4,
+        "bytes": 572928
+      },
+      {
+        "path": "ARD_hardware\\Control Box_v1\\OldVersions",
+        "files": 4,
+        "bytes": 1523712
+      },
+      {
+        "path": "ARD_hardware\\CY300208M4_v1\\OldVersions",
+        "files": 3,
+        "bytes": 964096
+      },
+      {
+        "path": "ARD_hardware\\CY300210M4_v1\\OldVersions",
+        "files": 6,
+        "bytes": 1841152
+      },
+      {
+        "path": "ARD_hardware\\CY300210M8_v1\\OldVersions",
+        "files": 6,
+        "bytes": 3239424
+      },
+      {
+        "path": "ARD_hardware\\CY300210_v1\\OldVersions",
+        "files": 6,
+        "bytes": 1816064
+      },
+      {
+        "path": "ARD_hardware\\PL121248Drive_v1\\OldVersions",
+        "files": 8,
+        "bytes": 7823872
+      },
+      {
+        "path": "ARD_hardware\\PL121248m2Drive_v1\\OldVersions",
+        "files": 7,
+        "bytes": 7320576
+      },
+      {
+        "path": "ARD_hardware\\PL121248m2Drive_v2\\OldVersions",
+        "files": 12,
+        "bytes": 13102080
+      },
+      {
+        "path": "ARD_hardware\\Pneumatic fitting\\CDJ2B10_100\\OldVersions",
+        "files": 1,
+        "bytes": 269312
+      },
+      {
+        "path": "ARD_hardware\\Pneumatic fitting\\J-CV-10\\OldVersions",
+        "files": 1,
+        "bytes": 797184
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v1\\OldVersions",
+        "files": 19,
+        "bytes": 9430016
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v1\\Pneumatic fitting\\CDJ2B10_100\\OldVersions",
+        "files": 2,
+        "bytes": 478720
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v1\\TONGS SE\\OldVersions",
+        "files": 2,
+        "bytes": 1658880
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v2\\OldVersions",
+        "files": 14,
+        "bytes": 6807040
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v2\\Pneumatic fitting\\CDJ2B10_100\\OldVersions",
+        "files": 2,
+        "bytes": 478720
+      },
+      {
+        "path": "ARD_hardware\\PneumaticGripper_v2\\TONGS SE\\OldVersions",
+        "files": 3,
+        "bytes": 2749440
+      },
+      {
+        "path": "ARD_hardware\\Rali_v1\\OldVersions",
+        "files": 6,
+        "bytes": 2701312
+      },
+      {
+        "path": "ARD_hardware\\Rali_v1\\Rali_v2\\OldVersions",
+        "files": 4,
+        "bytes": 1032704
+      },
+      {
+        "path": "ARD_hardware\\RA_Project\\OldVersions",
+        "files": 25,
+        "bytes": 11662848
+      },
+      {
+        "path": "ARD_hardware\\RA_Project\\clap\\OldVersions",
+        "files": 4,
+        "bytes": 1704960
+      },
+      {
+        "path": "ARD_hardware\\RA_Project\\Head\\OldVersions",
+        "files": 4,
+        "bytes": 2097152
+      },
+      {
+        "path": "ARD_hardware\\RA_Project\\Substrate\\OldVersions",
+        "files": 8,
+        "bytes": 2249216
+      },
+      {
+        "path": "ARD_hardware\\RA_Project\\Z-axis mover parts\\OldVersions",
+        "files": 2,
+        "bytes": 2455552
+      },
+      {
+        "path": "ARD_hardware\\SCARA_v1\\OldVersions",
+        "files": 1,
+        "bytes": 332800
+      },
+      {
+        "path": "ARD_hardware\\TRCR_Project\\TRCRv1\\OldVersions",
+        "files": 17,
+        "bytes": 7086936
+      },
+      {
+        "path": "ARD_hardware\\TRCR_Project\\TRCRv1\\disk_v4\\OldVersions",
+        "files": 3,
+        "bytes": 1468928
+      }
+    ]
+  },
+  "legacy": {
+    "from": "C:/Users/work/Desktop/ARD_v1/ARD_software",
+    "to": "C:/Users/work/Desktop/ETC/ARD_software",
+    "files": 8323,
+    "logical_bytes": 3597308922,
+    "git_metadata_and_dirty_sources_preserved": true,
+    "tracked_in_ard_v1_before": 0,
+    "shortcut_updated": "run_pc.bat - 바로 가기.lnk"
+  },
+  "validation": {
+    "wifi_host_cases": 11,
+    "pc_python_cases": 29,
+    "javascript_suites": 3,
+    "firmware_rebuilt_after_merge": false,
+    "hardware_retested_after_merge": false
+  },
+  "unrelated_local_changes_excluded": [
+    "ARD_MAIN/backend/app.py",
+    "ARD_MAIN/backend/config/config_manager.py",
+    "ARD_ESP-IDF/ImageSenderMCU/main/main.c",
+    "ARD_ESP-IDF/ImageSenderMCU/main/pc_link.c",
+    "ARD_ESP-IDF/ImageSenderMCU/main/pc_link.h"
+  ]
+}

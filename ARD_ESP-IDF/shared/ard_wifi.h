@@ -13,6 +13,11 @@ esp_err_t ard_wifi_init(const ard_network_settings_t *configured);
 void ard_wifi_tick(void);
 void ard_wifi_request_scan(void);
 size_t ard_wifi_scan_snapshot(ard_wifi_ap_t *out, size_t capacity, bool *busy, esp_err_t *error);
+// For boards with live touch setup. The caller must serialize these calls with
+// ard_wifi_tick(), disconnect the old station, and await its disconnect first.
+// Manual entry may target a hidden SSID; automatic history still requires scan visibility.
+esp_err_t ard_wifi_begin_manual(const ard_network_settings_t *settings);
+bool ard_wifi_active_profile(ard_wifi_profile_t *out);
 
 #ifdef __cplusplus
 }

@@ -45,7 +45,7 @@ static void fatal(const char *what, esp_err_t err) {
 
 static void healthTask(void *) {
     static const char *names[] = {"motion", "sensors", "tcp_cmd", "console", "gps", "heartbeat", "log",
-                                  "buzzer", "ard_network", "pc_link", "lvgl", "controls", "gamepad"};
+                                  "buzzer", "ard_network", "pc_link", "lvgl", "controls", "gamepad", "ui_settings"};
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(30000));
         printf("[Health] heap=%lu min_heap=%lu logs_dropped=%lu stack_free:",

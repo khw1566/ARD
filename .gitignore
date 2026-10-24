@@ -1,4 +1,4 @@
-# Old PlatformIO code has its own repository (khw1566/ARD, branch main)
+# Legacy PlatformIO checkout is stored at ../ETC/ARD_software; GitHub main is preserved.
 /ARD_software/
 /ARD/
 

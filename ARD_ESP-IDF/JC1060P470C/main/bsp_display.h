@@ -13,6 +13,8 @@ esp_err_t bsp_display_start(i2c_master_bus_handle_t bus);
 
 void bsp_backlight_set(int percent); // 0..100
 int bsp_backlight_get();
+// NVS write only; call on a worker after the slider is released.
+esp_err_t bsp_backlight_save(int percent);
 
 bool bsp_lvgl_lock(uint32_t timeoutMs);
 void bsp_lvgl_unlock();

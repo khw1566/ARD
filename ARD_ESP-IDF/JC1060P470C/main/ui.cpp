@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "ui_settings.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -23,7 +24,7 @@ namespace {
 const lv_color_t kBar = lv_color_hex(0x1F2A36), kAccent = lv_color_hex(0x0B6E99), kOn = lv_color_hex(0x1E9E50),
                  kOff = lv_color_hex(0xB3261E), kMuted = lv_color_hex(0x5F6B76), kPanel = lv_color_hex(0xF2F4F6);
 
-enum Tab { TAB_DRIVE, TAB_ROBOT, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_COUNT };
+enum Tab { TAB_DRIVE, TAB_ROBOT, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TAB_COUNT };
 
 struct Ui {
     lv_obj_t *tabview;
@@ -33,7 +34,7 @@ struct Ui {
     // Robot / Cam / Sound
     lv_obj_t *robotOnline, *robotInfo, *camOnline, *camInfo, *camImage, *camImageNote, *soundOnline, *soundInfo;
     // System
-    lv_obj_t *netInfo, *padInfo, *padRaw, *sysInfo, *brightness;
+    lv_obj_t *netInfo, *padInfo, *padRaw, *sysInfo;
     // Approval popup
     lv_obj_t *approval, *approvalText;
     char approvalId[40];
@@ -75,6 +76,7 @@ lv_obj_t *panel(lv_obj_t *parent, int w, int h) {
     lv_obj_t *p = lv_obj_create(parent);
     lv_obj_set_size(p, w, h);
     lv_obj_set_style_bg_color(p, kPanel, 0);
+    lv_obj_set_style_bg_opa(p, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(p, 0, 0);
     lv_obj_set_style_radius(p, 12, 0);
     lv_obj_set_style_pad_all(p, 14, 0);
@@ -262,7 +264,6 @@ void buildSound(lv_obj_t *tab) {
 
 // ---- System tab ------------------------------------------------------------------------------
 
-void brightnessChanged(lv_event_t *) { bsp_backlight_set(lv_slider_get_value(ui.brightness)); }
 void pairPad(lv_event_t *) { gamepad_pair(); }
 void forgetPad(lv_event_t *) { gamepad_forget(); }
 void modeToggle(lv_event_t *) { controls_set_mode(controls_status().mode == MODE_DRIVE ? MODE_ROBOT : MODE_DRIVE); }
@@ -324,12 +325,6 @@ void buildSystem(lv_obj_t *tab) {
     label(net, "Network", &lv_font_montserrat_28, kAccent);
     ui.netInfo = label(net, "---", &lv_font_montserrat_16);
     button(net, "Setup QR", kAccent, showSetupQr, nullptr, 200, 40);
-    label(net, "Brightness", &lv_font_montserrat_16, kMuted);
-    ui.brightness = lv_slider_create(net);
-    lv_obj_set_width(ui.brightness, 400);
-    lv_slider_set_range(ui.brightness, 5, 100);
-    lv_slider_set_value(ui.brightness, bsp_backlight_get(), LV_ANIM_OFF);
-    lv_obj_add_event_cb(ui.brightness, brightnessChanged, LV_EVENT_VALUE_CHANGED, nullptr);
     ui.sysInfo = label(net, "", &lv_font_montserrat_16, kMuted);
 
     lv_obj_t *pad = panel(tab, 490, 470);
@@ -472,6 +467,7 @@ void refresh(lv_timer_t *) {
     if (ard_network_connected()) lv_label_set_text_fmt(ui.net, "Wi-Fi %s  %d dBm", ip, ard_network_rssi());
     else lv_label_set_text(ui.net, "Wi-Fi offline (setup AP on)");
     const PcStatus pc = pc_status();
+    ui_settings_poll(lv_tabview_get_tab_active(ui.tabview) == TAB_SETTINGS && !pc.approvalPending);
     char server[65];
     ard_network_server(server, sizeof(server));
     lv_label_set_text_fmt(ui.pc, "PC %s %s", server, pc.reachable ? "OK" : "--");
@@ -528,7 +524,9 @@ void refresh(lv_timer_t *) {
                               pc.controlMode);
         break;
     case TAB_SYSTEM: {
-        const ard_network_settings_t *s = ard_network_settings();
+        ard_network_settings_t snapshot;
+        ard_network_get_settings(&snapshot);
+        const ard_network_settings_t *s = &snapshot;
         lv_label_set_text_fmt(ui.netInfo,
                               "Configured SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nAP password: %s\n"
                               "http://192.168.4.1/network",
@@ -579,6 +577,7 @@ esp_err_t ui_start() {
     if (!bsp_lvgl_lock(1000)) return ESP_ERR_TIMEOUT;
     lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
     lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
     buildBar(screen);
     ui.tabview = lv_tabview_create(screen);
@@ -591,6 +590,19 @@ esp_err_t ui_start() {
     buildCam(lv_tabview_add_tab(ui.tabview, "Cam"));
     buildSound(lv_tabview_add_tab(ui.tabview, "Voice"));
     buildSystem(lv_tabview_add_tab(ui.tabview, "System"));
+    lv_obj_t *settingsPage = lv_tabview_add_tab(ui.tabview, "Settings");
+    const esp_err_t settingsError = ui_settings_create(settingsPage);
+    if (settingsError != ESP_OK) label(settingsPage, "Settings could not start. Restart the board.");
+    // Make page coverage explicit when switching away from buttons to the dark
+    // camera viewer; the default tabview page style is transparent in LVGL 9.2.
+    lv_obj_t *content = lv_tabview_get_content(ui.tabview);
+    lv_obj_set_style_bg_color(content, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(content, LV_OPA_COVER, 0);
+    for (int i = 0; i < TAB_COUNT; ++i) {
+        lv_obj_t *page = lv_obj_get_child(content, i);
+        lv_obj_set_style_bg_color(page, lv_color_white(), 0);
+        lv_obj_set_style_bg_opa(page, LV_OPA_COVER, 0);
+    }
     buildApproval();
     lv_timer_create(refresh, 250, nullptr);
     bsp_lvgl_unlock();

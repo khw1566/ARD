@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "mbedtls/base64.h"
-#include "nvs.h"
 
 static bool authorize(httpd_req_t *req) {
     char auth[96], plain[48], encoded[80], expected[96];
@@ -39,7 +38,9 @@ static esp_err_t send_escaped(httpd_req_t *req, const char *text) {
 }
 static esp_err_t page(httpd_req_t *req) {
     if (!authorize(req)) return ESP_OK;
-    const ard_network_settings_t *settings = ard_network_settings();
+    ard_network_settings_t snapshot;
+    ard_network_get_settings(&snapshot);
+    const ard_network_settings_t *settings = &snapshot;
     const char *keys[] = {"{{HOST}}", "{{STATUS}}", "{{TOKEN}}", "{{SSID}}", "{{SERVER}}", "{{PASSWORD}}"};
     const char *values[] = {ard_network_hostname(), ard_network_connected() ? "Wi-Fi 연결됨" : "Wi-Fi 미연결 · 설정 AP 사용 가능",
                             ard_network_token(), settings->ssid, settings->server, settings->password};
@@ -80,12 +81,11 @@ static esp_err_t save(httpd_req_t *req) {
     if (!ard_form_field(body, "ssid", next.ssid, sizeof(next.ssid)) || !ard_form_field(body, "password", next.password, sizeof(next.password)) ||
         !ard_form_field(body, "server", next.server, sizeof(next.server)) || !ard_network_valid(&next))
         return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid SSID/password/server host");
-    nvs_handle_t nvs;
-    esp_err_t err = nvs_open("ard-network", NVS_READWRITE, &nvs);
-    if (err != ESP_OK) return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "NVS open failed");
-    err = nvs_set_blob(nvs, "settings", &next, sizeof(next));
-    if (err == ESP_OK) err = nvs_commit(nvs);
-    nvs_close(nvs);
+    esp_err_t err = ard_network_store_settings(&next);
+    if (err == ESP_ERR_TIMEOUT) {
+        httpd_resp_set_status(req, "503 Service Unavailable");
+        return httpd_resp_sendstr(req, "Wi-Fi setup is busy; try again shortly");
+    }
     if (err != ESP_OK) return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "NVS save failed");
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     err = httpd_resp_sendstr(req, "<meta charset='utf-8'><p>저장했습니다. 보드가 재시작됩니다. 같은 설정 AP 또는 .local 주소로 다시 접속하세요.</p>");

@@ -27,7 +27,8 @@ with tempfile.TemporaryDirectory(prefix="ard-wifi-test-") as folder:
         f'"{shared / "third_party/qrcodegen.c"}" /Fe:"{build / "test_wifi.exe"}"\n',
         encoding="utf-8")
     subprocess.run([os.environ.get("COMSPEC", "cmd.exe"), "/c", str(script)], cwd=build, check=True)
-    for case in ["slots", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry", "qr"]:
+    for case in ["slots", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry",
+                 "manual-success", "manual-rollback", "manual-empty", "qr"]:
         subprocess.run([str(build / "test_wifi.exe"), case], cwd=build, check=True)
     try:
         import cv2

@@ -1,10 +1,12 @@
 #include "bsp_display.h"
 #include <atomic>
+#include <cstring>
 #include <initializer_list>
 #include "board.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "esp_check.h"
+#include "esp_cache.h"
 #include "esp_heap_caps.h"
 #include "esp_lcd_jd9165.h"
 #include "panel_init.h"
@@ -19,6 +21,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "lvgl.h"
+#include "nvs.h"
 
 static const char *TAG = "bsp";
 
@@ -40,7 +43,12 @@ constexpr int kDsiLanes = 2;
 constexpr float kLaneMbps = 750;
 constexpr int kDsiPhyLdoChannel = 3;     // Espressif P4 reference design; assumed for this board
 constexpr int kDsiPhyLdoMv = 2500;
-constexpr int kDrawLines = 100;          // LVGL partial buffer height
+#if CONFIG_ARD_LCD_SYNC_FULL_REFRESH
+constexpr bool kSyncFullRefresh = true;
+#else
+constexpr bool kSyncFullRefresh = false;
+#endif
+constexpr int kDrawLines = kSyncFullRefresh ? LCD_V_RES : 100;
 constexpr ledc_timer_t kBlTimer = LEDC_TIMER_1;     // timer 0 / channel 0 belong to the buzzer
 constexpr ledc_channel_t kBlChannel = LEDC_CHANNEL_1;
 
@@ -55,8 +63,12 @@ bool IRAM_ATTR onColorTransDone(esp_lcd_panel_handle_t, esp_lcd_dpi_panel_event_
 }
 
 void flush(lv_display_t *disp, const lv_area_t *area, uint8_t *pixels) {
-    // DMA2D copies into the frame buffer; onColorTransDone releases the draw buffer.
-    esp_lcd_panel_draw_bitmap(panel, area->x1, area->y1, area->x2 + 1, area->y2 + 1, pixels);
+    const esp_err_t err = esp_lcd_panel_draw_bitmap(panel, area->x1, area->y1,
+                                                  area->x2 + 1, area->y2 + 1, pixels);
+    // CPU copies finish before draw_bitmap returns. Only the DMA2D path uses
+    // onColorTransDone; signal exactly once, and never deadlock LVGL on an error.
+    if (kSyncFullRefresh || err != ESP_OK) lv_display_flush_ready(disp);
+    if (err != ESP_OK) ESP_LOGE(TAG, "LCD flush failed: %s", esp_err_to_name(err));
 }
 
 void touchRead(lv_indev_t *, lv_indev_data_t *data) {
@@ -140,6 +152,54 @@ esp_err_t touchInit(i2c_master_bus_handle_t bus) {
     return ESP_OK;
 }
 
+#if CONFIG_ARD_LCD_BOOT_TEST
+esp_err_t displayBootTest() {
+    // The DSI host generates these colors without LVGL, DMA2D or the PSRAM
+    // framebuffer. Run before any LVGL task or touch callback can start.
+    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_set_pattern(panel, MIPI_DSI_PATTERN_BAR_VERTICAL),
+                        TAG, "vertical test pattern");
+    bsp_backlight_set(backlight.load());
+    ESP_LOGI(TAG, "LCD test: vertical hardware color bars (4 s)");
+    vTaskDelay(pdMS_TO_TICKS(4000));
+    const esp_err_t horizontal = esp_lcd_dpi_panel_set_pattern(panel, MIPI_DSI_PATTERN_BAR_HORIZONTAL);
+    if (horizontal == ESP_OK) {
+        ESP_LOGI(TAG, "LCD test: horizontal hardware color bars (4 s)");
+        vTaskDelay(pdMS_TO_TICKS(4000));
+    }
+    // Always restore framebuffer output, including when the second pattern fails.
+    const esp_err_t restore = esp_lcd_dpi_panel_set_pattern(panel, MIPI_DSI_PATTERN_NONE);
+    ESP_RETURN_ON_ERROR(restore, TAG, "restore framebuffer output");
+    ESP_RETURN_ON_ERROR(horizontal, TAG, "horizontal test pattern");
+
+    // Drive the real scanout framebuffer directly, before LVGL is created.
+    // White -> black distinguishes stale UI pixels from retention downstream of
+    // the framebuffer. Invalidate the CPU cache after writeback for readback.
+    void *framebuffer = nullptr;
+    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_get_frame_buffer(panel, 1, &framebuffer),
+                        TAG, "get diagnostic framebuffer");
+    const size_t bytes = LCD_H_RES * LCD_V_RES * sizeof(uint16_t);
+    for (uint8_t value : {uint8_t{0xFF}, uint8_t{0x00}}) {
+        std::memset(framebuffer, value, bytes);
+        ESP_RETURN_ON_ERROR(esp_cache_msync(framebuffer, bytes,
+                            ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+                            TAG, "diagnostic framebuffer writeback");
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, framebuffer),
+                            TAG, "diagnostic solid fill");
+        ESP_LOGI(TAG, "LCD test: solid %s framebuffer (3 s)", value ? "white" : "black");
+        if (!value) {
+            const volatile uint16_t *pixels = static_cast<const uint16_t *>(framebuffer);
+            size_t nonzero = 0;
+            for (size_t i = 0; i < bytes / sizeof(uint16_t); ++i) nonzero += pixels[i] != 0;
+            ESP_LOGI(TAG, "LCD test: black framebuffer nonzero pixels=%u", (unsigned)nonzero);
+            ESP_RETURN_ON_FALSE(nonzero == 0, ESP_ERR_INVALID_STATE, TAG, "black framebuffer readback failed");
+        }
+        vTaskDelay(pdMS_TO_TICKS(3000));
+    }
+    ESP_LOGI(TAG, "LCD test complete; starting normal UI");
+    return ESP_OK;
+}
+#endif
+
 } // namespace
 
 
@@ -155,6 +215,12 @@ esp_err_t bsp_i2c_init(i2c_master_bus_handle_t *out) {
 }
 
 esp_err_t bsp_display_start(i2c_master_bus_handle_t bus) {
+    nvs_handle_t displayNvs;
+    if (nvs_open("ard-display", NVS_READONLY, &displayNvs) == ESP_OK) {
+        uint8_t saved = 80;
+        if (nvs_get_u8(displayNvs, "brightness", &saved) == ESP_OK && saved >= 5 && saved <= 100) backlight = saved;
+        nvs_close(displayNvs);
+    }
     ESP_RETURN_ON_ERROR(backlightInit(), TAG, "backlight");
 
     // MIPI DSI PHY supply.
@@ -187,7 +253,7 @@ esp_err_t bsp_display_start(i2c_master_bus_handle_t bus) {
     dpi.pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565;
     dpi.num_fbs = 1;
     dpi.video_timing = ard_panel_timing;
-    dpi.flags.use_dma2d = true;
+    dpi.flags.use_dma2d = !kSyncFullRefresh;
 
     jd9165_vendor_config_t vendor = {};
     vendor.init_cmds = ard_panel_init;
@@ -202,7 +268,11 @@ esp_err_t bsp_display_start(i2c_master_bus_handle_t bus) {
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_jd9165(dbi, &dev, &panel), TAG, "jd9165");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(panel), TAG, "panel reset");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(panel), TAG, "panel init");
-    ESP_LOGI(TAG, "JD9165 %s panel up, %.0f MHz", ard_panel_name, ard_panel_pclk_mhz);
+    ESP_LOGI(TAG, "JD9165 %s panel up, %.0f MHz (RGB565, inversion off)", ard_panel_name, ard_panel_pclk_mhz);
+
+#if CONFIG_ARD_LCD_BOOT_TEST
+    ESP_RETURN_ON_ERROR(displayBootTest(), TAG, "LCD boot test");
+#endif
 
     if ((err = touchInit(bus)) != ESP_OK) ESP_LOGE(TAG, "Touch disabled: %s", esp_err_to_name(err));
 
@@ -213,15 +283,25 @@ esp_err_t bsp_display_start(i2c_master_bus_handle_t bus) {
     lv_display_t *display = lv_display_create(LCD_H_RES, LCD_V_RES);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     const size_t bytes = LCD_H_RES * kDrawLines * sizeof(uint16_t);
-    // PSRAM draw buffers; the DPI driver writes the cache back before DMA2D reads them.
-    void *buf1 = heap_caps_aligned_alloc(64, bytes, MALLOC_CAP_SPIRAM);
-    void *buf2 = heap_caps_aligned_alloc(64, bytes, MALLOC_CAP_SPIRAM);
-    ESP_RETURN_ON_FALSE(buf1 && buf2, ESP_ERR_NO_MEM, TAG, "draw buffers");
-    lv_display_set_buffers(display, buf1, buf2, bytes, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    // The diagnostic full-frame path uses one 1,228,800-byte RGB565 draw buffer,
+    // replacing the two 204,800-byte partial buffers. The scanout FB is separate.
+    void *buf1 = heap_caps_aligned_alloc(64, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    void *buf2 = kSyncFullRefresh ? nullptr : heap_caps_aligned_alloc(64, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!buf1 || (!kSyncFullRefresh && !buf2)) {
+        heap_caps_free(buf1);
+        heap_caps_free(buf2);
+        ESP_LOGE(TAG, "draw buffer allocation failed");
+        return ESP_ERR_NO_MEM;
+    }
+    lv_display_set_buffers(display, buf1, buf2, bytes,
+                           kSyncFullRefresh ? LV_DISPLAY_RENDER_MODE_FULL : LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(display, flush);
-    esp_lcd_dpi_panel_event_callbacks_t callbacks = {};
-    callbacks.on_color_trans_done = onColorTransDone;
-    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_register_event_callbacks(panel, &callbacks, display), TAG, "dpi cb");
+    if (!kSyncFullRefresh) {
+        esp_lcd_dpi_panel_event_callbacks_t callbacks = {};
+        callbacks.on_color_trans_done = onColorTransDone;
+        ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_register_event_callbacks(panel, &callbacks, display), TAG, "dpi cb");
+    }
+    ESP_LOGI(TAG, "LVGL: %s", kSyncFullRefresh ? "full redraw, synchronous CPU copy" : "partial redraw, asynchronous DMA2D copy");
 
     lv_indev_t *indev = lv_indev_create();
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
@@ -242,6 +322,17 @@ void bsp_backlight_set(int percent) {
 }
 
 int bsp_backlight_get() { return backlight; }
+
+esp_err_t bsp_backlight_save(int percent) {
+    if (percent < 5 || percent > 100) return ESP_ERR_INVALID_ARG;
+    nvs_handle_t nvs;
+    esp_err_t err = nvs_open("ard-display", NVS_READWRITE, &nvs);
+    if (err != ESP_OK) return err;
+    err = nvs_set_u8(nvs, "brightness", (uint8_t)percent);
+    if (err == ESP_OK) err = nvs_commit(nvs);
+    nvs_close(nvs);
+    return err;
+}
 
 bool bsp_lvgl_lock(uint32_t timeoutMs) {
     return lvglMutex && xSemaphoreTakeRecursive(lvglMutex, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;

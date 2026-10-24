@@ -1,10 +1,14 @@
 // JD9165 init tables for the two JC1060P470C panel revisions (C file: compound literals).
 #include "panel_init.h"
 #include "board.h"
+#include "esp_lcd_panel_commands.h"
 
 // ---- Panel init tables -------------------------------------------------------------------
 // Taken from ESPHome esphome/components/mipi_dsi/models/guition.py (JC1060P470 / -V2), which
 // cites Guition's JC1060P470C_I_W_Y reference driver. Not verified on our board.
+// ESPHome appends COLMOD and INVOFF outside the vendor table. The JD9165 2.0.2
+// component does not set COLMOD from dev.bits_per_pixel, so send them explicitly
+// on page 0 after SLPOUT, before DISPON, to match our RGB565 DSI stream.
 #define C(cmd, ...) {cmd, (const uint8_t[]){__VA_ARGS__}, sizeof((const uint8_t[]){__VA_ARGS__}), 0}
 #define CD(cmd, ms, ...) {cmd, (const uint8_t[]){__VA_ARGS__}, sizeof((const uint8_t[]){__VA_ARGS__}), ms}
 
@@ -33,6 +37,8 @@ const jd9165_lcd_init_cmd_t ard_panel_init[] = {
     C(0x30, 0x0A), C(0x02, 0x4F), C(0x0B, 0x40), C(0x30, 0x0D), C(0x0D, 0x04), C(0x10, 0x05), C(0x11, 0x0C),
     C(0x12, 0x05), C(0x13, 0x0C), C(0x30, 0x00),
     {0x11, NULL, 0, 120}, // SLPOUT
+    C(LCD_CMD_COLMOD, 0x55), // RGB565 (16-bit), matching LVGL and DPI
+    {LCD_CMD_INVOFF, NULL, 0, 0},
     {0x29, NULL, 0, 20},  // DISPON
 };
 #else
@@ -58,6 +64,8 @@ const jd9165_lcd_init_cmd_t ard_panel_init[] = {
     C(0x30, 0x0A), C(0x02, 0x4F), C(0x0B, 0x40), C(0x12, 0x3E), C(0x13, 0x78), C(0x30, 0x0D), C(0x0D, 0x04),
     C(0x10, 0x0C), C(0x11, 0x0C), C(0x12, 0x0C), C(0x13, 0x0C), C(0x30, 0x00),
     {0x11, NULL, 0, 120}, // SLPOUT
+    C(LCD_CMD_COLMOD, 0x55), // RGB565 (16-bit), matching LVGL and DPI
+    {LCD_CMD_INVOFF, NULL, 0, 0},
     {0x29, NULL, 0, 20},  // DISPON
 };
 #endif

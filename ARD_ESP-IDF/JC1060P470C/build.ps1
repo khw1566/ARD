@@ -22,6 +22,12 @@ if (-not (Get-Command idf.py -ErrorAction SilentlyContinue)) { throw "ESP-IDF ac
 Set-Location -LiteralPath $PSScriptRoot
 if ($PSScriptRoot -match '[^\x00-\x7F]') { throw "Project path must be ASCII for the ESP-IDF toolchain" }
 if (-not (Test-Path sdkconfig)) { idf.py --no-ccache set-target esp32p4; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+if ($Action -in @("build", "flash", "reconfigure")) {
+    $panelSelection = @(Select-String -LiteralPath "$PSScriptRoot\sdkconfig" -Pattern '^CONFIG_ARD_PANEL_(V[12])=y$')
+    if ($panelSelection.Count -ne 1) { throw "sdkconfig must select exactly one ARD panel revision; run menuconfig" }
+    $panelRevision = $panelSelection[0].Matches[0].Groups[1].Value
+    Write-Host "JC1060P470C panel selected in sdkconfig: $panelRevision"
+}
 $portArgs = @()
 if ($Port) { $portArgs = @("-p", $Port) }
 switch ($Action) {

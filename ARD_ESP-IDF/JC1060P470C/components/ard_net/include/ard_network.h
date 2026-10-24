@@ -28,7 +28,22 @@ void ard_network_local_ip(char *out, size_t size);
 int ard_network_rssi(void);
 void ard_network_print_setup(void);
 
-const ard_network_settings_t *ard_network_settings(void);
+// Copies a coherent snapshot; passwords must never be logged or displayed.
+void ard_network_get_settings(ard_network_settings_t *out);
+// These blocking functions belong on a worker, never in an LVGL callback.
+#define ARD_WIFI_SCAN_MAX 20
+typedef struct {
+    char ssid[33];
+    int8_t rssi;
+    uint8_t channel;
+    bool secure;
+} ard_network_ap_t;
+esp_err_t ard_network_scan(ard_network_ap_t *out, uint16_t capacity, uint16_t *count);
+// Connects live, waits up to 25 s for an IP, then persists the existing NVS blob.
+// Failure restores the previous station configuration. The setup AP stays on.
+esp_err_t ard_network_join(const char *ssid, const char *password);
+// Web portal: store for next boot, serialized against scan/join.
+esp_err_t ard_network_store_settings(const ard_network_settings_t *next);
 const char *ard_network_hostname(void);
 const char *ard_network_password(void);
 const char *ard_network_token(void);

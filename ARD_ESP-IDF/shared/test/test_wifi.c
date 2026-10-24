@@ -97,6 +97,41 @@ int main(int argc, char **argv) {
         visible_ap("new"); begin("new", "password"); ard_wifi_tick(); write_result = ESP_FAIL; success();
         assert(writes == 1 && commits == 0); ard_wifi_tick(); assert(writes == 1);
         clock_us = 5000000; write_result = ESP_OK; ard_wifi_tick(); assert(commits == 1 && disk.count == 1);
+    } else if (!strcmp(argv[1], "manual-success")) {
+        disk.version = 1; disk.count = 1; disk.entries[0] = profile("old", "old-password");
+        visible_ap("old"); begin("old", "old-password"); ard_wifi_tick(); success();
+        ard_wifi_profile_t previous;
+        assert(ard_wifi_active_profile(&previous) && !strcmp(previous.ssid, "old"));
+        ard_network_settings_t manual = {.version = 1};
+        strcpy(manual.server, "pc.local"); strcpy(manual.ssid, "manual-hidden"); strcpy(manual.password, "new-password");
+        esp_wifi_disconnect();
+        assert(ard_wifi_begin_manual(&manual) == ESP_OK);
+        assert(connects == 2 && scans == 1); // Manual hidden SSID does not require a visible scan result.
+        success();
+        assert(disk.count == 2 && !strcmp(disk.entries[0].ssid, "manual-hidden"));
+        assert(!strcmp(disk.entries[0].password, "new-password"));
+        assert(!strcmp(disk.entries[1].ssid, "old"));
+    } else if (!strcmp(argv[1], "manual-rollback")) {
+        disk.version = 1; disk.count = 1; disk.entries[0] = profile("old", "old-password");
+        visible_ap("old"); begin("old", "old-password"); ard_wifi_tick(); success();
+        ard_wifi_profile_t previous;
+        assert(ard_wifi_active_profile(&previous));
+        ard_network_settings_t manual = {.version = 1};
+        strcpy(manual.server, "pc.local"); strcpy(manual.ssid, "new"); strcpy(manual.password, "wrong-password");
+        esp_wifi_disconnect(); assert(ard_wifi_begin_manual(&manual) == ESP_OK);
+        event(NULL, WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, NULL);
+        assert(disk.count == 1 && !strcmp(disk.entries[0].ssid, "old"));
+        memcpy(manual.ssid, previous.ssid, sizeof(manual.ssid));
+        memcpy(manual.password, previous.password, sizeof(manual.password));
+        assert(ard_wifi_begin_manual(&manual) == ESP_OK); success();
+        assert(disk.count == 1 && !strcmp(disk.entries[0].ssid, "old"));
+        assert(!strcmp(disk.entries[0].password, "old-password"));
+    } else if (!strcmp(argv[1], "manual-empty")) {
+        disk.version = 1; disk.count = 1; disk.entries[0] = profile("old", "old-password");
+        visible_ap("old"); begin("", "");
+        ard_network_settings_t manual = {.version = 1}; strcpy(manual.server, "pc.local");
+        assert(ard_wifi_begin_manual(&manual) == ESP_OK); ard_wifi_tick();
+        assert(connects == 1 && !strcmp((char *)last_config.sta.ssid, "old"));
     } else if (!strcmp(argv[1], "qr")) {
         ard_setup_qr_init("ard-hmi-123456", "ARD-123456!");
         assert(ard_qrcodegen_getSize(ard_setup_qr(true)->modules) > 0);

@@ -69,6 +69,48 @@ size_t ard_wifi_scan_snapshot(ard_wifi_ap_t *out, size_t capacity, bool *busy, e
     return count;
 }
 
+bool ard_wifi_active_profile(ard_wifi_profile_t *out) {
+    if (!out) return false;
+    taskENTER_CRITICAL(&lock);
+    bool valid = initialized && (connected || connecting) && active.ssid[0];
+    if (valid) *out = active;
+    taskEXIT_CRITICAL(&lock);
+    return valid;
+}
+
+esp_err_t ard_wifi_begin_manual(const ard_network_settings_t *s) {
+    if (!initialized || !s) return ESP_ERR_INVALID_STATE;
+    if (s->version != 1 || !memchr(s->ssid, 0, sizeof(s->ssid)) ||
+        !memchr(s->password, 0, sizeof(s->password)) || (s->ssid[0] && !ard_network_valid(s)))
+        return ESP_ERR_INVALID_STATE;
+    wifi_config_t config = {0};
+    memcpy(config.sta.ssid, s->ssid, strlen(s->ssid));
+    memcpy(config.sta.password, s->password, strlen(s->password));
+    config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+    taskENTER_CRITICAL(&lock);
+    memcpy(configured.ssid, s->ssid, sizeof(configured.ssid));
+    memcpy(configured.password, s->password, sizeof(configured.password));
+    active = configured;
+    connected = false; got_ip = false; failed = false; was_connected = false;
+    connecting = s->ssid[0] != 0;
+    remembered = false; configured_known = false; tried = 0; pending_tried = true;
+    request_scan = !connecting;
+    attempt_at = esp_timer_get_time();
+    taskEXIT_CRITICAL(&lock);
+    // With no previous SSID, resume normal history selection on the next tick.
+    if (!s->ssid[0]) return ESP_OK;
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &config);
+    if (err == ESP_OK) err = esp_wifi_connect();
+    if (err != ESP_OK) {
+        taskENTER_CRITICAL(&lock);
+        connecting = false;
+        request_scan = true;
+        taskEXIT_CRITICAL(&lock);
+    }
+    return err;
+}
+
 static bool visible(const char *ssid) {
     for (size_t i = 0; i < result_count; ++i) if (!strcmp(ssid, results[i].ssid)) return true;
     return false;
@@ -190,7 +232,9 @@ void ard_wifi_tick(void) {
         if (now >= next_scan) ard_wifi_request_scan();
         return;
     }
+    taskENTER_CRITICAL(&lock);
     active = *candidate;
+    taskEXIT_CRITICAL(&lock);
     wifi_config_t config = {0};
     memcpy(config.sta.ssid, active.ssid, strlen(active.ssid));
     memcpy(config.sta.password, active.password, strlen(active.password));
