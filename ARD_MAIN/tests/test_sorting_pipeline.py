@@ -143,4 +143,13 @@ class SortingTests(unittest.TestCase):
         self.assertEqual(self.events[-1]['step'],'error')
         self.assertEqual(self.mcu.commands,[])
 
+    def test_phase_names_each_motion_before_it_runs(self):
+        # Remote screens (JC1060 Main tab) animate the axis named by phase.
+        p=self.build(); p.run(self.config)
+        phases=[e['phase'] for e in self.events if 'phase' in e]
+        self.assertEqual(phases,['capture','analyze','rail_out','yaw_out','roll_out','settle',
+                                 'roll_back','yaw_back','rail_back','done'])
+        p=self.build(analyze=lambda frame: {'object':'bad','category':'Unrecognized'}); p.run(self.config)
+        self.assertEqual(self.events[-1]['phase'],'error')
+
 if __name__=='__main__': unittest.main()

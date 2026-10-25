@@ -31,7 +31,6 @@ class HardwareMonitor:
             "gpu_name": "Integrated Graphics",
             "os_name": "Windows"
         }
-        self._detect_gpu_name()
 
         # 네트워크 속도 계산용 이전 상태
         self._last_net_time = time.time()
@@ -103,6 +102,8 @@ class HardwareMonitor:
 
     def _monitor_loop(self):
         """1초마다 시스템 상태를 수집하여 큐에 적재"""
+        # PowerShell GPU query takes ~0.3 s; keep it off the server startup path.
+        self._detect_gpu_name()
         while self._is_running:
             try:
                 now = time.time()

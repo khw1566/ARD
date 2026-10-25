@@ -147,13 +147,15 @@ class SortingPipeline:
             factor = float(state['steps_per_mm'])
             if not math.isfinite(factor) or factor <= 0:
                 raise RuntimeError('DriveMCU 레일 보정값이 유효하지 않습니다.')
-            self.publish(step='capturing', step_num=1, progress=10, is_running=True,
+            # phase names the motion in progress so remote screens can animate it.
+            self.publish(step='capturing', step_num=1, progress=10, is_running=True, phase='capture',
                          step_desc='새 이미지 촬영 및 수신 대기', detected_object='-', detected_material='-',
                          target_yaw=0, dump_roll=0, current_yaw=0, current_roll=0,
                          current_rail_z=start_rail, target_rail_z=0)
             frame = self.inbox.capture(self.trigger, self.cancelled)
             self.check_cancelled()
-            self.publish(step='inferring', step_num=2, progress=30, step_desc='수신한 새 이미지 AI 분석 중')
+            self.publish(step='inferring', step_num=2, progress=30, phase='analyze',
+                         step_desc='수신한 새 이미지 AI 분석 중')
             result = validate_analysis(self.analyze(frame))
             self.check_cancelled()
             yaw, rail_mm, bin_name = DESTINATIONS[result['category']]
@@ -164,25 +166,25 @@ class SortingPipeline:
             rail = round((rail_mm - start_rail) * factor)
             sx, sy = round(yaw / 1.8 * gx), round(yaw / 1.8 * gy)
             rx, ry = round(roll / 1.8 * gx), -round(roll / 1.8 * gy)
-            self.publish(step='rotating', step_num=3, progress=45,
+            self.publish(step='rotating', step_num=3, progress=45, phase='rail_out',
                          step_desc=f'{bin_name} 배출 위치로 레일 이송 중')
             moved = True
             self.move(f'mzr{rail}', (0, 0, rail))
-            self.publish(current_rail_z=rail_mm, step_desc=f'{bin_name} 방향 {yaw:g}도 선회 중')
+            self.publish(current_rail_z=rail_mm, phase='yaw_out', step_desc=f'{bin_name} 방향 {yaw:g}도 선회 중')
             self.move(f'b{sx},{sy}', (sx, sy, 0))
-            self.publish(current_yaw=yaw, step='dumping', step_num=4, progress=70,
+            self.publish(current_yaw=yaw, step='dumping', step_num=4, progress=70, phase='roll_out',
                          step_desc=f'{roll:g}도 전도 구동 중')
             self.move(f'b{rx},{ry}', (rx, ry, 0))
-            self.publish(current_roll=roll, step_desc='전도 완료 · 물체 낙하 대기')
+            self.publish(current_roll=roll, phase='settle', step_desc='전도 완료 · 물체 낙하 대기')
             if self.cancelled.wait(2):
                 self.check_cancelled()
-            self.publish(step='homing', step_num=5, progress=85, step_desc='트레이 수평 복귀 중')
+            self.publish(step='homing', step_num=5, progress=85, phase='roll_back', step_desc='트레이 수평 복귀 중')
             self.move(f'b{-rx},{-ry}', (-rx, -ry, 0))
-            self.publish(current_roll=0, step_desc='선회 원위치 복귀 중')
+            self.publish(current_roll=0, phase='yaw_back', step_desc='선회 원위치 복귀 중')
             self.move(f'b{-sx},{-sy}', (-sx, -sy, 0))
-            self.publish(current_yaw=0, step_desc='레일 시작 위치 복귀 중')
+            self.publish(current_yaw=0, phase='rail_back', step_desc='레일 시작 위치 복귀 중')
             self.move(f'mzr{-rail}', (0, 0, -rail))
-            self.publish(current_rail_z=start_rail, step='complete', step_num=5, progress=100,
+            self.publish(current_rail_z=start_rail, step='complete', step_num=5, progress=100, phase='done',
                          is_running=False, step_desc=f'{bin_name} 분류 구동 및 시작 위치 복귀 확인')
         except Exception as error:
             if moved:
@@ -190,7 +192,7 @@ class SortingPipeline:
                     self.transport(self.ip, 'x')
                 except Exception:
                     pass
-            self.publish(step='error', is_running=False, step_desc=str(error), error=str(error))
+            self.publish(step='error', phase='error', is_running=False, step_desc=str(error), error=str(error))
         finally:
             self.ip = None
             self.boot_id = None

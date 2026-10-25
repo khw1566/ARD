@@ -39,3 +39,6 @@ OldVersions/
 Thumbs.db
 desktop.ini
 *.lnk
+
+# PC launcher setup state (python path, requirements hash)
+/ARD_MAIN/.ard_setup/

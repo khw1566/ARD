@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         overlay.style.opacity = '0';
                         overlay.style.visibility = 'hidden';
                         setTimeout(() => overlay.remove(), 1000);
-                    }, 800);
+                    }, 200);
                     return true;
                 }
             } catch (e) {
@@ -47,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         };
 
+        // Check once right away; the server is usually ready when the page loads.
+        if (await checkStatus()) return;
         const interval = setInterval(async () => {
             const done = await checkStatus();
             if (done) clearInterval(interval);

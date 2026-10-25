@@ -28,16 +28,18 @@ class Ignore200LogFilter(logging.Filter):
         return True
 
 logging.getLogger('werkzeug').addFilter(Ignore200LogFilter())
-import google.generativeai as genai
+from core.lazy_import import LazyModule
+# Heavy SDKs load on first use or in the background warm-up, not on the startup path.
+genai = LazyModule("google.generativeai")
 from dotenv import load_dotenv
 from PIL import Image
 import webbrowser
 from threading import Timer
-import whisper
+whisper = LazyModule("whisper")
 import numpy as np
 import soundfile as sf
 from gtts import gTTS
-from scipy import signal
+signal = LazyModule("scipy.signal")
 
 import asyncio
 import edge_tts
@@ -52,6 +54,7 @@ from api.board_routes import register_board_routes
 from api.jc1060_voice_routes import VoiceIngress, GuidanceQueue, register_jc1060_voice_routes, register_jc1060_guidance_route
 
 from core.sorting_pipeline import FrameInbox, SortingPipeline, validate_analysis
+from core.camera_stream import CameraStream
 from network.image_protocol import ImageReceiver, serve as serve_image_socket
 from network.drive_transport import drive_commands
 from api.jc1060_drive_routes import register_jc1060_drive_routes
@@ -161,7 +164,7 @@ def mask_key(key):
     if len(key) < 10: return "***"
     return key[:6] + "..." + key[-4:]
 
-from openai import OpenAI
+openai = LazyModule("openai")
 import sherpa_onnx
 from core.stats_manager import stats_manager
 from core.hardware_monitor import hardware_monitor
@@ -292,11 +295,10 @@ register_jc1060_voice_routes(app, board_settings, get_jc1060_ip, jc1060_voice_in
 register_jc1060_guidance_route(app, board_settings, get_jc1060_ip, jc1060_guidance,
                               lambda: voice_selection_generation)
 
+# Ready once HTTP serves; Whisper and AI SDKs keep loading in the background.
 STARTUP_STEPS = [
     {"id": "env", "text": "Initializing Environment...", "progress": 15},
-    {"id": "config", "text": "Loading Configurations...", "progress": 30},
-    {"id": "whisper", "text": "Preloading Whisper AI Model...", "progress": 60},
-    {"id": "network", "text": "Initializing Network Protocols...", "progress": 85},
+    {"id": "network", "text": "Starting Network Services...", "progress": 60},
     {"id": "ready", "text": "System Ready", "progress": 100}
 ]
 _current_startup_idx = 0
@@ -370,7 +372,10 @@ def send_tcp_command_async(ip, port, cmd, mcu_name="MCU", on_result=None):
     threading.Thread(target=run, daemon=True).start()
 
 last_hmi_image = None    # HMI용 최적화 이미지 캐시
+last_jc1060_image = None # JC1060 1024x600 화면용 (최대 640x448)
+hmi_image_seq = 0        # 새 프레임마다 증가: HMI가 즉시 다시 가져가는 기준
 last_raw_image = None    # AI 벤치마크 및 원본 이미지 캐시
+JC1060_IMAGE_SIZE = (640, 448)  # Cam 뷰어(630x440)에 맞춤, 16px MCU 정렬
 
 # 전역 상태 변수
 last_seen = {
@@ -558,7 +563,14 @@ def is_ffmpeg_available():
     import shutil
     return shutil.which("ffmpeg") is not None
 
+_whisper_lock = threading.Lock()
 def get_whisper_model():
+    global _whisper_model
+    # The startup warm-up and a first voice request must not load the model twice.
+    with _whisper_lock:
+        return _load_whisper_model()
+
+def _load_whisper_model():
     global _whisper_model
     if _whisper_model is None:
         if not is_ffmpeg_available():
@@ -1543,10 +1555,18 @@ PRICING_DEFAULTS = {
 
 @app.route('/api/hmi/last_image', methods=['GET'])
 def get_hmi_last_image():
-    """HMI에서 요청 시 최신 최적화 이미지를 반환"""
-    if not last_hmi_image:
+    """HMI에서 요청 시 최신 최적화 이미지를 반환 (?size=large: JC1060 화면용)"""
+    image = last_jc1060_image if request.args.get("size") == "large" else last_hmi_image
+    if not image:
         return "No image", 404
-    return Response(last_hmi_image, mimetype='image/jpeg')
+    return Response(image, mimetype='image/jpeg')
+
+
+@app.route('/api/hmi/updates', methods=['GET'])
+def get_hmi_updates():
+    """JC1060이 짧은 간격으로 조회: 선별 상태, 새 이미지 순번, 스트림 여부"""
+    return jsonify({"sorting": dict(sorting_status), "image_seq": hmi_image_seq,
+                    "stream": camera_stream.active})
 
 @app.route('/api/imagesendermcu/command', methods=['POST'])
 @app.route('/api/transmitter/command', methods=['POST']) # Alias for main.js compatibility
@@ -1594,9 +1614,18 @@ def send_imagesendermcu_command():
             CONFIG["imagesendermcu"]["transmission_mode"] = new_mode
             broadcast_system_log(f"전송 모드가 {new_mode} 모드로 설정되었습니다.", "System")
         else:
-            if cmd == "capture":
+            if cmd in ("capture", "analyze"):  # 수신한 모든 단일 촬영 프레임은 AI 분석까지 진행
+                camera_stream.stop()
                 threading.Thread(target=tts_to_pcm_and_send, args=("캡쳐하였습니다!",), daemon=True).start()
                 threading.Thread(target=trigger_image_capture, daemon=True).start()
+            elif cmd in ("stream", "stream_on", "stream_off"):
+                # ImageSender는 단일 촬영만 지원하므로 PC가 연속 촬영을 이끈다.
+                want = not camera_stream.active if cmd == "stream" else cmd == "stream_on"
+                if want:
+                    camera_stream.start()
+                else:
+                    camera_stream.stop()
+                broadcast_system_log(f"카메라 스트림 {'시작' if camera_stream.active else '중지'}", "System")
             else:
                 CONFIG["imagesendermcu"]["command"] = cmd
             
@@ -1604,7 +1633,8 @@ def send_imagesendermcu_command():
         save_config_to_env()
         # PC 웹 UI 즉시 동기화 브로드캐스트
         broadcast_event({"type": "status", "status": get_status()})
-        return jsonify({"status": "success", "command": cmd, "config": CONFIG["imagesendermcu"]})
+        return jsonify({"status": "success", "command": cmd, "config": CONFIG["imagesendermcu"],
+                        "stream": camera_stream.active})
     return jsonify({"status": "error"}), 400
 
 @app.route('/api/imagesendermcu/config', methods=['GET'])
@@ -1740,8 +1770,6 @@ def update_gemini_config():
             print(f"[Gemini] System Configured | Model: {model_name} | Key: {key[:10]}...")
         except Exception as e:
             print(f"[Gemini] Config Error: {e}")
-
-update_gemini_config()
 
 @app.route('/api/status/stream')
 def events():
@@ -2568,6 +2596,7 @@ sorting_status = {
     "step": "idle",
     "step_num": 0,
     "progress": 0,
+    "phase": "idle",
     "step_desc": "대기 중",
     "detected_object": "-",
     "detected_material": "-",
@@ -2575,6 +2604,9 @@ sorting_status = {
     "dump_roll": 0,
     "current_yaw": 0,
     "current_roll": 0,
+    "current_rail_z": 0,
+    "target_rail_z": 0,
+    "error": None,
     "last_updated": ""
 }
 
@@ -2644,6 +2676,8 @@ sorting_pipeline = SortingPipeline(sorting_frames, request_sorting_capture,
                                    analyze_sorting_frame, publish_sorting_state,
                                    update_motor_state)
 
+camera_stream = CameraStream(trigger_image_capture, sorting_frames, lambda: sorting_pipeline.active)
+
 jc1060_drive_input = register_jc1060_drive_routes(
     app, board_settings, get_jc1060_ip,
     lambda: CONFIG.get("drivemcu_ip") or device_stats["DriveMCU"].get("ip"),
@@ -2674,15 +2708,16 @@ def start_sorting_sequence():
         return jsonify({"status": "error", "message": "감속비는 유효한 양수여야 합니다."}), 400
     if not sorting_pipeline.reserve():
         return jsonify({"status": "busy", "message": "선별 작업이 이미 진행 중입니다."}), 409
+    camera_stream.stop()  # 선별 촬영이 우선
     for axis in "xy":
         CONFIG[f"gear_ratio_{axis}"] = config[f"gear_ratio_{axis}"]
-    publish_sorting_state(is_running=True, step="capturing", step_num=1, progress=0,
+    publish_sorting_state(is_running=True, step="capturing", step_num=1, progress=0, phase="prepare",
                          step_desc="장치 준비 상태 확인 중", error=None)
     try:
         threading.Thread(target=execute_sorting_pipeline, args=(config,), daemon=True).start()
     except Exception:
         sorting_pipeline.active = False
-        publish_sorting_state(is_running=False, step="error", step_desc="선별 작업 시작 실패")
+        publish_sorting_state(is_running=False, step="error", phase="error", step_desc="선별 작업 시작 실패")
         raise
     return jsonify({"status": "started", "message": "실제 장치 확인을 포함한 선별 작업을 시작했습니다."})
 
@@ -2702,15 +2737,6 @@ def cancel_sorting_sequence():
 def get_sorting_status():
     """선별 작업 현재 상태 조회 API"""
     return jsonify({"status": "success", "sorting": sorting_status})
-
-@app.route('/api/hmi/last_image', methods=['GET'])
-def get_last_hmi_image():
-    """HMI가 요청할 때 최신 이미지를 바이너리로 반환"""
-    global last_hmi_image
-    if last_hmi_image is None:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] HMI Image Request: 404 (Empty Cache)")
-        return "No image", 404
-    return Response(last_hmi_image, mimetype='image/jpeg')
 
 @app.route('/api/hmi/info', methods=['GET'])
 def get_hmi_info():
@@ -2766,8 +2792,15 @@ def process_udp_frame(frame_data, source_type="UDP"):
         hmi_io = io.BytesIO()
         # PIL quality는 1~100 (높을수록 좋음). HMI 썸네일은 70으로 고정하여 깨짐 방지
         hmi_img.save(hmi_io, format="JPEG", quality=70)
-        global last_hmi_image, last_raw_image
+        # JC1060 화면용: 원본 비율을 유지해 640x448 안에 맞춘다 (작은 원본은 보드에서 확대).
+        jc_img = img.convert("RGB")
+        jc_img.thumbnail(JC1060_IMAGE_SIZE, Image.Resampling.LANCZOS)
+        jc_io = io.BytesIO()
+        jc_img.save(jc_io, format="JPEG", quality=80)
+        global last_hmi_image, last_jc1060_image, hmi_image_seq, last_raw_image
         last_hmi_image = hmi_io.getvalue()
+        last_jc1060_image = jc_io.getvalue()
+        hmi_image_seq += 1
         last_raw_image = frame_data
         sorting_frames.publish(frame_data)
         
@@ -2780,7 +2813,7 @@ def process_udp_frame(frame_data, source_type="UDP"):
         # 웹 UI에 이미지 즉시 표시
         initial_payload = {
             "type": "update",
-            "analysis": {"object": "Analyzing...", "category": ""},
+            "analysis": {"object": "Live preview" if camera_stream.active else "Analyzing...", "category": ""},
             "image_b64": base64.b64encode(frame_data).decode('utf-8'),
             "metadata": {
                 "sensor": f"{source_type}_STREAM",
@@ -2794,7 +2827,8 @@ def process_udp_frame(frame_data, source_type="UDP"):
             q.append(initial_payload)
 
         # The active sorter analyzes its captured frame once and publishes the result.
-        if sorting_pipeline.active:
+        # Live preview frames are not sent to the AI (cost and latency per frame).
+        if sorting_pipeline.active or camera_stream.active:
             return
 
         # [Step 2] Gemini 분석
@@ -2954,7 +2988,7 @@ def process_voice_command(buffer):
                 broadcast_system_log("OpenAI API Key가 설정되지 않았습니다. Whisper-Local로 전환합니다.", "Warning")
                 stt_engine = "Whisper-Local"
             else:
-                client = OpenAI(api_key=api_key)
+                client = openai.OpenAI(api_key=api_key)
                 temp_wav = "stt_temp.wav"
                 sf.write(temp_wav, buffer, 16000)
                 with open(temp_wav, "rb") as audio_file:
@@ -3433,7 +3467,7 @@ def resample_linear(data, orig_sr, target_sr):
 
 
 
-import yt_dlp
+yt_dlp = LazyModule("yt_dlp")
 
 @app.route('/api/youtube/play', methods=['POST'])
 def play_youtube_audio():
@@ -4220,7 +4254,7 @@ def tts_to_pcm_and_send(text, priority=1):
             if not api_key:
                 broadcast_system_log("OpenAI API Key가 설정되지 않았습니다.", "Error")
                 return None
-            client = OpenAI(api_key=api_key)
+            client = openai.OpenAI(api_key=api_key)
             # OpenAI doesn't support SSML pitch natively, but we could add it via processing.
             # Speed only (0.25 to 4.0)
             speed = 1.0 + (rate_val / 100.0)
@@ -4574,17 +4608,22 @@ if __name__ == '__main__':
     threading.Thread(target=monitor_device_status_loop, daemon=True).start()
 
     
-    # Whisper 모델 사전 로드 (백그라운드) - 첫 발화 시 Cold Start 지연 제거
-    def preload_whisper():
-        global _current_startup_idx
-        _current_startup_idx = 2 # Preloading Whisper
+    _current_startup_idx = 1 # Network
+
+    # AI SDK와 Whisper 모델은 서버 시작 후 백그라운드에서 준비 (첫 사용 지연 제거).
+    # 화면은 기다리지 않으며, 준비 전 첫 음성 요청은 로드 완료까지 기다린다.
+    def warm_up():
+        time.sleep(0.5) # 첫 페이지 응답을 먼저 처리
+        update_gemini_config()
+        for module in (signal, openai):
+            try:
+                module.load()
+            except Exception as e:
+                print(f"[Startup] {module!r} preload failed: {e}")
         print("[Startup] Preloading Whisper model...")
-        get_whisper_model()
-        print("[Startup] Whisper model ready.")
-        _current_startup_idx = 3 # Network
-        time.sleep(1) # 시각적 효과를 위해 잠시 대기
-        _current_startup_idx = 4 # Ready
-    threading.Thread(target=preload_whisper, daemon=True).start()
+        if get_whisper_model() is not None:
+            print("[Startup] Whisper model ready.")
+    threading.Thread(target=warm_up, daemon=True).start()
 
     # 서버 상태 주기적 출력 (로그 확인용)
     def server_heartbeat():
@@ -4596,8 +4635,9 @@ if __name__ == '__main__':
     # 브라우저 자동 실행 (localhost 주소를 사용해야 마이크 권한이 허용됨)
     if not os.environ.get("BROWSER_OPENED"):
         os.environ["BROWSER_OPENED"] = "1"
-        Timer(1.5, lambda: webbrowser.open('http://localhost:5000')).start()
-    
+        Timer(0.5, lambda: webbrowser.open('http://localhost:5000')).start()
+    _current_startup_idx = 2 # Ready: the status route answers only once app.run listens
+
     # 운영 모드로 실행 (안정성 강화)
     print("Starting PC Center Server on 0.0.0.0:5000...")
     app.run(host='0.0.0.0', port=int(os.getenv("PC_PORT", 5000)), debug=False, use_reloader=False, threaded=True)
