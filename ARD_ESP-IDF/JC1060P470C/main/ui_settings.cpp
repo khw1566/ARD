@@ -1,4 +1,5 @@
 #include "ui_settings.h"
+#include "ui_text.h"
 #include <cstdio>
 #include <cstring>
 #include <initializer_list>
@@ -6,6 +7,11 @@
 #include "ard_wifi.h"
 #include "bsp_display.h"
 #include "esp_wifi.h"
+#include "onboard_audio.h"
+#include "pc_link.h"
+#include "ui.h"
+#include "esp_system.h"
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -25,20 +31,27 @@ struct Result {
     uint32_t brightnessGeneration;
     esp_err_t brightnessError;
     bool brightnessBusy;
+    uint32_t serverGeneration;
+    esp_err_t serverError;
+    bool serverBusy;
 };
 
 QueueHandle_t requests;
 portMUX_TYPE resultLock = portMUX_INITIALIZER_UNLOCKED;
 Result result{};
 int pendingBrightness = -1;
+char pendingServer[65];
+bool serverPending;
 bool ready;
 struct Widgets {
     lv_obj_t *tabs, *brightness, *brightnessValue, *brightnessStatus;
     lv_obj_t *scan, *list, *ssid, *password, *connect, *status, *connection, *keyboard;
+    lv_obj_t *server, *serverSave, *serverStatus, *serverCurrent;
+    lv_obj_t *volume, *volumeValue, *mute, *soundStatus;
     ard_network_ap_t aps[ARD_WIFI_SCAN_MAX];
     uint16_t count;
-    uint32_t generation = UINT32_MAX, brightnessGeneration = UINT32_MAX;
-    bool savedSsidLoaded;
+    uint32_t generation = UINT32_MAX, brightnessGeneration = UINT32_MAX, serverGeneration = UINT32_MAX;
+    bool savedSsidLoaded, serverLoaded, soundMuted;
 } ui;
 
 const lv_color_t accent = lv_color_hex(0x0B6E99);
@@ -64,6 +77,21 @@ void worker(void *) {
             taskEXIT_CRITICAL(&resultLock);
         }
 
+        char server[65];
+        taskENTER_CRITICAL(&resultLock);
+        const bool saveServer = serverPending;
+        serverPending = false;
+        if (saveServer) std::memcpy(server, pendingServer, sizeof(server));
+        taskEXIT_CRITICAL(&resultLock);
+        if (saveServer) {
+            const esp_err_t err = ard_network_set_server(server);
+            taskENTER_CRITICAL(&resultLock);
+            result.serverError = err;
+            result.serverBusy = serverPending;
+            ++result.serverGeneration;
+            taskEXIT_CRITICAL(&resultLock);
+        }
+
         Request request{};
         if (xQueueReceive(requests, &request, pdMS_TO_TICKS(100)) != pdTRUE) continue;
         ard_network_ap_t aps[ARD_WIFI_SCAN_MAX]{};
@@ -86,7 +114,7 @@ void worker(void *) {
 }
 
 lv_obj_t *text(lv_obj_t *parent, const char *value, int x, int y, int width,
-               const lv_font_t *font = &lv_font_montserrat_20) {
+               const lv_font_t *font = &ard_font_20) {
     lv_obj_t *label = lv_label_create(parent);
     lv_label_set_text(label, value);
     lv_obj_set_pos(label, x, y);
@@ -106,7 +134,7 @@ lv_obj_t *button(lv_obj_t *parent, const char *caption, int x, int y, int width,
     lv_obj_add_event_cb(button, callback, LV_EVENT_CLICKED, data);
     lv_obj_t *label = lv_label_create(button);
     lv_label_set_text(label, caption);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(label, &ard_font_20, 0);
     lv_obj_center(label);
     return button;
 }
@@ -117,18 +145,36 @@ void hideKeyboard() {
     lv_obj_add_flag(ui.keyboard, LV_OBJ_FLAG_HIDDEN);
 }
 
+void requestServer(const char *host);
+
 void keyboardEvent(lv_event_t *event) {
-    if (lv_event_get_code(event) == LV_EVENT_READY || lv_event_get_code(event) == LV_EVENT_CANCEL) hideKeyboard();
+    const lv_event_code_t code = lv_event_get_code(event);
+    if (code != LV_EVENT_READY && code != LV_EVENT_CANCEL) return;
+    const bool server = lv_keyboard_get_textarea(ui.keyboard) == ui.server;
+    hideKeyboard();
+    // OK on the server keyboard saves, like the Save button.
+    if (code == LV_EVENT_READY && server) requestServer(lv_textarea_get_text(ui.server));
+}
+
+void showKeyboard(lv_obj_t *field, lv_keyboard_mode_t mode) {
+    lv_keyboard_set_mode(ui.keyboard, mode);
+    lv_keyboard_set_textarea(ui.keyboard, field);
+    lv_obj_clear_flag(ui.keyboard, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(ui.keyboard);
 }
 
 void editField(lv_event_t *event) {
+    lv_obj_t *field = static_cast<lv_obj_t *>(lv_event_get_target(event));
+    if (field == ui.server) {
+        // Keep the current mode if the ABC/123 key already chose one.
+        if (lv_keyboard_get_textarea(ui.keyboard) != field) showKeyboard(field, LV_KEYBOARD_MODE_NUMBER);
+        return;
+    }
     taskENTER_CRITICAL(&resultLock);
     const bool busy = result.phase == Phase::Scanning || result.phase == Phase::Joining;
     taskEXIT_CRITICAL(&resultLock);
     if (busy) return;
-    lv_keyboard_set_textarea(ui.keyboard, static_cast<lv_obj_t *>(lv_event_get_target(event)));
-    lv_obj_clear_flag(ui.keyboard, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_foreground(ui.keyboard);
+    showKeyboard(field, LV_KEYBOARD_MODE_TEXT_LOWER);
 }
 
 void settingsTabChanged(lv_event_t *) { hideKeyboard(); }
@@ -238,10 +284,152 @@ void brightnessPreset(lv_event_t *event) {
     saveBrightness();
 }
 
+void requestServer(const char *host) {
+    if (!ready) {
+        lv_label_set_text(ui.serverStatus, "Settings storage is unavailable. Restart the board.");
+        return;
+    }
+    if (!ard_network_valid_server(host)) {
+        lv_label_set_text(ui.serverStatus, "Enter an IP address such as 192.168.0.35 or a host name, "
+                          "without http://, port or path.");
+        return;
+    }
+    taskENTER_CRITICAL(&resultLock);
+    strlcpy(pendingServer, host, sizeof(pendingServer));
+    serverPending = true;
+    result.serverBusy = true;
+    taskEXIT_CRITICAL(&resultLock);
+    lv_obj_add_state(ui.serverSave, LV_STATE_DISABLED);
+    lv_label_set_text(ui.serverStatus, "Saving PC server...");
+}
+
+void saveServer(lv_event_t *) {
+    hideKeyboard();
+    requestServer(lv_textarea_get_text(ui.server));
+}
+
+void defaultServer(lv_event_t *) {
+    hideKeyboard();
+    lv_textarea_set_text(ui.server, CONFIG_ARD_DEFAULT_SERVER);
+    requestServer(CONFIG_ARD_DEFAULT_SERVER);
+}
+
+void serverKeys(lv_event_t *) {
+    // Number pad for IP addresses; letters for names such as my-pc.local.
+    const bool number = lv_keyboard_get_textarea(ui.keyboard) == ui.server &&
+                        !lv_obj_has_flag(ui.keyboard, LV_OBJ_FLAG_HIDDEN) &&
+                        lv_keyboard_get_mode(ui.keyboard) == LV_KEYBOARD_MODE_NUMBER;
+    showKeyboard(ui.server, number ? LV_KEYBOARD_MODE_TEXT_LOWER : LV_KEYBOARD_MODE_NUMBER);
+}
+
+void buildServer(lv_obj_t *page) {
+    // The keyboard covers the lower part of this tab; keep the field near the top.
+    text(page, "PC server address", 24, 12, 600, &ard_font_28);
+    ui.server = lv_textarea_create(page);
+    lv_obj_set_pos(ui.server, 24, 56);
+    lv_obj_set_size(ui.server, 520, 46);
+    lv_obj_set_style_text_font(ui.server, &ard_font_20, 0);
+    lv_textarea_set_one_line(ui.server, true);
+    lv_textarea_set_max_length(ui.server, 63);
+    lv_textarea_set_placeholder_text(ui.server, "e.g. 192.168.0.35");
+    lv_obj_add_event_cb(ui.server, editField, LV_EVENT_FOCUSED, nullptr);
+    lv_obj_add_event_cb(ui.server, editField, LV_EVENT_CLICKED, nullptr);
+    ui.serverSave = button(page, "Save", 560, 56, 130, saveServer);
+    button(page, "ABC/123", 706, 56, 130, serverKeys);
+    button(page, "Default", 852, 56, 140, defaultServer);
+    ui.serverStatus = text(page, "Enter the IP address of the PC running ARD, then Save.", 24, 118, 968);
+    ui.serverCurrent = text(page, "", 24, 176, 968, &ard_font_16);
+    text(page, "Applied immediately and kept after restart. Default: " CONFIG_ARD_DEFAULT_SERVER
+         ". Serial console: server=<IP>", 24, 214, 968, &ard_font_16);
+}
+
+constexpr int kVolumeMax = 21; // ES8311 output steps, same scale as the PC voice settings
+
+void showVolume(int value) {
+    lv_label_set_text_fmt(ui.volumeValue, "%d / %d", value, kVolumeMax);
+}
+
+// The PC pushes its stored volume to the selected voice board; keep both equal.
+// Another voice board (ControlMCU) has its own PC volume, so only change it locally then.
+void saveVolume() {
+    const int value = lv_slider_get_value(ui.volume);
+    const OnboardAudioStatus audio = onboard_audio_status();
+    if (!audio.selected) {
+        lv_label_set_text(ui.soundStatus, "Saved on this board. The PC uses another voice board.");
+        return;
+    }
+    char command[12];
+    std::snprintf(command, sizeof(command), "vol=%d", value);
+    lv_label_set_text(ui.soundStatus, pc_send_command(PC_SOUND, command)
+                      ? "Saved on this board and sent to the PC." : "Saved on this board. PC busy; try again.");
+}
+
+void setVolume(int value) {
+    value = value < 0 ? 0 : value > kVolumeMax ? kVolumeMax : value;
+    onboard_audio_set_volume(value);
+    lv_slider_set_value(ui.volume, value, LV_ANIM_OFF);
+    showVolume(value);
+}
+
+void volumeChanged(lv_event_t *event) {
+    setVolume(lv_slider_get_value(ui.volume));
+    if (lv_event_get_code(event) == LV_EVENT_RELEASED) saveVolume();
+}
+
+void volumeStep(lv_event_t *event) {
+    setVolume(lv_slider_get_value(ui.volume) + static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(event))));
+    saveVolume();
+}
+
+void muteToggle(lv_event_t *) {
+    onboard_audio_command(onboard_audio_status().muted ? "unmute" : "mute");
+}
+
+void soundTest(lv_event_t *) {
+    onboard_audio_test();
+    lv_label_set_text(ui.soundStatus, "Playing test sound...");
+}
+
+void buildSound(lv_obj_t *page) {
+    text(page, "Speaker volume", 24, 20, 600, &ard_font_28);
+    text(page, "Applies immediately. Saved on the board and in the PC voice settings.", 24, 66, 900);
+    const int current = onboard_audio_status().volume;
+    ui.volumeValue = text(page, "", 825, 116, 150, &ard_font_28);
+    showVolume(current);
+    ui.volume = lv_slider_create(page);
+    lv_obj_set_pos(ui.volume, 42, 130);
+    lv_obj_set_size(ui.volume, 720, 22);
+    lv_slider_set_range(ui.volume, 0, kVolumeMax);
+    lv_slider_set_value(ui.volume, current, LV_ANIM_OFF);
+    lv_obj_add_event_cb(ui.volume, volumeChanged, LV_EVENT_VALUE_CHANGED, nullptr);
+    lv_obj_add_event_cb(ui.volume, volumeChanged, LV_EVENT_RELEASED, nullptr);
+    button(page, "-", 24, 194, 130, volumeStep, reinterpret_cast<void *>(static_cast<intptr_t>(-1)));
+    button(page, "+", 174, 194, 130, volumeStep, reinterpret_cast<void *>(static_cast<intptr_t>(1)));
+    ui.mute = button(page, "Mute", 324, 194, 170, muteToggle);
+    button(page, "Test sound", 514, 194, 190, soundTest);
+    ui.soundStatus = text(page, "", 24, 274, 900);
+    text(page, "Same setting as Voice tab VOL - / + and the PC voice volume. 0 is silent.", 24, 326, 900,
+         &ard_font_16);
+}
+
+void restartForLanguage(lv_timer_t *) { esp_restart(); }
+
+void chooseLanguage(lv_event_t *event) {
+    const UiLanguage next = static_cast<UiLanguage>(reinterpret_cast<intptr_t>(lv_event_get_user_data(event)));
+    if (next == ui_language()) return;
+    if (ui_save_language(next) != ESP_OK) {
+        lv_label_set_text(ui.brightnessStatus, "Could not save the language. Try again.");
+        return;
+    }
+    // Every screen is built once in one language, so restart to rebuild it.
+    ui_notice("Restarting to change the language..."); // shown in the current language
+    lv_timer_set_repeat_count(lv_timer_create(restartForLanguage, 800, nullptr), 1);
+}
+
 void buildDisplay(lv_obj_t *page) {
-    text(page, "Screen brightness", 24, 20, 600, &lv_font_montserrat_28);
+    text(page, "Screen brightness", 24, 20, 600, &ard_font_28);
     text(page, "Adjust with the slider. Your setting is saved when released.", 24, 66, 900);
-    ui.brightnessValue = text(page, "", 825, 116, 130, &lv_font_montserrat_28);
+    ui.brightnessValue = text(page, "", 825, 116, 130, &ard_font_28);
     lv_label_set_text_fmt(ui.brightnessValue, "%d %%", bsp_backlight_get());
     ui.brightness = lv_slider_create(page);
     lv_obj_set_pos(ui.brightness, 42, 130);
@@ -257,14 +445,23 @@ void buildDisplay(lv_obj_t *page) {
         button(page, caption, 24 + i * 150, 194, 130, brightnessPreset, reinterpret_cast<void *>(static_cast<intptr_t>(presets[i])));
     }
     ui.brightnessStatus = text(page, "Brightness is restored after restarting the board.", 24, 274, 900);
-    text(page, "Minimum brightness is 5% so the controls remain visible.", 24, 326, 900, &lv_font_montserrat_16);
+    // Language names stay in their own language so either can be found.
+    text(page, "Language", 24, 372, 160);
+    lv_obj_t *english = button(page, "English", 190, 360, 150, chooseLanguage,
+                               reinterpret_cast<void *>(static_cast<intptr_t>(UI_LANG_EN)));
+    lv_obj_t *korean = button(page, "한국어", 356, 360, 150, chooseLanguage,
+                              reinterpret_cast<void *>(static_cast<intptr_t>(UI_LANG_KO)));
+    lv_obj_add_state(ui_language() == UI_LANG_KO ? korean : english, LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(ui_language() == UI_LANG_KO ? korean : english, lv_color_hex(0x1E9E50), LV_STATE_CHECKED);
+    text(page, "The board restarts to apply the language.", 524, 372, 470, &ard_font_16);
+    text(page, "Minimum brightness is 5% so the controls remain visible.", 24, 326, 900, &ard_font_16);
 }
 
 lv_obj_t *input(lv_obj_t *parent, int y, uint32_t maximum, const char *placeholder) {
     lv_obj_t *field = lv_textarea_create(parent);
     lv_obj_set_pos(field, 368, y);
     lv_obj_set_size(field, 600, 46);
-    lv_obj_set_style_text_font(field, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(field, &ard_font_20, 0);
     lv_textarea_set_one_line(field, true);
     lv_textarea_set_max_length(field, maximum);
     lv_textarea_set_placeholder_text(field, placeholder);
@@ -274,22 +471,22 @@ lv_obj_t *input(lv_obj_t *parent, int y, uint32_t maximum, const char *placehold
 }
 
 void buildNetwork(lv_obj_t *page) {
-    text(page, "Nearby Wi-Fi", 16, 10, 300, &lv_font_montserrat_28);
+    text(page, "Nearby Wi-Fi", 16, 10, 300, &ard_font_28);
     ui.scan = button(page, "Search Wi-Fi", 16, 54, 318, scan);
     ui.list = lv_list_create(page);
     lv_obj_set_pos(ui.list, 16, 112);
     lv_obj_set_size(ui.list, 318, 284);
-    text(ui.list, "Press Search Wi-Fi", 0, 0, 270, &lv_font_montserrat_16);
-    ui.connection = text(page, "Wi-Fi starting...", 368, 8, 600, &lv_font_montserrat_16);
+    text(ui.list, "Press Search Wi-Fi", 0, 0, 270, &ard_font_16);
+    ui.connection = text(page, "Wi-Fi starting...", 368, 8, 600, &ard_font_16);
     text(page, "Wi-Fi name (SSID)", 368, 52, 590);
     ui.ssid = input(page, 80, 32, "Choose a network or enter its name");
     text(page, "Password", 368, 128, 590);
     ui.password = input(page, 154, 64, "Wi-Fi password");
     lv_textarea_set_password_mode(ui.password, false);
-    text(page, "Password is shown as entered.", 368, 226, 400, &lv_font_montserrat_16);
+    text(page, "Password is shown as entered.", 368, 226, 400, &ard_font_16);
     ui.connect = button(page, "Connect", 778, 214, 190, connect);
     ui.status = text(page, "Select a 2.4 GHz network. Connection details are saved after success.", 368, 276, 600);
-    text(page, "The setup access point remains available while connecting.", 368, 358, 600, &lv_font_montserrat_16);
+    text(page, "The setup access point turns off while connecting.", 368, 358, 600, &ard_font_16);
 }
 
 } // namespace
@@ -302,10 +499,12 @@ esp_err_t ui_settings_create(lv_obj_t *page) {
     ui.tabs = lv_tabview_create(page);
     lv_obj_set_size(ui.tabs, LV_PCT(100), LV_PCT(100));
     lv_tabview_set_tab_bar_size(ui.tabs, 48);
-    lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabs), &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabs), &ard_font_20, 0);
     lv_obj_t *display = lv_tabview_add_tab(ui.tabs, "Display");
+    lv_obj_t *sound = lv_tabview_add_tab(ui.tabs, "Sound");
     lv_obj_t *network = lv_tabview_add_tab(ui.tabs, "Network");
-    for (lv_obj_t *tab : {display, network}) {
+    lv_obj_t *server = lv_tabview_add_tab(ui.tabs, "Server");
+    for (lv_obj_t *tab : {display, sound, network, server}) {
         lv_obj_set_style_pad_all(tab, 0, 0);
         lv_obj_set_style_bg_color(tab, lv_color_white(), 0);
         lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
@@ -315,7 +514,9 @@ esp_err_t ui_settings_create(lv_obj_t *page) {
     lv_obj_clear_flag(lv_tabview_get_content(ui.tabs), LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_event_cb(ui.tabs, settingsTabChanged, LV_EVENT_VALUE_CHANGED, nullptr);
     buildDisplay(display);
+    buildSound(sound);
     buildNetwork(network);
+    buildServer(server);
     ui.keyboard = lv_keyboard_create(lv_layer_top());
     lv_obj_set_size(ui.keyboard, LV_PCT(100), 220);
     lv_obj_align(ui.keyboard, LV_ALIGN_BOTTOM_MID, 0, 0);
@@ -326,6 +527,7 @@ esp_err_t ui_settings_create(lv_obj_t *page) {
         lv_obj_add_state(ui.scan, LV_STATE_DISABLED);
         lv_obj_add_state(ui.connect, LV_STATE_DISABLED);
         lv_obj_add_state(ui.brightness, LV_STATE_DISABLED);
+        lv_obj_add_state(ui.serverSave, LV_STATE_DISABLED);
         lv_label_set_text(ui.status, "Settings worker could not start. Restart the board.");
         return ESP_ERR_NO_MEM;
     }
@@ -349,6 +551,23 @@ void ui_settings_poll(bool visible) {
             lv_label_set_text(ui.brightnessStatus, snapshot.brightnessError == ESP_OK
                               ? "Brightness saved." : "Could not save brightness. Try again.");
     }
+    if (!snapshot.serverBusy && snapshot.serverGeneration != ui.serverGeneration) {
+        ui.serverGeneration = snapshot.serverGeneration;
+        lv_obj_remove_state(ui.serverSave, LV_STATE_DISABLED);
+        if (snapshot.serverGeneration) {
+            switch (snapshot.serverError) {
+            case ESP_OK: lv_label_set_text(ui.serverStatus, "Saved. The board now uses this PC server."); break;
+            case ESP_ERR_INVALID_STATE:
+                lv_label_set_text(ui.serverStatus, "Connect to Wi-Fi first. The server is saved with the Wi-Fi settings.");
+                break;
+            case ESP_ERR_INVALID_ARG:
+                lv_label_set_text(ui.serverStatus, "Invalid address. Use an IPv4 address such as 192.168.0.35 or a host name.");
+                break;
+            case ESP_ERR_TIMEOUT: lv_label_set_text(ui.serverStatus, "Wi-Fi is busy. Try again in a moment."); break;
+            default: lv_label_set_text(ui.serverStatus, "Could not save the PC server. Try again."); break;
+            }
+        }
+    }
     if (snapshot.generation != ui.generation) {
         ui.generation = snapshot.generation;
         const bool busy = snapshot.phase == Phase::Scanning || snapshot.phase == Phase::Joining;
@@ -370,9 +589,9 @@ void ui_settings_poll(bool visible) {
             for (uint16_t i = 0; i < ui.count; ++i) {
                 char caption[96];
                 std::snprintf(caption, sizeof(caption), "%s\n%d dBm  %s", ui.aps[i].ssid,
-                              ui.aps[i].rssi, ui.aps[i].secure ? "Password" : "Open");
+                              ui.aps[i].rssi, ui_tr(ui.aps[i].secure ? "Password" : "Open"));
                 lv_obj_t *row = lv_list_add_button(ui.list, nullptr, caption);
-                lv_obj_set_style_text_font(row, &lv_font_montserrat_16, 0);
+                lv_obj_set_style_text_font(row, &ard_font_16, 0);
                 lv_obj_add_event_cb(row, selectNetwork, LV_EVENT_CLICKED,
                                     reinterpret_cast<void *>(static_cast<uintptr_t>(i + 1)));
             }
@@ -400,6 +619,26 @@ void ui_settings_poll(bool visible) {
         }
         scan(nullptr); // Populate nearby networks automatically when settings first opens.
     }
+    // Follow VOL -/+ on the Voice tab, the gamepad and the PC, except while dragging.
+    const OnboardAudioStatus audio = onboard_audio_status();
+    if (!lv_obj_has_state(ui.volume, LV_STATE_PRESSED) && lv_slider_get_value(ui.volume) != audio.volume) {
+        lv_slider_set_value(ui.volume, audio.volume, LV_ANIM_OFF);
+        showVolume(audio.volume);
+    }
+    lv_label_set_text(lv_obj_get_child(ui.mute, 0), audio.muted ? "Unmute" : "Mute");
+    if (!audio.ready) lv_label_set_text(ui.soundStatus, "Speaker unavailable (ES8311 not started).");
+    else if (audio.muted != ui.soundMuted)
+        lv_label_set_text(ui.soundStatus, audio.muted ? "Muted. Press Unmute to hear sound again." : "Sound on.");
+    ui.soundMuted = audio.muted;
+    if (!ui.serverLoaded && saved.version == 1) {
+        ui.serverLoaded = true;
+        lv_textarea_set_text(ui.server, saved.server);
+    }
+    char inUse[65];
+    ard_network_server(inUse, sizeof(inUse));
+    lv_label_set_text_fmt(ui.serverCurrent, "Saved: %s   |   In use: %s   |   PC: %s", saved.server, inUse,
+                          ui_tr(!ard_network_connected() ? "Wi-Fi not connected"
+                                : pc_status().reachable ? "responding" : "no response"));
     char ip[16];
     ard_network_local_ip(ip, sizeof(ip));
     if (snapshot.phase == Phase::Joining)

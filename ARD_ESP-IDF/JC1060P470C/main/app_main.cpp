@@ -4,6 +4,7 @@
 #include "ard_network.h"
 #include "board.h"
 #include "bsp_display.h"
+#include "c6_update.h"
 #include "commands.h"
 #include "controls.h"
 #include "gamepad.h"
@@ -72,6 +73,9 @@ extern "C" void app_main(void) {
 
     if ((err = onboard_audio_start(i2c)) != ESP_OK)
         ESP_LOGE(TAG, "Onboard audio failed: %s (UI/network remain available)", esp_err_to_name(err));
+
+    // An older ESP-Hosted C6 associates but never passes DHCP traffic; update it first.
+    if ((err = c6_firmware_check()) != ESP_OK) ESP_LOGW(TAG, "[C6] Firmware check: %s", esp_err_to_name(err));
 
     // Wi-Fi goes through the C6 (esp_wifi_remote). A C6 without ESP-Hosted firmware ends here
     // with an error; the screen and the serial console keep working.

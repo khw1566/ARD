@@ -19,6 +19,8 @@ void onboard_audio_pc_state(bool selected, bool vad, bool busy, uint32_t complet
 void onboard_audio_set_ptt(bool held);
 void onboard_audio_set_gamepad_ptt(bool held);
 void onboard_audio_set_mic(bool enabled);
+// 0..21, saved in NVS. Wins over the PC's pushed value for a few seconds so the
+// PC can store the same change (send "vol=N" to the PC when this board is selected).
 void onboard_audio_set_volume(int volume);
 void onboard_audio_stop();
 void onboard_audio_boot();

@@ -23,6 +23,13 @@ static int64_t attempt_at, next_scan, next_save;
 static bool associated, manual;
 static uint32_t disconnect_generation, manual_retries;
 static int64_t associated_at, manual_retry_at;
+// Right after boot the C6/router often miss the first scan or attempt. Rescan
+// quickly a few times before falling back to the 15 s interval.
+#define QUICK_RESCANS 5
+#define QUICK_RESCAN_US 3000000LL
+static uint32_t quick_rescans;
+static bool paused;
+static int64_t last_scan_at;
 
 static void station_config(wifi_config_t *config, const ard_wifi_profile_t *profile) {
     memset(config, 0, sizeof(*config));
@@ -182,6 +189,11 @@ void ard_wifi_end_manual(void) {
     manual = false;
 }
 
+void ard_wifi_set_paused(bool on) {
+    paused = on;
+    if (!on) ard_wifi_request_scan(); // look for saved networks right away
+}
+
 esp_err_t ard_wifi_disconnect_wait(void) {
     if (!initialized) return ESP_ERR_INVALID_STATE;
     taskENTER_CRITICAL(&lock);
@@ -259,10 +271,16 @@ static void scan(void) {
     }
     scan_error = err; scanning = false;
     taskEXIT_CRITICAL(&lock);
+    // SSIDs are not secret; BSSID/channel/auth tell which AP a profile actually joins.
+    for (uint16_t i = 0; err == ESP_OK && i < count; ++i)
+        if (records[i].ssid[0]) ESP_LOGI(TAG, "  %.32s  %02x:%02x:%02x:%02x:%02x:%02x  ch%d  %d dBm  auth %d", (char *)records[i].ssid,
+                 records[i].bssid[0], records[i].bssid[1], records[i].bssid[2], records[i].bssid[3],
+                 records[i].bssid[4], records[i].bssid[5], records[i].primary, records[i].rssi, records[i].authmode);
     free(records);
     if (err != ESP_OK) ESP_LOGW(TAG, "SSID scan failed: %s", esp_err_to_name(err));
     else ESP_LOGI(TAG, "SSID scan: %u networks", (unsigned)result_count);
-    next_scan = esp_timer_get_time() + 15000000;
+    last_scan_at = esp_timer_get_time();
+    next_scan = last_scan_at + 15000000;
     tried = 0; pending_tried = false;
 }
 
@@ -299,6 +317,7 @@ void ard_wifi_tick(void) {
     if (ready) {
         was_connected = true;
         connecting = false;
+        quick_rescans = 0;
         if (success || !remembered) remember();
         if (requested && !manual) scan();
         return;
@@ -327,6 +346,12 @@ void ard_wifi_tick(void) {
             if (err != ESP_OK && manual_retries < 2) manual_retry_at = attempt_at + 1000000;
             ESP_LOGI(TAG, "Manual connection retry %lu: %s", (unsigned long)manual_retries, esp_err_to_name(err));
         }
+        return;
+    }
+    if (paused) {
+        // A station attempt would move the setup AP to the router's channel.
+        if ((connecting || linked) && ard_wifi_disconnect_wait() != ESP_OK) return;
+        if (requested) scan();
         return;
     }
     if (was_connected) {
@@ -364,6 +389,13 @@ void ard_wifi_tick(void) {
     }
     if (!candidate) {
         if (now >= next_scan) ard_wifi_request_scan();
+        else if ((configured.ssid[0] || profiles.count) && quick_rescans < QUICK_RESCANS &&
+                 now - last_scan_at >= QUICK_RESCAN_US) {
+            ++quick_rescans;
+            ESP_LOGI(TAG, "No saved SSID connected yet; quick rescan %lu/%d",
+                     (unsigned long)quick_rescans, QUICK_RESCANS);
+            ard_wifi_request_scan();
+        }
         return;
     }
     taskENTER_CRITICAL(&lock);

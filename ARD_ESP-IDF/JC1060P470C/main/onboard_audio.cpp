@@ -27,6 +27,8 @@ constexpr int kRate = 16000, kFrame = 256, kVolumeMax = 21, kPort = 5005;
 constexpr size_t kMaxSamples = kRate * CONFIG_ARD_VOICE_MAX_SECONDS;
 constexpr size_t kPreSamples = kRate / 10;
 constexpr uint32_t kPeerTimeoutMs = 12000, kEchoTailMs = 500;
+// Switching the speaker amplifier off clicks into the microphone; ignore it.
+constexpr uint32_t kAmpSettleMs = 600;
 const char *TAG = "onboard_audio";
 
 struct Packet { uint32_t generation; uint16_t count; int16_t mono[512]; };
@@ -49,10 +51,17 @@ std::atomic<int> volume{12}, peak{0}, threshold{2000}, cue{0};
 std::atomic<uint32_t> generation{0}, selection{0}, awaitedJob{0}, completedJob{0}, serverAddress{0}, serverSession{0};
 std::atomic<uint32_t> rxPackets{0}, dropped{0}, uploaded{0}, uploadErrors{0};
 std::atomic<uint32_t> peerSeen{0}, echoUntil{0}, discardUntil{0};
+// A local change wins until the PC has had time to store it (status polls every 3 s).
+std::atomic<uint32_t> localVolumeUntil{0};
+constexpr uint32_t kLocalVolumeHoldMs = 4000;
 portMUX_TYPE errorLock = portMUX_INITIALIZER_UNLOCKED;
 char lastError[64];
 
 uint32_t nowMs() { return (uint32_t)(esp_timer_get_time() / 1000); }
+void storeVolume(int value) {
+    value = value < 0 ? 0 : value > kVolumeMax ? kVolumeMax : value;
+    if (volume.exchange(value) != value) dirty.store(true);
+}
 bool before(uint32_t deadline) { return (int32_t)(nowMs() - deadline) < 0; }
 void error(const char *message) {
     char copy[64]{};
@@ -159,7 +168,11 @@ void ioTask(void *) {
     size_t preAt = 0, preCount = 0, count = 0, packetAt = 0;
     uint32_t phase = 0, toneRemaining = 0, lastGeneration = generation.load();
     int melody = 0, note = 0, toneHz = 0;
-    bool lastVad = vad.load();
+    bool lastVad = vad.load(), ampOn = false;
+    uint32_t micHoldUntil = 0;
+    // Idle peak level of the room (fans, motors). VAD speech must clearly exceed it,
+    // in addition to the PC's sensitivity threshold.
+    int noiseFloor = 0;
     const int notes[] = {523, 659, 784, 988, 1175, 1568};
     const int lengths[] = {100, 100, 100, 100, 120, 300};
     for (;;) {
@@ -195,10 +208,16 @@ void ioTask(void *) {
         }
         const bool mode = vad.load();
         const bool permitted = active() && micEnabled.load() && !uploading.load() &&
-            !remoteBusy.load() && !awaitedJob.load() && !before(echoUntil.load()) && !melody && mode == lastVad;
+            !remoteBusy.load() && !awaitedJob.load() && !before(echoUntil.load()) && !before(micHoldUntil) &&
+            !melody && mode == lastVad;
         lastVad = mode;
+        const int floorLevel = noiseFloor * 3;
+        const int speechLevel = threshold.load() > floorLevel ? threshold.load() : floorLevel;
+        const bool speech = maximum > speechLevel;
+        // Follow only non-speech frames, slowly (about 4 s), so speech never raises it.
+        if (permitted && !capture.recording && !speech) noiseFloor += (maximum - noiseFloor) / 256;
         const voice_capture_event_t event = voice_capture_step(&capture, permitted, mode, ptt.load() || gamepadPtt.load(),
-            maximum > threshold.load(), kFrame, (uint32_t)kMaxSamples - kPreSamples, kRate * 3 / 4);
+            speech, kFrame, (uint32_t)kMaxSamples - kPreSamples, kRate * 3 / 4);
         if (event == VOICE_START) {
             count = 0;
             for (size_t i = 0; i < preCount; ++i) clip[count++] = pre[(preAt + kPreSamples - preCount + i) % kPreSamples];
@@ -244,7 +263,10 @@ void ioTask(void *) {
         }
         if (audible) echoUntil.store(nowMs() + kEchoTailMs);
         playing.store(audible || before(echoUntil.load()));
-        gpio_set_level(PIN_SPK_AMP_EN, playing.load() && !quiet ? 1 : 0);
+        const bool amp = playing.load() && !quiet;
+        if (ampOn && !amp) micHoldUntil = nowMs() + kAmpSettleMs;
+        ampOn = amp;
+        gpio_set_level(PIN_SPK_AMP_EN, amp ? 1 : 0);
         size_t written = 0;
         err = i2s_channel_write(tx, output, sizeof(output), &written, 100);
         if (err != ESP_OK || written != sizeof(output)) {
@@ -392,7 +414,7 @@ void onboard_audio_pc_state(bool enabled, bool mode, bool busy, uint32_t complet
     selected.store(enabled); serverAddress.store(address); serverSession.store(session); peerSeen.store(nowMs());
     completedJob.store(completed); remoteBusy.store(enabled && busy); vad.store(mode);
     if (awaitedJob.load() && completed >= awaitedJob.load()) awaitedJob.store(0);
-    if (enabled && vol >= 0 && vol <= kVolumeMax) onboard_audio_set_volume(vol);
+    if (enabled && vol >= 0 && vol <= kVolumeMax && !before(localVolumeUntil.load())) storeVolume(vol);
     threshold.store(sensitivity < 100 ? 100 : sensitivity > 32767 ? 32767 : sensitivity);
 }
 void onboard_audio_set_ptt(bool held) { ptt.store(held); }
@@ -403,8 +425,8 @@ void onboard_audio_set_mic(bool enabled) {
     dirty.store(true);
 }
 void onboard_audio_set_volume(int value) {
-    value = value < 0 ? 0 : value > kVolumeMax ? kVolumeMax : value;
-    if (volume.exchange(value) != value) dirty.store(true);
+    localVolumeUntil.store(nowMs() + kLocalVolumeHoldMs);
+    storeVolume(value);
 }
 void onboard_audio_stop() {
     ++generation; cue.store(0); discardUntil.store(nowMs() + 500);

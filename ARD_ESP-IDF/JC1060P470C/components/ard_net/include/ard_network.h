@@ -40,14 +40,21 @@ typedef struct {
 } ard_network_ap_t;
 esp_err_t ard_network_scan(ard_network_ap_t *out, uint16_t capacity, uint16_t *count);
 // Connects live, waits up to 25 s for an IP, then persists the existing NVS blob.
-// Failure restores the previous station configuration. The setup AP stays on.
+// Turns the setup AP off first (no DHCP lease while it runs). Failure restores
+// the previous station configuration; network_task brings the AP back if needed.
 esp_err_t ard_network_join(const char *ssid, const char *password);
 // Web portal: store for next boot, serialized against scan/join.
 esp_err_t ard_network_store_settings(const ard_network_settings_t *next);
+// Touch/serial setup: validates, saves and applies the PC host immediately
+// (re-resolved right away). ESP_ERR_INVALID_STATE until a Wi-Fi SSID is saved,
+// because the server shares the stored Wi-Fi settings blob.
+esp_err_t ard_network_set_server(const char *host);
 const char *ard_network_hostname(void);
 const char *ard_network_password(void);
 const char *ard_network_token(void);
 void ard_network_restart_later(void);
+// Setup AP (open, 192.168.4.1) runs without a saved Wi-Fi or after 90 s offline.
+bool ard_network_setup_ap_active(void);
 
 #ifdef __cplusplus
 }

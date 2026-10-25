@@ -25,11 +25,13 @@ namespace {
 
 constexpr uint32_t kPollMs = 3000;       // same cadence as HMI_MCU
 constexpr uint32_t kHeartbeatMs = 3000;
+// /api/hmi/updates: sorting progress, new camera frames and the live preview.
+constexpr uint32_t kUpdatesIdleMs = 1000, kUpdatesActiveMs = 300;
 constexpr size_t kStatusMax = 16384;
 constexpr size_t kJpegMax = 512 * 1024;  // HMI_MCU capped at 40 KB; PSRAM allows full frames
 
 struct Outgoing {
-    enum Kind : uint8_t { COMMAND, APPROVAL, GUIDANCE } kind;
+    enum Kind : uint8_t { COMMAND, APPROVAL, GUIDANCE, SORTING } kind;
     PcBoard board;
     bool approve;
     char text[96];
@@ -44,6 +46,8 @@ SemaphoreHandle_t statusLock, imageLock;
 PcStatus status = {};
 QueueHandle_t outgoing;
 std::atomic<bool> imageRequested{false};
+std::atomic<uint32_t> imageSeqSeen{0};
+PcRequestResult sortingResult = {};   // guarded by driveLock (short critical sections)
 TaskHandle_t worker;
 portMUX_TYPE driveLock = portMUX_INITIALIZER_UNLOCKED;
 float driveAxes[3] = {};
@@ -217,6 +221,59 @@ void poll(char *buffer) {
     xSemaphoreGive(statusLock);
 }
 
+// The panel fonts are ASCII Montserrat; replace other bytes so names never render as boxes.
+void asciiCopy(char *out, size_t size, const char *text) {
+    size_t n = 0;
+    for (; *text && n + 1 < size; ++text) {
+        const unsigned char c = (unsigned char)*text;
+        if (c >= 0x80 && (c & 0xC0) == 0x80) continue; // UTF-8 continuation byte
+        out[n++] = c >= 32 && c < 127 ? (char)c : '?';
+    }
+    out[n] = 0;
+}
+
+// Reuses the status poll's PSRAM buffer (same task) to keep the 6 KB stack free.
+// Returns true while something changes quickly (sorting or live preview).
+bool pollUpdates(char *buffer) {
+    PcSorting next = {};
+    cJSON *doc = nullptr;
+    int code = http("/api/hmi/updates", HTTP_METHOD_GET, nullptr, 1000, (uint8_t *)buffer, kStatusMax);
+    // A PC program from before /api/hmi/updates still reports sorting progress.
+    if (code == 404) code = http("/api/sorting/status", HTTP_METHOD_GET, nullptr, 1000, (uint8_t *)buffer, kStatusMax);
+    if (code == 200) doc = cJSON_Parse(buffer);
+    // A new frame on the PC (capture, sorting, live preview) is fetched right away.
+    const cJSON *seq = cJSON_GetObjectItem(doc, "image_seq");
+    if (cJSON_IsNumber(seq) && seq->valuedouble > 0) {
+        const uint32_t value = (uint32_t)seq->valuedouble;
+        if (value != imageSeqSeen.exchange(value)) imageRequested = true;
+    }
+    const bool streaming = cJSON_IsTrue(cJSON_GetObjectItem(doc, "stream"));
+    const cJSON *s = cJSON_GetObjectItem(doc, "sorting");
+    if (cJSON_IsObject(s)) {
+        next.valid = true;
+        next.running = cJSON_IsTrue(cJSON_GetObjectItem(s, "is_running"));
+        next.stepNum = (int)num(s, "step_num");
+        next.progress = (int)num(s, "progress");
+        strlcpy(next.step, str(s, "step", "idle"), sizeof(next.step));
+        strlcpy(next.phase, str(s, "phase", ""), sizeof(next.phase));
+        asciiCopy(next.object, sizeof(next.object), str(s, "detected_object", "-"));
+        strlcpy(next.material, str(s, "detected_material", "-"), sizeof(next.material));
+        strlcpy(next.updated, str(s, "last_updated", ""), sizeof(next.updated));
+        next.targetYaw = (float)num(s, "target_yaw");
+        next.currentYaw = (float)num(s, "current_yaw");
+        next.dumpRoll = (float)num(s, "dump_roll");
+        next.currentRoll = (float)num(s, "current_roll");
+        next.targetRail = (float)num(s, "target_rail_z");
+        next.currentRail = (float)num(s, "current_rail_z");
+    }
+    cJSON_Delete(doc);
+    xSemaphoreTake(statusLock, portMAX_DELAY);
+    status.sorting = next;
+    status.cameraStream = streaming;
+    xSemaphoreGive(statusLock);
+    return (next.valid && next.running) || streaming;
+}
+
 void heartbeat() {
     char ip[16], body[256];
     ard_network_local_ip(ip, sizeof(ip));
@@ -240,6 +297,8 @@ void send(const Outgoing &item) {
     } else if (item.kind == Outgoing::GUIDANCE) {
         cJSON_AddStringToObject(doc, "cue", item.text);
         path = "/api/jc1060/guidance";
+    } else if (item.kind == Outgoing::SORTING) {
+        path = item.approve ? "/api/sorting/start" : "/api/sorting/cancel"; // gear ratios: PC settings
     } else {
         cJSON_AddStringToObject(doc, "command", item.text);
         path = kCommandPaths[item.board];
@@ -248,8 +307,15 @@ void send(const Outgoing &item) {
     cJSON_Delete(doc);
     if (!json) return;
     const int code = http(path, HTTP_METHOD_POST, json,
-        item.kind == Outgoing::COMMAND && item.board == PC_DRIVE ? 6500 : 1000);
+        item.kind == Outgoing::COMMAND && item.board == PC_DRIVE ? 6500 : item.kind == Outgoing::SORTING ? 3000 : 1000);
     if (code != 200 && code != 202) ESP_LOGW(TAG, "POST %s -> %d", path, code);
+    if (item.kind == Outgoing::SORTING) {
+        portENTER_CRITICAL(&driveLock);
+        sortingResult.code = code;
+        sortingResult.start = item.approve;
+        ++sortingResult.sequence;
+        portEXIT_CRITICAL(&driveLock);
+    }
     cJSON_free(json);
 }
 
@@ -263,7 +329,8 @@ void setImageError(const char *message) {
 // /api/hmi/last_image -> hardware JPEG decoder (ESP32-P4) -> RGB565 for the Cam tab.
 void fetchImage() {
     size_t length = 0;
-    const int code = http("/api/hmi/last_image", HTTP_METHOD_GET, nullptr, 3000, jpegBuffer, kJpegMax, &length);
+    // 640x448 for this screen; the legacy 240x320 HMI keeps the small default.
+    const int code = http("/api/hmi/last_image?size=large", HTTP_METHOD_GET, nullptr, 3000, jpegBuffer, kJpegMax, &length);
     char message[40];
     if (code != 200 || !length) { snprintf(message, sizeof(message), "HTTP error %d", code); setImageError(message); return; }
     jpeg_decode_picture_info_t info;
@@ -290,8 +357,9 @@ void fetchImage() {
     }
     if (err == ESP_OK) {
         image.pixels = pixels;
-        image.width = (uint16_t)width;
-        image.height = (uint16_t)height;
+        image.width = (uint16_t)info.width;   // show the picture, not the MCU padding
+        image.height = (uint16_t)info.height;
+        image.stride = (uint16_t)width;
         image.error[0] = 0;
     } else {
         image.pixels = nullptr;
@@ -305,7 +373,8 @@ void fetchImage() {
 
 void linkTask(void *) {
     char *buffer = (char *)heap_caps_malloc(kStatusMax, MALLOC_CAP_SPIRAM);
-    uint32_t lastPoll = 0, lastHeartbeat = 0;
+    uint32_t lastPoll = 0, lastHeartbeat = 0, lastUpdates = 0;
+    bool fast = false;
     for (;;) {
         Outgoing item;
         // Commands and approvals first: they are what the operator is waiting on.
@@ -315,6 +384,11 @@ void linkTask(void *) {
         if (ard_network_connected()) {
             if (buffer && now - lastPoll >= kPollMs) { lastPoll = now; poll(buffer); }
             if (now - lastHeartbeat >= kHeartbeatMs) { lastHeartbeat = now; heartbeat(); }
+            // Small endpoint; poll fast while sorting or the live preview runs.
+            if (buffer && now - lastUpdates >= (fast ? kUpdatesActiveMs : kUpdatesIdleMs)) {
+                lastUpdates = now;
+                fast = pollUpdates(buffer);
+            }
         }
         xQueuePeek(outgoing, &item, pdMS_TO_TICKS(50)); // wake early when something is queued
     }
@@ -446,6 +520,19 @@ void pc_send_approval(const char *id, bool approve) {
 }
 
 void pc_request_image() { imageRequested = true; }
+
+bool pc_sorting_request(bool start) {
+    Outgoing item = {Outgoing::SORTING, PC_DRIVE, start, {}};
+    // Cancel goes first so it is not stuck behind queued commands.
+    return outgoing && (start ? xQueueSend(outgoing, &item, 0) : xQueueSendToFront(outgoing, &item, 0)) == pdTRUE;
+}
+
+PcRequestResult pc_sorting_result() {
+    portENTER_CRITICAL(&driveLock);
+    const PcRequestResult result = sortingResult;
+    portEXIT_CRITICAL(&driveLock);
+    return result;
+}
 
 bool pc_image_lock(PcImage *out, uint32_t timeoutMs) {
     if (!imageLock || xSemaphoreTake(imageLock, pdMS_TO_TICKS(timeoutMs)) != pdTRUE) return false;

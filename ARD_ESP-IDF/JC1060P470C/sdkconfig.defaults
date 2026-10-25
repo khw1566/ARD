@@ -80,4 +80,3 @@ CONFIG_LV_FONT_MONTSERRAT_28=y
 
 # Reproduce the user's working V2 display configuration on a fresh checkout.
 CONFIG_ARD_PANEL_V2=y
-CONFIG_ARD_LCD_SYNC_FULL_REFRESH=y

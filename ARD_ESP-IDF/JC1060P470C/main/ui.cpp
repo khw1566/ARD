@@ -1,5 +1,7 @@
 #include "ui.h"
+#include "ui_main.h"
 #include "ui_settings.h"
+#include "ui_text.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -22,15 +24,15 @@ namespace {
 const lv_color_t kBar = lv_color_hex(0x1F2A36), kAccent = lv_color_hex(0x0B6E99), kOn = lv_color_hex(0x1E9E50),
                  kOff = lv_color_hex(0xB3261E), kMuted = lv_color_hex(0x5F6B76), kPanel = lv_color_hex(0xF2F4F6);
 
-enum Tab { TAB_DRIVE, TAB_ROBOT, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TAB_COUNT };
+enum Tab { TAB_MAIN, TAB_DRIVE, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TAB_COUNT };
 
 struct Ui {
     lv_obj_t *tabview;
     lv_obj_t *clock, *net, *pc, *pad, *armed;
     // Drive
     lv_obj_t *pos, *driveState, *env, *tof, *gps, *jogSpeed, *jogSpeedLabel, *pidButton, *railLabel, *stepLabel;
-    // Robot / Cam / Sound
-    lv_obj_t *robotOnline, *robotInfo, *camOnline, *camInfo, *camImage, *camImageNote, *soundOnline, *soundInfo;
+    // Cam / Sound
+    lv_obj_t *camOnline, *camInfo, *camImage, *camImageNote, *camStream, *soundOnline, *soundInfo;
     lv_obj_t *talk, *micToggle;
     // System
     lv_obj_t *netInfo, *padInfo, *padRaw, *sysInfo;
@@ -50,7 +52,7 @@ volatile int pendingTabStep = 0;
 
 // ---- helpers ---------------------------------------------------------------------------------
 
-lv_obj_t *label(lv_obj_t *parent, const char *text, const lv_font_t *font = &lv_font_montserrat_20,
+lv_obj_t *label(lv_obj_t *parent, const char *text, const lv_font_t *font = &ard_font_20,
                 lv_color_t color = lv_color_black()) {
     lv_obj_t *l = lv_label_create(parent);
     lv_label_set_text(l, text);
@@ -66,7 +68,7 @@ lv_obj_t *button(lv_obj_t *parent, const char *text, lv_color_t color, lv_event_
     lv_obj_set_style_bg_color(b, color, 0);
     lv_obj_set_style_radius(b, 10, 0);
     lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, data);
-    lv_obj_t *l = label(b, text, &lv_font_montserrat_20, lv_color_white());
+    lv_obj_t *l = label(b, text, &ard_font_20, lv_color_white());
     lv_obj_center(l);
     return b;
 }
@@ -98,7 +100,6 @@ void localCommand(lv_event_t *e) {
     command_execute(cmd); // PC routes to the unchanged, independent DriveMCU
 }
 
-void robotCommand(lv_event_t *e) { pc_send_command(PC_ROBOT, static_cast<const char *>(lv_event_get_user_data(e))); }
 void camCommand(lv_event_t *e) { pc_send_command(PC_CAM, static_cast<const char *>(lv_event_get_user_data(e))); }
 void soundCommand(lv_event_t *e) {
     const char *cmd = static_cast<const char *>(lv_event_get_user_data(e));
@@ -120,7 +121,7 @@ void rearm(lv_event_t *) { pc_drive_arm(); }
 
 void updateRailLabels() {
     char text[48];
-    snprintf(text, sizeof(text), pidOn ? "PID target: %d mm" : "Z step: %d steps", pidOn ? railTarget : zStep);
+    snprintf(text, sizeof(text), ui_tr(pidOn ? "PID target: %d mm" : "Z step: %d steps"), pidOn ? railTarget : zStep);
     lv_label_set_text(ui.railLabel, text);
     if (ui.pidButton) lv_label_set_text(lv_obj_get_child(ui.pidButton, 0), pidOn ? "PID: ON" : "PID: OFF");
 }
@@ -163,19 +164,19 @@ void buildDrive(lv_obj_t *tab) {
     lv_obj_t *left = panel(tab, 360, 470);
     lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_gap(left, 10, 0);
-    label(left, "DriveMCU (via PC)", &lv_font_montserrat_28, kAccent);
+    label(left, "DriveMCU (via PC)", &ard_font_28, kAccent);
     ui.pos = label(left, "X 0  Y 0  Z 0");
-    ui.driveState = label(left, "---", &lv_font_montserrat_20, kMuted);
+    ui.driveState = label(left, "---", &ard_font_20, kMuted);
     ui.env = label(left, "Env: ---");
     ui.tof = label(left, "ToF: ---");
     ui.gps = label(left, "GPS: off");
-    label(left, "Gamepad jog speed", &lv_font_montserrat_16, kMuted);
+    label(left, "Gamepad jog speed", &ard_font_16, kMuted);
     ui.jogSpeed = lv_slider_create(left);
     lv_obj_set_width(ui.jogSpeed, 300);
     lv_slider_set_range(ui.jogSpeed, 10, 100);
     lv_slider_set_value(ui.jogSpeed, controls_status().speedPercent, LV_ANIM_OFF);
     lv_obj_add_event_cb(ui.jogSpeed, jogSpeedChanged, LV_EVENT_VALUE_CHANGED, nullptr);
-    ui.jogSpeedLabel = label(left, "", &lv_font_montserrat_16, kMuted);
+    ui.jogSpeedLabel = label(left, "", &ard_font_16, kMuted);
 
     lv_obj_t *right = grid(tab, 600, 480);
     // Same moves as HMI_MCU Drive pages 2-4.
@@ -195,43 +196,27 @@ void buildDrive(lv_obj_t *tab) {
     button(right, "Enable", kOn, localCommand, (void *)"e");
     button(right, "Disable", kMuted, localCommand, (void *)"d");
     button(right, "Step -10", kMuted, zStepChange, (void *)(intptr_t)-1, 150, 64);
-    ui.railLabel = label(right, "", &lv_font_montserrat_20, kMuted);
+    ui.railLabel = label(right, "", &ard_font_20, kMuted);
     updateRailLabels();
 }
 
-// ---- Robot / Cam / Sound tabs (boards that are still separate, through the PC) ------------------
+// ---- Cam / Sound tabs (boards that are still separate, through the PC) --------------------------
 
 lv_obj_t *statusColumn(lv_obj_t *tab, const char *title, lv_obj_t **online, lv_obj_t **info) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
     lv_obj_t *left = panel(tab, 360, 470);
     lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
-    label(left, title, &lv_font_montserrat_28, kAccent);
-    *online = label(left, "Offline", &lv_font_montserrat_20, kOff);
+    label(left, title, &ard_font_28, kAccent);
+    *online = label(left, "Offline", &ard_font_20, kOff);
     *info = label(left, "---");
     lv_label_set_long_mode(*info, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(*info, 330);
     return grid(tab, 600, 480);
 }
 
-void buildRobot(lv_obj_t *tab) {
-    lv_obj_t *g = statusColumn(tab, "Robot3Axis", &ui.robotOnline, &ui.robotInfo);
-    button(g, "X +50", kAccent, robotCommand, (void *)"rx50");
-    button(g, "X -50", kAccent, robotCommand, (void *)"rx-50");
-    button(g, "Y +50", kAccent, robotCommand, (void *)"ry50");
-    button(g, "Y -50", kAccent, robotCommand, (void *)"ry-50");
-    button(g, "Z +50", kAccent, robotCommand, (void *)"rz50");
-    button(g, "Z -50", kAccent, robotCommand, (void *)"rz-50");
-    button(g, "Grab open", kOn, robotCommand, (void *)"grab open");
-    button(g, "Grab close", kOff, robotCommand, (void *)"grab close");
-    button(g, "HOME", kMuted, robotCommand, (void *)"home");
-    button(g, "X spd +", kMuted, robotCommand, (void *)"rxs10");
-    button(g, "X spd -", kMuted, robotCommand, (void *)"rxs-10");
-    button(g, "Y spd +", kMuted, robotCommand, (void *)"rys50");
-    button(g, "Y spd -", kMuted, robotCommand, (void *)"rys-50");
-    button(g, "Z spd +", kMuted, robotCommand, (void *)"rzs50");
-    button(g, "Z spd -", kMuted, robotCommand, (void *)"rzs-50");
-}
+// The PC drives the preview (ImageSender only knows single captures); ask for the opposite state.
+void streamToggle(lv_event_t *) { pc_send_command(PC_CAM, pc_status().cameraStream ? "stream_off" : "stream_on"); }
 
 void viewImage(lv_event_t *) {
     pc_request_image();
@@ -244,9 +229,9 @@ void buildCam(lv_obj_t *tab) {
     lv_obj_t *left = panel(tab, 300, 470);
     lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_gap(left, 8, 0);
-    label(left, "Camera", &lv_font_montserrat_28, kAccent);
-    ui.camOnline = label(left, "Offline", &lv_font_montserrat_20, kOff);
-    ui.camInfo = label(left, "---", &lv_font_montserrat_16);
+    label(left, "Camera", &ard_font_28, kAccent);
+    ui.camOnline = label(left, "Offline", &ard_font_20, kOff);
+    ui.camInfo = label(left, "---", &ard_font_16);
     lv_label_set_long_mode(ui.camInfo, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(ui.camInfo, 270);
     lv_obj_t *g = grid(left, 280, 220);
@@ -254,13 +239,13 @@ void buildCam(lv_obj_t *tab) {
     button(g, "SHOT", kAccent, camCommand, (void *)"capture", 125, 56);
     button(g, "VIEW", kOn, viewImage, nullptr, 125, 56);
     button(g, "AI ANALYZE", kAccent, camCommand, (void *)"analyze", 125, 56);
-    button(g, "STREAM", kMuted, camCommand, (void *)"stream", 125, 56);
+    ui.camStream = button(g, "STREAM", kMuted, streamToggle, nullptr, 125, 56);
 
     lv_obj_t *view = panel(tab, 660, 470);
     lv_obj_set_style_bg_color(view, lv_color_hex(0x101418), 0);
     ui.camImage = lv_image_create(view);
     lv_obj_center(ui.camImage);
-    ui.camImageNote = label(view, "Press VIEW for the last captured image", &lv_font_montserrat_20, lv_color_white());
+    ui.camImageNote = label(view, "New captures appear here automatically", &ard_font_20, lv_color_white());
     lv_obj_align(ui.camImageNote, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
 
@@ -323,9 +308,9 @@ void showSetupQr(lv_event_t *) {
         qrPanel = panel(lv_layer_top(), 620, 470);
         lv_obj_set_pos(qrPanel, 202, 70);
         lv_obj_set_flex_flow(qrPanel, LV_FLEX_FLOW_COLUMN);
-        qrTitle = label(qrPanel, "Setup QR", &lv_font_montserrat_28, kAccent);
+        qrTitle = label(qrPanel, "Setup QR", &ard_font_28, kAccent);
         qrImage = lv_image_create(qrPanel);
-        qrNote = label(qrPanel, "", &lv_font_montserrat_16);
+        qrNote = label(qrPanel, "", &ard_font_16);
         lv_obj_t *buttons = grid(qrPanel, 570, 56);
         lv_obj_set_flex_flow(buttons, LV_FLEX_FLOW_ROW);
         button(buttons, "Next QR", kAccent, nextSetupQr, nullptr, 200, 48);
@@ -341,16 +326,16 @@ void buildSystem(lv_obj_t *tab) {
     lv_obj_set_style_pad_gap(tab, 12, 0);
     lv_obj_t *net = panel(tab, 470, 470);
     lv_obj_set_flex_flow(net, LV_FLEX_FLOW_COLUMN);
-    label(net, "Network", &lv_font_montserrat_28, kAccent);
-    ui.netInfo = label(net, "---", &lv_font_montserrat_16);
+    label(net, "Network", &ard_font_28, kAccent);
+    ui.netInfo = label(net, "---", &ard_font_16);
     button(net, "Setup QR", kAccent, showSetupQr, nullptr, 200, 40);
-    ui.sysInfo = label(net, "", &lv_font_montserrat_16, kMuted);
+    ui.sysInfo = label(net, "", &ard_font_16, kMuted);
 
     lv_obj_t *pad = panel(tab, 490, 470);
     lv_obj_set_flex_flow(pad, LV_FLEX_FLOW_COLUMN);
-    label(pad, "Gamepad (BLE via C6)", &lv_font_montserrat_28, kAccent);
-    ui.padInfo = label(pad, "---", &lv_font_montserrat_16);
-    ui.padRaw = label(pad, "", &lv_font_montserrat_16, kMuted);
+    label(pad, "Gamepad (BLE via C6)", &ard_font_28, kAccent);
+    ui.padInfo = label(pad, "---", &ard_font_16);
+    ui.padRaw = label(pad, "", &ard_font_16, kMuted);
     lv_obj_t *g = grid(pad, 460, 90);
     lv_obj_set_flex_flow(g, LV_FLEX_FLOW_ROW);
     button(g, "Pair new", kAccent, pairPad, nullptr, 140, 56);
@@ -372,9 +357,9 @@ void buildApproval() {
     lv_obj_center(ui.approval);
     lv_obj_set_style_border_color(ui.approval, kAccent, 0);
     lv_obj_set_style_border_width(ui.approval, 4, 0);
-    lv_obj_t *title = label(ui.approval, "AI Command - approve?", &lv_font_montserrat_28, kAccent);
+    lv_obj_t *title = label(ui.approval, "AI Command - approve?", &ard_font_28, kAccent);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 0);
-    ui.approvalText = label(ui.approval, "", &lv_font_montserrat_20);
+    ui.approvalText = label(ui.approval, "", &ard_font_20);
     lv_label_set_long_mode(ui.approvalText, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(ui.approvalText, 540);
     lv_obj_align(ui.approvalText, LV_ALIGN_TOP_MID, 0, 60);
@@ -393,22 +378,22 @@ void buildBar(lv_obj_t *screen) {
     lv_obj_set_style_radius(bar, 0, 0);
     lv_obj_set_style_border_width(bar, 0, 0);
     lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_t *title = label(bar, "ARD", &lv_font_montserrat_28, lv_color_white());
+    lv_obj_t *title = label(bar, "ARD", &ard_font_28, lv_color_white());
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 0, 0);
-    ui.clock = label(bar, "--:--", &lv_font_montserrat_28, lv_color_white());
+    ui.clock = label(bar, "--:--", &ard_font_28, lv_color_white());
     lv_obj_align(ui.clock, LV_ALIGN_LEFT_MID, 80, 0);
-    ui.net = label(bar, "Wi-Fi --", &lv_font_montserrat_16, lv_color_white());
+    ui.net = label(bar, "Wi-Fi --", &ard_font_16, lv_color_white());
     lv_obj_align(ui.net, LV_ALIGN_LEFT_MID, 190, -12);
-    ui.pc = label(bar, "PC --", &lv_font_montserrat_16, lv_color_white());
+    ui.pc = label(bar, "PC --", &ard_font_16, lv_color_white());
     lv_obj_align(ui.pc, LV_ALIGN_LEFT_MID, 190, 12);
-    ui.pad = label(bar, "Pad --", &lv_font_montserrat_16, lv_color_white());
+    ui.pad = label(bar, "Pad --", &ard_font_16, lv_color_white());
     lv_obj_align(ui.pad, LV_ALIGN_LEFT_MID, 430, -12);
-    ui.armed = label(bar, "", &lv_font_montserrat_16, lv_color_white());
+    ui.armed = label(bar, "", &ard_font_16, lv_color_white());
     lv_obj_align(ui.armed, LV_ALIGN_LEFT_MID, 430, 12);
     lv_obj_t *arm = button(bar, "RE-ARM", kMuted, rearm, nullptr, 120, 56);
     lv_obj_align(arm, LV_ALIGN_RIGHT_MID, -200, 0);
     lv_obj_t *stop = button(bar, "E-STOP", kOff, estop, nullptr, 180, 60);
-    lv_obj_set_style_text_font(lv_obj_get_child(stop, 0), &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_font(lv_obj_get_child(stop, 0), &ard_font_28, 0);
     lv_obj_align(stop, LV_ALIGN_RIGHT_MID, 0, 0);
 }
 
@@ -425,7 +410,7 @@ const char *linkName(GamepadLink link) {
 }
 
 void showBoard(lv_obj_t *online, const PcBoardState &b, bool reachable) {
-    lv_label_set_text_fmt(online, "%s  %s", !reachable ? "PC offline" : b.online ? "Online" : "Offline", b.ip);
+    lv_label_set_text_fmt(online, "%s  %s", ui_tr(!reachable ? "PC offline" : b.online ? "Online" : "Offline"), b.ip);
     lv_obj_set_style_text_color(online, reachable && b.online ? kOn : kOff, 0);
 }
 
@@ -435,7 +420,7 @@ void refreshCamImage() {
     if (img.sequence != imageSeq) {
         imageSeq = img.sequence;
         if (img.pixels) {
-            const size_t bytes = (size_t)img.width * img.height * 2;
+            const size_t bytes = (size_t)img.stride * img.height * 2;
             if (bytes > imageCopySize) {
                 heap_caps_free(imageCopy);
                 imageCopy = (uint8_t *)heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM);
@@ -448,17 +433,13 @@ void refreshCamImage() {
                 imageDsc.header.cf = LV_COLOR_FORMAT_RGB565;
                 imageDsc.header.w = img.width;
                 imageDsc.header.h = img.height;
-                imageDsc.header.stride = img.width * 2;
+                imageDsc.header.stride = img.stride * 2;
                 imageDsc.data = imageCopy;
                 imageDsc.data_size = bytes;
                 lv_image_set_src(ui.camImage, &imageDsc);
-                // Fit into the 630x440 viewer.
-                uint32_t scale = 256;
-                if (img.width > 630 || img.height > 440) {
-                    const uint32_t sx = 630 * 256 / img.width, sy = 440 * 256 / img.height;
-                    scale = sx < sy ? sx : sy;
-                }
-                lv_image_set_scale(ui.camImage, scale);
+                // Fill the 630x440 viewer, enlarging small captures too (aspect kept).
+                const uint32_t sx = 630 * 256 / img.width, sy = 440 * 256 / img.height;
+                lv_image_set_scale(ui.camImage, sx < sy ? sx : sy);
                 lv_obj_center(ui.camImage);
                 lv_label_set_text_fmt(ui.camImageNote, "%ux%u", img.width, img.height);
             }
@@ -484,16 +465,17 @@ void refresh(lv_timer_t *) {
     char ip[16];
     ard_network_local_ip(ip, sizeof(ip));
     if (ard_network_connected()) lv_label_set_text_fmt(ui.net, "Wi-Fi %s  %d dBm", ip, ard_network_rssi());
-    else lv_label_set_text(ui.net, "Wi-Fi offline (setup AP on)");
+    else lv_label_set_text(ui.net, ard_network_setup_ap_active() ? "Wi-Fi offline (setup AP on)" : "Wi-Fi offline");
     const PcStatus pc = pc_status();
     ui_settings_poll(lv_tabview_get_tab_active(ui.tabview) == TAB_SETTINGS && !pc.approvalPending);
+    ui_main_poll(pc, lv_tabview_get_tab_active(ui.tabview) == TAB_MAIN);
     char server[65];
     ard_network_server(server, sizeof(server));
-    lv_label_set_text_fmt(ui.pc, "PC %s %s", server, pc.reachable ? "OK" : "--");
+    lv_label_set_text_fmt(ui.pc, "PC %s %s", server, pc.reachable ? ui_tr("OK") : "--");
 
     const GamepadInfo pad = gamepad_info();
     const ControlStatus ctl = controls_status();
-    lv_label_set_text_fmt(ui.pad, "Pad %s  %s", linkName(pad.link), ctl.mode == MODE_DRIVE ? "DRIVE" : "ROBOT");
+    lv_label_set_text_fmt(ui.pad, "Pad %s  %s", ui_tr(linkName(pad.link)), ui_tr(ctl.mode == MODE_DRIVE ? "DRIVE" : "ROBOT"));
 
     lv_label_set_text(ui.armed, ctl.lastAction);
     lv_obj_set_style_text_color(ui.armed, lv_color_white(), 0);
@@ -504,25 +486,21 @@ void refresh(lv_timer_t *) {
         if (online) lv_label_set_text_fmt(ui.pos, "PC estimate: X %ld   Y %ld   Z %ld",
             (long)pc.driveX, (long)pc.driveY, (long)pc.driveZ);
         else lv_label_set_text(ui.pos, "DriveMCU offline / PC unavailable");
-        lv_label_set_text_fmt(ui.driveState, "DriveMCU %s  %s", pc.board[PC_DRIVE].ip, online ? "ONLINE" : "OFFLINE");
+        lv_label_set_text_fmt(ui.driveState, "DriveMCU %s  %s", pc.board[PC_DRIVE].ip, ui_tr(online ? "ONLINE" : "OFFLINE"));
         lv_label_set_text_fmt(ui.env, "Drive env: %.1f C  %.0f %%  %.1f hPa", pc.driveTemp, pc.driveHumidity, pc.drivePressure);
         lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm", pc.driveTof);
         lv_label_set_text_fmt(ui.gps, "Drive GPS: %.5f, %.5f", pc.driveLat, pc.driveLng);
-        lv_label_set_text_fmt(ui.jogSpeedLabel, "%d %%%s", ctl.speedPercent, ctl.precision ? " (precision)" : "");
+        lv_label_set_text_fmt(ui.jogSpeedLabel, "%d %%%s", ctl.speedPercent, ctl.precision ? ui_tr(" (precision)") : "");
         if (lv_slider_get_value(ui.jogSpeed) != ctl.speedPercent && !lv_obj_has_state(ui.jogSpeed, LV_STATE_PRESSED))
             lv_slider_set_value(ui.jogSpeed, ctl.speedPercent, LV_ANIM_OFF);
         pidOn = pc.drivePid;
         updateRailLabels();
         break;
     }
-    case TAB_ROBOT:
-        showBoard(ui.robotOnline, pc.board[PC_ROBOT], pc.reachable);
-        lv_label_set_text_fmt(ui.robotInfo, "X  %.1f deg\nY  %.1f mm\nZ  %.1f mm\nGrip  %s\nSpeed  %d / %d / %d\nLast seen %s",
-                              pc.robotX, pc.robotY, pc.robotZ, pc.robotGrab, pc.robotSpeed[0], pc.robotSpeed[1],
-                              pc.robotSpeed[2], pc.board[PC_ROBOT].lastSeen);
-        break;
     case TAB_CAM:
         showBoard(ui.camOnline, pc.board[PC_CAM], pc.reachable);
+        lv_label_set_text(lv_obj_get_child(ui.camStream, 0), pc.cameraStream ? "STOP STREAM" : "STREAM");
+        lv_obj_set_style_bg_color(ui.camStream, pc.cameraStream ? kOff : kMuted, 0);
         lv_label_set_text_fmt(ui.camInfo, "Sensor %s\nRes %s  Q %d\nAI model %s\n\nObject: %s\nCategory: %s",
                               pc.camSensor, pc.camRes, pc.camQuality, pc.aiModel, pc.aiObject, pc.aiCategory);
         refreshCamImage();
@@ -534,7 +512,8 @@ void refresh(lv_timer_t *) {
         const char *state = audio.recording ? "RECORDING" : audio.uploading ? "UPLOADING" : audio.waiting ? "PROCESSING" :
                             audio.playing ? "SPEAKING" : audio.micEnabled && audio.selected ? "LISTENING" : "MIC OFF";
         lv_label_set_text_fmt(ui.soundInfo, "%s  %s\nMode %s\nMic level %d / 32767\nVolume %d / 21%s\nClips %lu  errors %lu\n\nPTT: hold TALK or gamepad RT\nVAD: automatic speech input\n\n%s",
-            state, pc.soundStatus, audio.vad ? "VAD" : "PTT", audio.peak, audio.volume, audio.muted ? " (muted)" : "",
+            ui_tr(state), pc.soundStatus, ui_tr(audio.vad ? "VAD" : "PTT"), audio.peak, audio.volume,
+            audio.muted ? ui_tr(" (muted)") : "",
             (unsigned long)audio.uploadedClips, (unsigned long)audio.uploadErrors, audio.error);
         lv_label_set_text(lv_obj_get_child(ui.micToggle, 0), audio.micEnabled ? "MIC ON" : "MIC OFF");
         const bool canTalk = audio.ready && audio.selected && audio.micEnabled && !audio.vad &&
@@ -551,17 +530,17 @@ void refresh(lv_timer_t *) {
         lv_label_set_text_fmt(ui.netInfo,
                               "Configured SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nOpen Wi-Fi / No login required\n"
                               "http://192.168.4.1/network",
-                              s->ssid[0] ? s->ssid : "(not set)", ip, s->server, server, ard_network_hostname());
+                              s->ssid[0] ? s->ssid : ui_tr("(not set)"), ip, s->server, server, ard_network_hostname());
         lv_label_set_text_fmt(ui.sysInfo, "Heap %lu KB internal, %lu KB PSRAM\nTouch %s",
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
-                              bsp_touch_ready() ? "OK" : "not found");
+                              ui_tr(bsp_touch_ready() ? "OK" : "not found"));
         if (pad.link == GAMEPAD_CONNECTED)
             lv_label_set_text_fmt(ui.padInfo, "%s\n%s  reports %lu  battery %d%%", pad.name, pad.address,
                                   (unsigned long)pad.reports, pad.battery);
         else
             lv_label_set_text_fmt(ui.padInfo, "%s\nPair: hold the pad's pairing button,\nthen press 'Pair new'.",
-                                  linkName(pad.link));
+                                  ui_tr(linkName(pad.link)));
         GamepadState st;
         if (gamepad_state(&st)) {
             char pressed[96] = "";
@@ -593,8 +572,36 @@ void tabStep(int direction) { pendingTabStep = direction; } // applied by the LV
 
 } // namespace
 
+void ui_notice(const char *text) {
+    static lv_obj_t *notice, *noticeText;
+    if (!bsp_lvgl_lock(1000)) return;
+    if (!notice && text) {
+        notice = lv_obj_create(lv_layer_top());
+        lv_obj_set_size(notice, 700, 200);
+        lv_obj_center(notice);
+        lv_obj_set_style_bg_color(notice, kBar, 0);
+        lv_obj_set_style_border_width(notice, 0, 0);
+        lv_obj_clear_flag(notice, LV_OBJ_FLAG_SCROLLABLE);
+        noticeText = label(notice, "", &ard_font_28, lv_color_white());
+        lv_label_set_long_mode(noticeText, LV_LABEL_LONG_WRAP);
+        lv_obj_set_width(noticeText, 640);
+        lv_obj_set_style_text_align(noticeText, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(noticeText);
+    }
+    if (notice) {
+        if (text) {
+            lv_label_set_text(noticeText, text);
+            lv_obj_remove_flag(notice, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(notice, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    bsp_lvgl_unlock();
+}
+
 esp_err_t ui_start() {
     if (!bsp_lvgl_lock(1000)) return ESP_ERR_TIMEOUT;
+    ui_text_init(); // language and Hangul-capable fonts, before any label
     lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_white(), 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
@@ -604,9 +611,10 @@ esp_err_t ui_start() {
     lv_tabview_set_tab_bar_size(ui.tabview, 56);
     lv_obj_set_size(ui.tabview, LCD_H_RES, LCD_V_RES - 72);
     lv_obj_align(ui.tabview, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabview), &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabview), &ard_font_20, 0);
+    // Main (sorting sequence) is first, so it is the screen shown after boot.
+    ui_main_create(lv_tabview_add_tab(ui.tabview, "Main"));
     buildDrive(lv_tabview_add_tab(ui.tabview, "Drive"));
-    buildRobot(lv_tabview_add_tab(ui.tabview, "Robot"));
     buildCam(lv_tabview_add_tab(ui.tabview, "Cam"));
     buildSound(lv_tabview_add_tab(ui.tabview, "Voice"));
     buildSystem(lv_tabview_add_tab(ui.tabview, "System"));

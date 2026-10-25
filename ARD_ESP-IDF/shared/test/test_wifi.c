@@ -148,6 +148,35 @@ int main(int argc, char **argv) {
         visible_ap("new"); begin("new", "password"); ard_wifi_tick(); write_result = ESP_FAIL; success();
         assert(writes == 1 && commits == 0); ard_wifi_tick(); assert(writes == 1);
         clock_us = 5000000; write_result = ESP_OK; ard_wifi_tick(); assert(commits == 1 && disk.count == 1);
+    } else if (!strcmp(argv[1], "boot-quick-rescan")) {
+        // The router is missing from the first boot scan (C6 or router still starting).
+        begin("router", "password"); ard_wifi_tick(); assert(scans == 1 && connects == 0);
+        clock_us = 2900000; ard_wifi_tick(); ard_wifi_tick(); assert(scans == 1);
+        visible_ap("router");
+        clock_us = 3000000; ard_wifi_tick(); ard_wifi_tick();
+        assert(scans == 2 && connects == 1); // Connected after 3 s instead of the 15 s interval.
+        success(); assert(quick_rescans == 0);
+    } else if (!strcmp(argv[1], "boot-quick-limit")) {
+        begin("router", "password"); ard_wifi_tick();
+        for (int i = 0; i < 5; ++i) { clock_us += 3000000; ard_wifi_tick(); ard_wifi_tick(); }
+        assert(scans == 6);
+        clock_us += 3000000; ard_wifi_tick(); ard_wifi_tick();
+        assert(scans == 6); // Back to the normal 15 s interval after five quick rescans.
+        clock_us = last_scan_at + 15000000; ard_wifi_tick(); ard_wifi_tick(); assert(scans == 7);
+    } else if (!strcmp(argv[1], "boot-retry")) {
+        // A first attempt that fails right after boot is retried after a quick rescan.
+        visible_ap("router"); begin("router", "password"); ard_wifi_tick(); assert(connects == 1);
+        failure(); assert(connects == 1);
+        clock_us = 3000000; ard_wifi_tick(); ard_wifi_tick();
+        assert(scans == 2 && connects == 2 && !strcmp((char *)last_config.sta.ssid, "router"));
+    } else if (!strcmp(argv[1], "paused")) {
+        // A setup AP pauses station attempts; requested scans still run for the portal.
+        visible_ap("router"); begin("router", "password"); ard_wifi_set_paused(true);
+        ard_wifi_tick(); assert(scans == 1 && connects == 0);
+        clock_us = 20000000; ard_wifi_tick(); assert(connects == 0);
+        ard_wifi_request_scan(); ard_wifi_tick(); assert(scans == 2 && connects == 0);
+        ard_wifi_set_paused(false); ard_wifi_tick(); assert(scans == 3 && connects == 1);
+        ard_wifi_set_paused(true); ard_wifi_tick(); assert(!connecting); // pausing ends an attempt
     } else if (!strcmp(argv[1], "manual-success")) {
         disk.version = 1; disk.count = 1; disk.entries[0] = profile("old", "old-password");
         visible_ap("old"); begin("old", "old-password"); ard_wifi_tick(); success();

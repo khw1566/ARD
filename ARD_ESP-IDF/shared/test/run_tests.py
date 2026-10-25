@@ -30,7 +30,8 @@ with tempfile.TemporaryDirectory(prefix="ard-wifi-test-") as folder:
     for case in ["slots", "migration", "invalid-migration", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry",
                  "manual-success", "manual-rollback", "manual-empty", "qr", "slow-dhcp", "security-config",
                  "manual-transient", "delayed-disconnect", "missing-disconnect",
-                 "manual-retry-success", "manual-lost-ip"]:
+                 "manual-retry-success", "manual-lost-ip", "boot-quick-rescan", "boot-quick-limit",
+                 "boot-retry", "paused"]:
         subprocess.run([str(build / "test_wifi.exe"), case], cwd=build, check=True)
     try:
         import cv2

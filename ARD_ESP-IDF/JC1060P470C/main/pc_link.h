@@ -18,6 +18,18 @@ struct PcBoardState {
     char lastSeen[9]; // HH:MM:SS of the last poll that saw it online
 };
 
+// PC sorting sequence (/api/sorting/status). Angles in degrees, rail in mm.
+// phase names the motion in progress: capture, analyze, rail_out, yaw_out, roll_out,
+// settle, roll_back, yaw_back, rail_back, done, error (idle/prepare otherwise).
+struct PcSorting {
+    bool valid;              // last sorting poll succeeded
+    bool running;
+    int stepNum, progress;   // 1..5, 0..100
+    char step[12], phase[12];
+    char object[40], material[12], updated[9];
+    float targetYaw, currentYaw, dumpRoll, currentRoll, targetRail, currentRail;
+};
+
 struct PcStatus {
     bool reachable;          // last /api/status poll succeeded
     uint32_t updatedMs;
@@ -40,6 +52,8 @@ struct PcStatus {
     // Pending AI action that needs the operator's approval on this screen.
     bool approvalPending;
     char approvalId[40], approvalDesc[96];
+    PcSorting sorting;
+    bool cameraStream;        // PC-driven live preview is running
 };
 
 esp_err_t pc_link_start();
@@ -50,10 +64,17 @@ void pc_drive_arm();
 void pc_drive_stop();
 void pc_send_approval(const char *id, bool approve);
 void pc_request_image();                      // fetch /api/hmi/last_image in the background
+                                              // (also automatic whenever the PC receives a new frame)
+// Start or cancel the PC sorting sequence (/api/sorting/start, /api/sorting/cancel).
+bool pc_sorting_request(bool start);
+// HTTP status of the latest sorting request; `sequence` changes when a new answer arrives.
+struct PcRequestResult { uint32_t sequence; int code; bool start; };
+PcRequestResult pc_sorting_result();
 bool pc_send_guidance(const char *cue);        // bounded PC TTS announcement for a local action
 
 // Last decoded camera frame (RGB565, PSRAM). Valid until the next pc_request_image() completes;
 // the caller holds the image lock while drawing it.
-struct PcImage { const uint8_t *pixels; uint16_t width, height; uint32_t sequence; char error[40]; };
+// width/height are the picture; rows are `stride` pixels apart (the decoder pads to 16).
+struct PcImage { const uint8_t *pixels; uint16_t width, height, stride; uint32_t sequence; char error[40]; };
 bool pc_image_lock(PcImage *out, uint32_t timeoutMs);
 void pc_image_unlock();

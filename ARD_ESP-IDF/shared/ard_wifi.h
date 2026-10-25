@@ -23,6 +23,9 @@ void ard_wifi_end_manual(void);
 // Serialized with tick/scan/join. Waits up to 2.5 s for disconnect completion.
 esp_err_t ard_wifi_disconnect_wait(void);
 bool ard_wifi_active_profile(ard_wifi_profile_t *out);
+// While paused, tick makes no connection attempts (requested scans still run), so a
+// setup AP keeps its channel. Serialized with tick like the manual calls.
+void ard_wifi_set_paused(bool paused);
 // Returns a saved successful profile for the visible setup password field.
 bool ard_wifi_saved_profile(const char *ssid, ard_wifi_profile_t *out);
 

@@ -33,6 +33,7 @@ void command_print_help() {
            "b<x>,<y> mxr<n> myr<n> mzr<n> home e d x stop\n"
            "Gamepad: START re-arm, B stop, sticks finite remote jog pulses.\n"
            "vol=<0..21> mute unmute audio_stop audio_status audio_test\n"
-           "vad ptt audio_mic_on audio_mic_off; w Wi-Fi; h help\nJC1060> ");
+           "vad ptt audio_mic_on audio_mic_off; w Wi-Fi; h help\n"
+           "server=<PC IP or host> (serial console only)\nJC1060> ");
     fflush(stdout);
 }

@@ -1,7 +1,9 @@
 // Serial console (UART0) and TCP command server (port 5002).
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include "BoundedLine.h"
+#include "ard_network.h"
 #include "board.h"
 #include "cJSON.h"
 #include "commands.h"
@@ -136,7 +138,12 @@ void consoleTask(void *) {
                 char command[128];
                 strlcpy(command, line.value(), sizeof(command));
                 line.reset();
-                if (!command_execute(command)) printf("ERR:REJECTED\n");
+                // Serial only: TCP clients on the network must not redirect the PC link.
+                if (!strncasecmp(command, "server=", 7)) {
+                    const esp_err_t err = ard_network_set_server(command + 7);
+                    if (err == ESP_OK) printf("OK: PC server %s\n", command + 7);
+                    else printf("ERR:SERVER %s\n", esp_err_to_name(err));
+                } else if (!command_execute(command)) printf("ERR:REJECTED\n");
             } else if (result == BoundedLine::TooLong) {
                 printf("ERR:TOO_LONG\n");
             }
