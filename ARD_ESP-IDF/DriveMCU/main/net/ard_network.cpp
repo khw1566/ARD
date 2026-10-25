@@ -110,10 +110,9 @@ esp_err_t startWifi() {
     wifi_config_t apCfg = {}, staCfg = {};
     memcpy(apCfg.ap.ssid, hostname, strlen(hostname));
     apCfg.ap.ssid_len = strlen(hostname);
-    memcpy(apCfg.ap.password, password, strlen(password));
     apCfg.ap.channel = 1;
     apCfg.ap.max_connection = 4;
-    apCfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    apCfg.ap.authmode = WIFI_AUTH_OPEN;
     // The driver arrays also accept a full-length SSID/PSK without a NUL.
     memcpy(staCfg.sta.ssid, settings.ssid, strlen(settings.ssid));
     memcpy(staCfg.sta.password, settings.password, strlen(settings.password));
@@ -248,7 +247,7 @@ void ard_network_restart_later(void) {
 
 void ard_network_print_setup(void) {
     ard_setup_qr_print();
-    printf("[NET] AP: %s | Password: %s | Login: admin\n", hostname, password);
+    printf("[NET] AP: %s | Open Wi-Fi | No web login\n", hostname);
     printf("[NET] Setup: http://192.168.4.1/network or http://%s.local/network\n", hostname);
 }
 
@@ -261,7 +260,7 @@ esp_err_t ard_network_start(const char *role, const char *legacyNamespace, const
     uint8_t mac[6];
     ESP_ERROR_CHECK(esp_efuse_mac_get_default(mac));
     snprintf(hostname, sizeof(hostname), "ard-%s-%02x%02x%02x", role, mac[3], mac[4], mac[5]);
-    snprintf(password, sizeof(password), "ARD-%02x%02x%02x!", mac[3], mac[4], mac[5]);
+    password[0] = 0; // Open setup AP; no separate device password.
     snprintf(token, sizeof(token), "%08lx%08lx%08lx%08lx", (unsigned long)esp_random(),
              (unsigned long)esp_random(), (unsigned long)esp_random(), (unsigned long)esp_random());
 

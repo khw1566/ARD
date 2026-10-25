@@ -3,6 +3,7 @@ import threading
 import time
 from network.sse_manager import sse_manager
 from core.state_manager import state_manager
+from network.drive_transport import drive_commands
 
 class TCPClient:
     """Handles sending asynchronous TCP commands to MCUs."""
@@ -35,6 +36,14 @@ class TCPClient:
 
     def send_command_async(self, ip, port, command, mcu_name="MCU"):
         """Sends a TCP command asynchronously."""
+        if "drive" in mcu_name.lower():
+            def completed(result):
+                if result.ok:
+                    state_manager.last_seen["drivemcu"] = time.time()
+                else:
+                    sse_manager.broadcast_system_log(
+                        f"[DriveMCU] {command}: {result.message}", "Network")
+            return drive_commands.submit(ip, port, command, callback=completed)
         threading.Thread(target=self._send_tcp_worker, args=(ip, port, command, mcu_name), daemon=True).start()
 
 # Create a singleton instance
@@ -42,4 +51,4 @@ tcp_client = TCPClient()
 
 def send_tcp_command_async(ip, port, command, mcu_name="MCU"):
     """Helper function to keep legacy interface."""
-    tcp_client.send_command_async(ip, port, command, mcu_name)
+    return tcp_client.send_command_async(ip, port, command, mcu_name)

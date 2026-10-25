@@ -3,6 +3,7 @@
 #include <cstring>
 #include <initializer_list>
 #include "ard_network.h"
+#include "ard_wifi.h"
 #include "bsp_display.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
@@ -33,7 +34,7 @@ int pendingBrightness = -1;
 bool ready;
 struct Widgets {
     lv_obj_t *tabs, *brightness, *brightnessValue, *brightnessStatus;
-    lv_obj_t *scan, *list, *ssid, *password, *showPassword, *connect, *status, *connection, *keyboard;
+    lv_obj_t *scan, *list, *ssid, *password, *connect, *status, *connection, *keyboard;
     ard_network_ap_t aps[ARD_WIFI_SCAN_MAX];
     uint16_t count;
     uint32_t generation = UINT32_MAX, brightnessGeneration = UINT32_MAX;
@@ -130,10 +131,6 @@ void editField(lv_event_t *event) {
     lv_obj_move_foreground(ui.keyboard);
 }
 
-void passwordVisibility(lv_event_t *) {
-    lv_textarea_set_password_mode(ui.password, !lv_obj_has_state(ui.showPassword, LV_STATE_CHECKED));
-}
-
 void settingsTabChanged(lv_event_t *) { hideKeyboard(); }
 
 bool submit(const Request &request, Phase phase) {
@@ -167,9 +164,15 @@ void selectNetwork(lv_event_t *event) {
     if (index >= ui.count) return;
     if (std::strcmp(lv_textarea_get_text(ui.ssid), ui.aps[index].ssid)) lv_textarea_set_text(ui.password, "");
     lv_textarea_set_text(ui.ssid, ui.aps[index].ssid);
+    ard_wifi_profile_t saved{};
+    const bool known = ard_wifi_saved_profile(ui.aps[index].ssid, &saved);
+    if (known) lv_textarea_set_text(ui.password, saved.password);
+    clearSecret(saved.password, sizeof(saved.password));
     // An open network must not inherit a password from a previous selection.
     if (!ui.aps[index].secure) lv_textarea_set_text(ui.password, "");
-    lv_label_set_text(ui.status, ui.aps[index].secure ? "Enter the Wi-Fi password, then Connect." : "Open network selected. Press Connect.");
+    lv_label_set_text(ui.status, !ui.aps[index].secure ? "Open network selected. Press Connect."
+                      : known ? "Saved password loaded. Check it, then Connect."
+                      : "Enter the Wi-Fi password, then Connect.");
     hideKeyboard();
 }
 
@@ -282,11 +285,8 @@ void buildNetwork(lv_obj_t *page) {
     ui.ssid = input(page, 80, 32, "Choose a network or enter its name");
     text(page, "Password", 368, 128, 590);
     ui.password = input(page, 154, 64, "Wi-Fi password");
-    lv_textarea_set_password_mode(ui.password, true);
-    ui.showPassword = lv_checkbox_create(page);
-    lv_obj_set_pos(ui.showPassword, 368, 220);
-    lv_checkbox_set_text(ui.showPassword, "Show password");
-    lv_obj_add_event_cb(ui.showPassword, passwordVisibility, LV_EVENT_VALUE_CHANGED, nullptr);
+    lv_textarea_set_password_mode(ui.password, false);
+    text(page, "Password is shown as entered.", 368, 226, 400, &lv_font_montserrat_16);
     ui.connect = button(page, "Connect", 778, 214, 190, connect);
     ui.status = text(page, "Select a 2.4 GHz network. Connection details are saved after success.", 368, 276, 600);
     text(page, "The setup access point remains available while connecting.", 368, 358, 600, &lv_font_montserrat_16);
@@ -337,8 +337,7 @@ void ui_settings_poll(bool visible) {
     if (!ready) return;
     if (!visible) {
         hideKeyboard();
-        lv_obj_remove_state(ui.showPassword, LV_STATE_CHECKED);
-        lv_textarea_set_password_mode(ui.password, true);
+        lv_textarea_set_password_mode(ui.password, false);
     }
     Result snapshot;
     taskENTER_CRITICAL(&resultLock);
@@ -353,7 +352,7 @@ void ui_settings_poll(bool visible) {
     if (snapshot.generation != ui.generation) {
         ui.generation = snapshot.generation;
         const bool busy = snapshot.phase == Phase::Scanning || snapshot.phase == Phase::Joining;
-        for (lv_obj_t *control : {ui.scan, ui.connect, ui.list, ui.ssid, ui.password, ui.showPassword}) {
+        for (lv_obj_t *control : {ui.scan, ui.connect, ui.list, ui.ssid, ui.password}) {
             if (busy) lv_obj_add_state(control, LV_STATE_DISABLED);
             else lv_obj_remove_state(control, LV_STATE_DISABLED);
         }
@@ -362,9 +361,7 @@ void ui_settings_poll(bool visible) {
         case Phase::Joining: lv_label_set_text(ui.status, "Connecting... Waiting for an IP address."); break;
         case Phase::Joined:
             lv_label_set_text(ui.status, "Connected. Wi-Fi settings saved for the next start.");
-            lv_textarea_set_text(ui.password, "");
-            lv_obj_remove_state(ui.showPassword, LV_STATE_CHECKED);
-            lv_textarea_set_password_mode(ui.password, true);
+            lv_textarea_set_password_mode(ui.password, false);
             break;
         case Phase::ScanDone:
             ui.count = snapshot.count;
@@ -397,7 +394,11 @@ void ui_settings_poll(bool visible) {
     ard_network_get_settings(&saved);
     if (!ui.savedSsidLoaded && saved.version == 1) {
         ui.savedSsidLoaded = true;
-        if (!lv_textarea_get_text(ui.ssid)[0]) lv_textarea_set_text(ui.ssid, saved.ssid);
+        if (!lv_textarea_get_text(ui.ssid)[0]) {
+            lv_textarea_set_text(ui.ssid, saved.ssid);
+            lv_textarea_set_text(ui.password, saved.password);
+        }
+        scan(nullptr); // Populate nearby networks automatically when settings first opens.
     }
     char ip[16];
     ard_network_local_ip(ip, sizeof(ip));

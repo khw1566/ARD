@@ -2,10 +2,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "buzzer.h"
 #include "commands.h"
 #include "gamepad.h"
-#include "motion.h"
+#include "onboard_audio.h"
 #include "pc_link.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -16,7 +15,7 @@ namespace {
 // HID button numbers (1-based). Xbox Wireless Controller over BLE.
 constexpr int kButtonA = 1, kButtonB = 2, kButtonX = 4, kButtonY = 5, kButtonLB = 7, kButtonRB = 8, kButtonStart = 12;
 constexpr float kDeadzone = 0.12f;
-constexpr uint32_t kPeriodMs = 20;         // 50 Hz: well inside the 300 ms jog dead-man timeout
+constexpr uint32_t kPeriodMs = 20;         // 50 Hz: refresh the latest remote input
 constexpr uint32_t kHomeHoldMs = 1000;
 constexpr uint32_t kRobotRepeatMs = 200;
 
@@ -49,7 +48,7 @@ void driveJog(const GamepadState &s, int speed, bool precision) {
     if (peak > 1) { x /= peak; y /= peak; }
     const float scale = speed / 100.0f * (precision ? 0.25f : 1.0f);
     const bool active = x != 0 || y != 0 || rail != 0;
-    const bool ok = motion_jog(x * scale, y * scale, rail * scale);
+    const bool ok = pc_drive_jog(x * scale, y * scale, rail * scale);
     portENTER_CRITICAL(&lock);
     status.jogging = active && ok;
     portEXIT_CRITICAL(&lock);
@@ -79,7 +78,8 @@ void controlTask(void *) {
         GamepadState s;
         const bool connected = gamepad_state(&s);
         if (!connected) {
-            if (wasConnected) { motion_jog(0, 0, 0); note("Gamepad lost: jog stopped"); buzzer_play(MELODY_CONNECTION_LOST); }
+            onboard_audio_set_gamepad_ptt(false);
+            if (wasConnected) { pc_drive_stop(); note("Gamepad lost: re-arm required"); }
             wasConnected = false;
             previous = 0;
             portENTER_CRITICAL(&lock);
@@ -88,14 +88,15 @@ void controlTask(void *) {
             continue;
         }
         wasConnected = true;
+        onboard_audio_set_gamepad_ptt(s.rt > 0.7f);
         const uint32_t now = nowMs(), b = s.buttons, edge = b & ~previous;
         previous = b;
 
         if (edge & (1u << (kButtonB - 1))) { command_execute("stop"); note("E-STOP (pad B)"); continue; }
-        if (edge & (1u << (kButtonStart - 1))) { motion_clear_stop(); note("Re-armed (pad START)"); }
+        if (edge & (1u << (kButtonStart - 1))) { pc_drive_arm(); note("Re-arm requested (START)"); }
         if (edge & (1u << (kButtonY - 1))) {
             controls_set_mode(status.mode == MODE_DRIVE ? MODE_ROBOT : MODE_DRIVE);
-            motion_jog(0, 0, 0);
+            pc_drive_jog(0, 0, 0);
         }
         if (tabStep && (edge & (1u << (kButtonLB - 1)))) tabStep(-1);
         if (tabStep && (edge & (1u << (kButtonRB - 1)))) tabStep(+1);
@@ -124,7 +125,7 @@ void controlTask(void *) {
         if (mode == MODE_DRIVE) {
             driveJog(s, speed, s.lt > 0.5f);
         } else {
-            motion_jog(0, 0, 0);
+            pc_drive_jog(0, 0, 0);
             if (edge & (1u << (kButtonA - 1))) {
                 gripperOpen = !gripperOpen;
                 pc_send_command(PC_ROBOT, gripperOpen ? "grab open" : "grab close");
@@ -153,6 +154,7 @@ void controls_set_mode(ControlMode mode) {
     status.mode = mode;
     portEXIT_CRITICAL(&lock);
     note(mode == MODE_DRIVE ? "Mode: DRIVE%s" : "Mode: ROBOT%s");
+    pc_send_guidance(mode == MODE_DRIVE ? "mode_drive" : "mode_robot");
 }
 
 void controls_set_speed(int percent) {

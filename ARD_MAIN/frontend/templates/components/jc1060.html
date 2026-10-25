@@ -1,0 +1,15 @@
+<div id="jc1060-main-view" class="card" style="display:none;flex:1;flex-direction:column;gap:18px;padding:28px;">
+    <h2>JC1060P470C 통합 단말</h2>
+    <p style="color:var(--text-dim);">7인치 터치 화면 · 게임패드 입력 · 음성 입출력</p>
+    <p>연결: <strong id="jc1060-connection">연결 대기</strong></p>
+    <p>IP: <span id="jc1060-ip">자동 감지 대기</span></p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+        <button type="button" class="btn-primary" style="width:auto;" onclick="switchTab('drivemcu-tab')">DriveMCU 구동 제어</button>
+        <button type="button" class="btn-primary" style="width:auto;" onclick="switchTab('imagesendermcu-tab')">카메라</button>
+        <button type="button" class="btn-primary" style="width:auto;" onclick="switchTab('controlmcu-tab')">음성 설정</button>
+        <a class="btn-primary" href="/settings#tab-general" style="width:auto;">보드 구성 변경</a>
+    </div>
+    <p style="color:var(--text-dim);line-height:1.7;">구동 보드는 기존 DriveMCU를 사용합니다. 단말을 전환해도 구동 보드의 IP·연결·설정은 유지됩니다.</p>
+    <p style="color:var(--text-dim);line-height:1.7;">구형 단말로 바꾸려면 설정에서 제어 단말을 변경하세요. 구형 HMI 화면 시뮬레이터는 구형 단말을 선택했을 때 표시됩니다.</p>
+    <p data-jc-voice-note style="color:#fbbf24;line-height:1.7;">JC1060 음성 지원 펌웨어를 올린 뒤, 보드의 Voice 탭에서 VAD 또는 PTT로 녹음할 수 있습니다.</p>
+</div>

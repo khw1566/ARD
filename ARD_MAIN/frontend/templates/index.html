@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ARD Control Center</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=10">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=11">
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <style>
+        .board-hidden { display:none !important; }
         /* Sub-tab styles */
         .subtab-btn {
             background: rgba(255,255,255,0.04) !important;
@@ -56,7 +57,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <!-- Chart.js Library for Real-time Monitoring -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v=3">
 </head>
 <body class="dark-theme dashboard-page">
     <!-- Startup Splash Screen -->
@@ -348,7 +349,8 @@
                     </div>
                 </div>
 
-                <div id="robot3axis-main-view" style="display: none; position: relative; width: 100%; min-height: 600px; flex: 1; background: #0f172a; border-radius: 12px; overflow: hidden; flex-direction: row;">
+                {% include "components/jc1060.html" %}
+                <div data-board="robot3axismcu" id="robot3axis-main-view" style="display: none; position: relative; width: 100%; min-height: 600px; flex: 1; background: #0f172a; border-radius: 12px; overflow: hidden; flex-direction: row;">
                     <div class="sim-hud" style="border-right: 1px solid rgba(255,255,255,0.1); border-left: none;">
                         <table class="hud-table">
                             <thead>
@@ -465,7 +467,7 @@
             {% include "components/sidebar.html" %}
         </main>
 
-        <section class="bottom-area" style="display: flex; flex-direction: row; gap: 15px; height: clamp(130px, 20vh, 200px); min-height: 0;">
+        <section class="bottom-area" style="display: flex; flex-direction: row; gap: 15px; height: var(--log-panel-height, clamp(130px, 20vh, 200px)); min-height: 0;">
             <!-- Compact Chart attached above Logs -->
             <div id="angle-monitor-card" class="card chart-card" style="margin: 0; flex: 1.2; height: 100%; padding: 10px 15px; display: flex; flex-direction: column; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -494,6 +496,9 @@
                     </div>
                 </div>
                 <div id="log-container" style="flex: 1; height: auto; margin-top: 0;"></div>
+                <div id="log-resize-handle" class="log-resize-handle" role="separator" tabindex="0"
+                     aria-label="시스템 로그 높이 조절" aria-orientation="horizontal" aria-controls="log-container"
+                     title="위아래로 드래그하여 로그 높이 조절 · 두 번 클릭하여 초기화"></div>
             </section>
         </section>
     </div>
@@ -515,19 +520,22 @@
         <a href="/settings">설정</a>
     </nav>
     {% include "components/modals.html" %}
+    <script>window.ARD_HARDWARE = {{ hardware | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/board-settings.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/auto-resize.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/log-resizer.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/terminal-controller.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/stats-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/hardware-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/audio-voice-controller.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=6"></script>
-    <script src="{{ url_for('static', filename='js/robot3axis-controller.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=7"></script>
+    <script src="{{ url_for('static', filename='js/robot3axis-controller.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/media-controller.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=9"></script>
     <script src="{{ url_for('static', filename='js/hmi-sim-fonts.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/hmi-simulator.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/hmi-simulator.js') }}?v=2"></script>
     <script>
         // --- Sidebar Resizer and Toggle Logic ---
         const resizer = document.getElementById('drag-me');

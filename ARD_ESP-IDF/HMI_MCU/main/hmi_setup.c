@@ -15,10 +15,10 @@ static void scene(void *ctx) {
             if (ard_qrcodegen_getModule(qr, x, y)) gfx_fill_rect(left + x * scale, top + y * scale, scale, scale, 0);
     if (wifi) {
         gfx_text(120, 232, ard_network_hostname(), 0, 1, GFX_TC);
-        gfx_text(120, 248, ard_network_password(), 0, 1, GFX_TC);
+        gfx_text(120, 248, "Open Wi-Fi - no password", 0, 1, GFX_TC);
     } else {
         gfx_text(120, 232, "192.168.4.1/network", 0, 1, GFX_TC);
-        gfx_text(120, 248, "Login: admin / AP password", 0, 1, GFX_TC);
+        gfx_text(120, 248, "No login required", 0, 1, GFX_TC);
     }
     gfx_text(120, 266, "Hold header to reopen QR", 0, 1, GFX_TC);
     gfx_fill_rect(4, 282, 112, 34, 0x176b);

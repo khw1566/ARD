@@ -1,0 +1,38 @@
+<div class="card status-card" style="margin-bottom:20px;">
+    <h2>사용 보드 및 제어 단말</h2>
+    <p style="color:var(--text-dim);line-height:1.6;">시연 구성에 맞게 보드를 선택하세요. 저장하면 열린 대시보드에도 바로 적용되며, 프로그램을 다시 켜도 유지됩니다.</p>
+    <p style="color:var(--text-dim);">제어 단말과 음성 보드를 전환해도 기존 DriveMCU 구성은 유지됩니다.</p>
+    <form id="board-config-form">
+        <div class="input-group">
+            <label style="display:flex;align-items:center;gap:10px;">
+                <input id="board-robot-enabled" type="checkbox" style="width:auto;" {% if hardware.robot3axis_enabled %}checked{% endif %}>
+                3축 로봇 보드 사용
+            </label>
+            <small style="color:var(--text-dim);">끄면 로봇 상태·제어 화면을 숨기고, 연결 알림과 로봇 명령 전송을 중지합니다.</small>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;">
+            <div class="input-group">
+                <label for="board-terminal">제어 단말</label>
+                <select id="board-terminal">
+                    <option value="legacy" {% if hardware.control_terminal == 'legacy' %}selected{% endif %}>구형 단말 — ControlMCU + HMI 보드</option>
+                    <option value="jc1060" {% if hardware.control_terminal == 'jc1060' %}selected{% endif %}>JC1060P470C 통합 단말</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="board-voice">음성 입출력 보드</label>
+                <select id="board-voice">
+                    <option value="controlmcu" {% if hardware.voice_device == 'controlmcu' %}selected{% endif %}>ControlMCU 음성 보드</option>
+                    <option value="jc1060" {% if hardware.voice_device == 'jc1060' %}selected{% endif %}>JC1060 내장 마이크·스피커</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="board-jc-ip">JC1060 IP (자동 감지 또는 직접 지정)</label>
+                <input id="board-jc-ip" type="text" value="{{ hardware.jc1060_ip }}" placeholder="자동 감지" inputmode="decimal" autocomplete="off">
+                <small style="color:var(--text-dim);">자동 감지는 JC1060의 연결 신호를 받은 뒤 적용됩니다.</small>
+            </div>
+        </div>
+        <p id="board-selection-summary" style="line-height:1.6;color:var(--text-dim);"></p>
+        <button type="submit" class="btn-primary" id="board-save-btn" style="width:auto;padding:8px 24px;">보드 구성 저장</button>
+        <span id="board-save-message" role="status" aria-live="polite" style="margin-left:12px;"></span>
+    </form>
+</div>

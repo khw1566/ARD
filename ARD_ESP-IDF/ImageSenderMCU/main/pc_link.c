@@ -20,6 +20,8 @@ static pc_config_t config = {.resolution = APP_DEFAULT_RESOLUTION, .quality = AP
 static pc_capture_cb_t capture_cb;
 static char response[1024];
 static size_t response_len;
+static bool pc_reachable;
+static int64_t next_failure_log;
 
 static esp_err_t http_event(esp_http_client_event_t *event) {
     if (event->event_id == HTTP_EVENT_ON_DATA && event->data_len > 0) {
@@ -54,7 +56,16 @@ static bool request(const char *path, const char *type, const void *body, size_t
         int status = esp_http_client_get_status_code(client);
         esp_http_client_cleanup(client);
         ok = err == ESP_OK && status >= 200 && status < 300;
-        if (!ok) ESP_LOGW(TAG, "%s failed: %s, HTTP %d", path, esp_err_to_name(err), status);
+        int64_t now = esp_timer_get_time();
+        if (ok && !pc_reachable)
+            ESP_LOGI(TAG, "PC server connected: %s:%d", host, APP_HTTP_PORT);
+        if (!ok && (pc_reachable || now >= next_failure_log)) {
+            ESP_LOGW(TAG, "PC %s:%d%s failed: %s, HTTP %d, Wi-Fi=%s. Check PC server and firewall.",
+                     host, APP_HTTP_PORT, path, esp_err_to_name(err), status,
+                     ard_network_connected() ? "connected" : "disconnected");
+            next_failure_log = now + 10000000;
+        }
+        pc_reachable = ok;
         if (ok && out) strlcpy(out, response, out_size);
     }
     xSemaphoreGive(http_lock);
@@ -144,10 +155,15 @@ static void link_task(void *arg) {
     }
 }
 
-void pc_link_start(pc_capture_cb_t on_capture) {
-    capture_cb = on_capture;
+void pc_link_init(void) {
+    if (config_lock) return;
     http_lock = xSemaphoreCreateMutex();
     config_lock = xSemaphoreCreateMutex();
     configASSERT(http_lock && config_lock);
+}
+
+void pc_link_start(pc_capture_cb_t on_capture) {
+    pc_link_init();
+    capture_cb = on_capture;
     configASSERT(xTaskCreate(link_task, "pc_link", 6144, NULL, 4, NULL) == pdPASS);
 }

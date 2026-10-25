@@ -9,6 +9,7 @@
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        .board-hidden { display:none !important; }
         body {
             background-color: var(--bg-color, #000000);
             color: var(--text-main, #ffffff);
@@ -554,17 +555,17 @@
                     </div>
                     <div class="mcu-live-chip" id="chip-hmi_mcu" title="HMI 디스플레이 제어 보드 (HMI MCU)">
                         <span class="mcu-pulse-dot" id="dot-hmi_mcu"></span>
-                        <span>HMI</span>
+                        <span class="chip-name">HMI</span>
                         <span id="txt-hmi_mcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
                     </div>
                     <div class="mcu-live-chip" id="chip-drivemcu" title="모터 주행 구동 보드 (DriveMCU)">
                         <span class="mcu-pulse-dot" id="dot-drivemcu"></span>
-                        <span>DRIVE</span>
+                        <span class="chip-name">DRIVE</span>
                         <span id="txt-drivemcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
                     </div>
                     <div class="mcu-live-chip" id="chip-controlmcu" title="메인 통합 제어 및 음성 제어 보드 (ControlMCU)">
                         <span class="mcu-pulse-dot" id="dot-controlmcu"></span>
-                        <span>CTRL</span>
+                        <span class="chip-name">CTRL</span>
                         <span id="txt-controlmcu" style="color: var(--text-dim); font-size: 0.65rem;">0 pkts</span>
                     </div>
                     <div class="mcu-live-chip" id="chip-robot3axismcu" title="3축 로봇 매니퓰레이터 보드 (Robot3AxisMCU)">
@@ -840,6 +841,7 @@
 
         <!-- 4. GENERAL CONFIG TAB -->
         <section id="tab-general" class="settings-view">
+            {% include "components/board_settings.html" %}
             <div class="card status-card">
                 <h2 data-i18n="settings_header" style="margin-bottom: 15px;">카메라 및 AI 전역 설정</h2>
                 <form id="general-config-form">
@@ -907,7 +909,7 @@
                             <input type="text" id="cfg_drive_ip" value="{{ config.drivemcu_ip }}">
                         </div>
                         <div class="input-group">
-                            <label for="cfg_hmi_ip">HMI MCU IP</label>
+                            <label for="cfg_hmi_ip">구형 HMI MCU IP</label>
                             <input type="text" id="cfg_hmi_ip" value="{{ config.hmi_mcu_ip }}">
                         </div>
                     </div>
@@ -919,6 +921,8 @@
         </section>
     </main>
 
+    <script>window.ARD_HARDWARE = {{ hardware | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/board-settings.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=1"></script>
     <script>
@@ -1010,6 +1014,7 @@
 
             const mcus = ['imagesendermcu', 'hmi_mcu', 'drivemcu', 'controlmcu', 'robot3axismcu'];
             mcus.forEach(key => {
+                if (!window.ARD_HARDWARE.robot3axis_enabled && key === 'robot3axismcu') return;
                 const item = (data.mcu_stats && data.mcu_stats[key]) ? data.mcu_stats[key] : null;
                 const chip = document.getElementById(`chip-${key}`);
                 const dot = document.getElementById(`dot-${key}`);

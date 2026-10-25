@@ -17,7 +17,7 @@ void ard_setup_qr_init(const char *ssid, const char *password) {
     // AP SSID <=32 bytes and AP password <=63 bytes (escaped worst case).
     char text[224];
     uint8_t temp[ARD_QR_BYTES];
-    strcpy(text, "WIFI:T:WPA;S:");
+    strcpy(text, password[0] ? "WIFI:T:WPA;S:" : "WIFI:T:nopass;S:");
     char *end = escape(text + strlen(text), ssid);
     strcpy(end, ";P:");
     end = escape(end + 3, password);

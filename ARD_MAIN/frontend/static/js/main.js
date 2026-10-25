@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.autoFitText === 'function') {
             setTimeout(window.autoFitText, 20);
         }
+        if (window.BoardUI) window.BoardUI.apply();
     }
 
 
@@ -379,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 전역 탭 전환 함수: HTML onclick에서도 직접 호출 가능
     window.switchTab = function(tabId) {
+        if (window.BoardUI && !window.BoardUI.isTabEnabled(tabId)) tabId = 'sorting-tab';
         tabContents.forEach(c => c.classList.remove('active'));
 
         // 상태박스 active 표시 (상단 박스 하이라이트)
@@ -404,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const angleCard = document.getElementById('angle-monitor-card');
         const r3MainView = document.getElementById('robot3axis-main-view');
         const mcView = document.getElementById('master-control-view');
+        const jcView = document.getElementById('jc1060-main-view');
 
         // Reset all to none
         if (sortingView) sortingView.style.display = 'none';
@@ -413,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (angleCard) angleCard.style.display = 'none';
         if (r3MainView) r3MainView.style.display = 'none';
         if (mcView) mcView.style.display = 'none';
+        if (jcView) jcView.style.display = 'none';
 
         if (tabId === 'sorting-tab') {
             if (sortingView) sortingView.style.display = 'flex';
@@ -425,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (tabId === 'controlmcu-tab') {
             if (voiceMediaContainer) voiceMediaContainer.style.display = 'flex';
         } else if (tabId === 'hmi_mcu-tab') {
-            // leave empty
+            if (jcView && window.BoardUI?.isJC()) jcView.style.display = 'flex';
         } else if (tabId === 'robot3axismcu-tab') {
             if (r3MainView) r3MainView.style.display = 'flex';
             if (window.startRobot3AxisSim) window.startRobot3AxisSim();
@@ -857,9 +861,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const data = JSON.parse(event.data);
-            if (data.type === 'status') {
+            if (data.type === 'hardware_config') {
+                window.BoardUI?.apply(data.hardware);
+            } else if (data.type === 'status') {
                 const stats = data.status || data.data;
                 if (stats) {
+                    window.BoardUI?.updateStatus(stats);
                     // Cache the latest motor state globally for updateHUD to use
                     if (stats.drivemcu) {
                         window.currentMotorState = window.currentMotorState || {};
@@ -871,8 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const tEl = document.getElementById('env-temp');
                             const hEl = document.getElementById('env-humid');
                             const pEl = document.getElementById('env-press');
-                            if (tEl) tEl.textContent = stats.drivemcu.env_temp.toFixed(1);
-                            if (hEl) hEl.textContent = stats.drivemcu.env_humid.toFixed(1);
+                            if (tEl) tEl.textContent = typeof stats.drivemcu.env_temp === 'number' ? stats.drivemcu.env_temp.toFixed(1) : '--';
+                            if (hEl) hEl.textContent = typeof stats.drivemcu.env_humid === 'number' ? stats.drivemcu.env_humid.toFixed(1) : '--';
                             if (pEl) pEl.textContent = Math.round(stats.drivemcu.env_press);
                         }
 

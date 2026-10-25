@@ -63,7 +63,7 @@ void ard_network_restart_later(void) {
 
 void ard_network_print_setup(void) {
     ard_setup_qr_print();
-    ESP_LOGI(TAG, "AP: %s | Password: %s | Login: admin", hostname, password);
+    ESP_LOGI(TAG, "AP: %s | Open Wi-Fi | No web login", hostname);
     ESP_LOGI(TAG, "Setup: http://192.168.4.1/network or http://%s.local/network", hostname);
     ESP_LOGI(TAG, "SSID: %s | PC server: %s", settings.ssid[0] ? settings.ssid : "(not set)", settings.server);
 }
@@ -105,10 +105,9 @@ static esp_err_t start_wifi(void) {
     wifi_config_t ap_cfg = {0}, sta_cfg = {0};
     strlcpy((char *)ap_cfg.ap.ssid, hostname, sizeof(ap_cfg.ap.ssid));
     ap_cfg.ap.ssid_len = strlen(hostname);
-    strlcpy((char *)ap_cfg.ap.password, password, sizeof(ap_cfg.ap.password));
     ap_cfg.ap.channel = 1;
     ap_cfg.ap.max_connection = 4;
-    ap_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
     // The driver's arrays also accept a full-length SSID/PSK without a NUL.
     memcpy(sta_cfg.sta.ssid, settings.ssid, strlen(settings.ssid));
     memcpy(sta_cfg.sta.password, settings.password, strlen(settings.password));
@@ -190,7 +189,7 @@ void ard_network_start(const char *role, const char *default_server) {
     ESP_ERROR_CHECK(esp_efuse_mac_get_default(mac));
     // Same naming as the Arduino ArdNetwork library (last three MAC bytes).
     snprintf(hostname, sizeof(hostname), "ard-%s-%02x%02x%02x", role, mac[3], mac[4], mac[5]);
-    snprintf(password, sizeof(password), "ARD-%02x%02x%02x!", mac[3], mac[4], mac[5]);
+    password[0] = 0; // Open setup AP; no separate device password.
     snprintf(token, sizeof(token), "%08lx%08lx%08lx%08lx", (unsigned long)esp_random(),
              (unsigned long)esp_random(), (unsigned long)esp_random(), (unsigned long)esp_random());
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event, NULL));

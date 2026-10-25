@@ -39,6 +39,13 @@ esp_err_t camera_start(const char *res, int q) {
         size = FRAMESIZE_SVGA;
     }
     bool psram = esp_psram_get_size() > 0;
+    // The driver's automatic SVGA JPEG buffer is only 96 KB. Detailed/high
+    // quality OV3660 frames can exceed it; reserve bounded PSRAM headroom.
+    size_t jpeg_bytes = 0;
+    if (psram) {
+        jpeg_bytes = (size_t)resolution[size].width * resolution[size].height / 2;
+        if (jpeg_bytes < 256 * 1024) jpeg_bytes = 256 * 1024;
+    }
     camera_config_t config = {
         .pin_pwdn = CAM_PIN_PWDN, .pin_reset = CAM_PIN_RESET, .pin_xclk = CAM_PIN_XCLK,
         .pin_sccb_sda = CAM_PIN_SIOD, .pin_sccb_scl = CAM_PIN_SIOC,
@@ -50,11 +57,15 @@ esp_err_t camera_start(const char *res, int q) {
         .pixel_format = PIXFORMAT_JPEG,
         .frame_size = size,
         .jpeg_quality = clamp_quality(q),
-        .fb_count = psram ? 2 : 1,
+        // This board takes individual photos. Keep DMA idle while the only
+        // frame is held for HTTP/UDP transfer instead of capturing continuously.
+        .fb_count = 1,
         .fb_location = psram ? CAMERA_FB_IN_PSRAM : CAMERA_FB_IN_DRAM,
-        .grab_mode = CAMERA_GRAB_LATEST,
+        .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
+        .jpeg_buffer_size = jpeg_bytes,
     };
-    ESP_LOGI(TAG, "Init %s Q%d, PSRAM=%s, fb_count=%d", res, config.jpeg_quality, psram ? "yes" : "no", config.fb_count);
+    ESP_LOGI(TAG, "Init %s Q%d, PSRAM=%s, fb_count=%u, JPEG buffer=%u bytes", res, config.jpeg_quality,
+             psram ? "yes" : "no", (unsigned)config.fb_count, (unsigned)jpeg_bytes);
     esp_err_t err = esp_camera_init(&config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_camera_init failed: %s (0x%x). Check ribbon cable and pins.", esp_err_to_name(err), err);
@@ -66,12 +77,8 @@ esp_err_t camera_start(const char *res, int q) {
     cur_quality = config.jpeg_quality;
     sensor_t *s = esp_camera_sensor_get();
     if (s) {
-        s->set_exposure_ctrl(s, 1);
-        s->set_gain_ctrl(s, 1);
-        s->set_whitebal(s, 1);
-        s->set_sharpness(s, 2);
-        s->set_denoise(s, 1);
-        s->set_quality(s, cur_quality);
+        // The driver already sets JPEG quality and sensor defaults. Avoid
+        // rewriting exposure/ISP registers after capture DMA has started.
         camera_sensor_info_t *info = esp_camera_sensor_get_info(&s->id);
         strlcpy(sensor_name, info ? info->name : "unknown", sizeof(sensor_name));
     }
@@ -104,7 +111,9 @@ esp_err_t camera_apply(const char *res, int q) {
 
 camera_fb_t *camera_capture_fresh(void) {
     if (!running) return NULL;
-    // With GRAB_LATEST and two buffers the first frame can predate the request.
+    // The single queued frame may predate the request (or sensor init).
+    // Return it, then wait for a newly exposed frame. The returned frame stays
+    // owned by the caller until transmission finishes and fb_return is called.
     camera_fb_t *fb = esp_camera_fb_get();
     if (fb) esp_camera_fb_return(fb);
     for (int attempt = 0; attempt < 2; ++attempt) {

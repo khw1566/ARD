@@ -79,7 +79,7 @@ void ard_network_print_setup(void) {
     ard_setup_qr_print();
     ard_network_settings_t snapshot;
     ard_network_get_settings(&snapshot);
-    ESP_LOGI(TAG, "AP: %s | Password: %s | Login: admin", hostname, password);
+    ESP_LOGI(TAG, "AP: %s | Open Wi-Fi | No web login", hostname);
     ESP_LOGI(TAG, "Setup: http://192.168.4.1/network or http://%s.local/network", hostname);
     ESP_LOGI(TAG, "SSID: %s | PC server: %s", snapshot.ssid[0] ? snapshot.ssid : "(not set)", snapshot.server);
 }
@@ -121,9 +121,8 @@ esp_err_t ard_network_scan(ard_network_ap_t *out, uint16_t capacity, uint16_t *c
     err = esp_wifi_scan_start(&config, true);
     if (err == ESP_ERR_WIFI_STATE && !ard_network_connected()) {
         // Stop a failing background association, then scan without retry races.
-        esp_wifi_disconnect();
-        vTaskDelay(pdMS_TO_TICKS(200));
-        err = esp_wifi_scan_start(&config, true);
+        err = ard_wifi_disconnect_wait();
+        if (err == ESP_OK) err = esp_wifi_scan_start(&config, true);
     }
     if (err == ESP_OK) {
         wifi_ap_record_t records[ARD_WIFI_SCAN_MAX];
@@ -170,12 +169,6 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
         memcpy(previous.ssid, active.ssid, sizeof(previous.ssid));
         memcpy(previous.password, active.password, sizeof(previous.password));
     }
-    esp_wifi_disconnect();
-    taskENTER_CRITICAL(&state_lock);
-    sta_ready = false;
-    taskEXIT_CRITICAL(&state_lock);
-    // Let the old association's disconnect event finish before requesting a new IP.
-    vTaskDelay(pdMS_TO_TICKS(200));
     // Updating the shared worker's active profile prevents it from saving a
     // successful touch connection under the preceding history entry.
     err = ard_wifi_begin_manual(&next);
@@ -183,6 +176,9 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
         const int64_t deadline = esp_timer_get_time() + 25000000LL;
         bool joined = false;
         while (esp_timer_get_time() < deadline) {
+            // network_task is gated by wifi_ops during live setup. Keep the
+            // shared worker running here so disconnects trigger bounded retries.
+            ard_wifi_tick();
             if (ard_network_connected()) {
                 wifi_ap_record_t ap;
                 if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK && !strncmp((char *)ap.ssid, next.ssid, 32)) {
@@ -200,15 +196,12 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
         taskEXIT_CRITICAL(&state_lock);
         ESP_LOGI(TAG, "Wi-Fi settings saved after successful connection");
     } else {
-        esp_wifi_disconnect();
-        taskENTER_CRITICAL(&state_lock);
-        sta_ready = false;
-        taskEXIT_CRITICAL(&state_lock);
-        vTaskDelay(pdMS_TO_TICKS(200));
         esp_err_t restore = ard_wifi_begin_manual(&previous);
         if (restore != ESP_OK) ESP_LOGW(TAG, "Previous Wi-Fi profile restore failed: %s", esp_err_to_name(restore));
-        ESP_LOGW(TAG, "Wi-Fi setup failed: %s; previous station settings restored", esp_err_to_name(err));
+        ESP_LOGW(TAG, "Wi-Fi setup failed: %s; previous profile restore: %s",
+                 esp_err_to_name(err), esp_err_to_name(restore));
     }
+    ard_wifi_end_manual();
     xSemaphoreGive(wifi_ops);
     return err;
 }
@@ -221,13 +214,15 @@ static void wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
         sta_ready = true;
         taskEXIT_CRITICAL(&state_lock);
         ESP_LOGI(TAG, "Wi-Fi connected: %s", sta_ip);
+    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_CONNECTED) {
+        ESP_LOGI(TAG, "Wi-Fi associated; waiting for DHCP address");
     } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
         const wifi_event_sta_disconnected_t *event = data;
-        bool was_ready = ard_network_connected();
         taskENTER_CRITICAL(&state_lock);
         sta_ready = false;
         taskEXIT_CRITICAL(&state_lock);
-        if (was_ready) ESP_LOGW(TAG, "Wi-Fi disconnected (reason %d); setup AP stays available", event->reason);
+        // Authentication/AP failures before DHCP need diagnostics too.
+        ESP_LOGW(TAG, "Wi-Fi disconnected (reason %d); setup AP stays available", event->reason);
     } else if (base == IP_EVENT && id == IP_EVENT_STA_LOST_IP) {
         taskENTER_CRITICAL(&state_lock);
         sta_ready = false;
@@ -251,10 +246,9 @@ static esp_err_t start_wifi(void) {
     wifi_config_t ap_cfg = {0}, sta_cfg = {0};
     strlcpy((char *)ap_cfg.ap.ssid, hostname, sizeof(ap_cfg.ap.ssid));
     ap_cfg.ap.ssid_len = strlen(hostname);
-    strlcpy((char *)ap_cfg.ap.password, password, sizeof(ap_cfg.ap.password));
     ap_cfg.ap.channel = 1;
     ap_cfg.ap.max_connection = 4;
-    ap_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
     // The driver arrays accept a full-length SSID/PSK without a terminating NUL.
     memcpy(sta_cfg.sta.ssid, settings.ssid, strlen(settings.ssid));
     memcpy(sta_cfg.sta.password, settings.password, strlen(settings.password));
@@ -379,7 +373,7 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
     if (err != ESP_OK) return err;
     // Same naming as the Arduino ArdNetwork library (last three MAC bytes).
     snprintf(hostname, sizeof(hostname), "ard-%s-%02x%02x%02x", role, mac[3], mac[4], mac[5]);
-    snprintf(password, sizeof(password), "ARD-%02x%02x%02x!", mac[3], mac[4], mac[5]);
+    password[0] = 0; // Open setup AP; no separate device password.
     snprintf(token, sizeof(token), "%08lx%08lx%08lx%08lx", (unsigned long)esp_random(),
              (unsigned long)esp_random(), (unsigned long)esp_random(), (unsigned long)esp_random());
     if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event, NULL)) != ESP_OK) return err;

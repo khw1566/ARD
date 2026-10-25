@@ -7,6 +7,7 @@
 #define esp_wifi_set_config test_esp_wifi_set_config
 #define esp_wifi_connect test_esp_wifi_connect
 #define esp_wifi_disconnect test_esp_wifi_disconnect
+#define vTaskDelay test_wifi_vTaskDelay
 #define nvs_open test_nvs_open
 #define nvs_get_blob test_nvs_get_blob
 #define nvs_set_blob test_nvs_set_blob
@@ -24,6 +25,11 @@ static void reset_worker(void) {
     scan_error = ESP_ERR_INVALID_STATE;
     connecting = remembered = pending_tried = history_dirty = configured_known = was_connected = false;
     tried = 0; attempt_at = next_scan = next_save = 0;
+    associated = manual = false;
+    disconnect_generation = manual_retries = 0;
+    associated_at = manual_retry_at = 0;
+    delayed_disconnect_at = 0; delay_disconnect = drop_disconnect = false;
+    memset(&legacy_disk, 0, sizeof(legacy_disk));
     disk = (ard_wifi_profiles_t){0}; memset(found, 0, sizeof(found)); found_count = 0;
     scans = connects = writes = commits = 0; clock_us = 0;
     scan_result = write_result = ESP_OK;
@@ -31,7 +37,7 @@ static void reset_worker(void) {
 }
 
 void run_wifi_worker_tests(void) {
-    const char *cases[] = {"slots", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry"};
+    const char *cases[] = {"slots", "migration", "invalid-migration", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry"};
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
         reset_worker();
         char *args[] = {"wifi-test", (char *)cases[i]};

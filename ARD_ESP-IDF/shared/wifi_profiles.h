@@ -1,7 +1,7 @@
 #pragma once
 #include "network_settings.h"
 
-#define ARD_WIFI_SLOTS 16
+#define ARD_WIFI_SLOTS 8
 typedef struct { char ssid[33], password[65]; } ard_wifi_profile_t;
 typedef struct {
     uint32_t version, count;

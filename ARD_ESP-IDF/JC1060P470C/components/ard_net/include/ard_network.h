@@ -28,7 +28,7 @@ void ard_network_local_ip(char *out, size_t size);
 int ard_network_rssi(void);
 void ard_network_print_setup(void);
 
-// Copies a coherent snapshot; passwords must never be logged or displayed.
+// Copies a coherent snapshot; setup may display passwords, but never log them.
 void ard_network_get_settings(ard_network_settings_t *out);
 // These blocking functions belong on a worker, never in an LVGL callback.
 #define ARD_WIFI_SCAN_MAX 20

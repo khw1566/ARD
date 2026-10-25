@@ -134,6 +134,7 @@
 
     function animateRobot3AxisSim() {
         r3ReqId = requestAnimationFrame(animateRobot3AxisSim);
+        if (window.BoardUI && !window.BoardUI.isTabEnabled('robot3axismcu-tab')) return;
         
         const now = performance.now();
         const dt = (now - lastR3Time) / 1000; // seconds
@@ -412,8 +413,11 @@
     // --- Robot3Axis Command Queue System ---
     let r3CommandQueue = [];
     let r3IsExecuting = false;
+    let r3NextTimer = null;
+    let r3QueueGeneration = 0;
 
     function addR3Command(name, estTime, apiData) {
+        if (window.BoardUI && !window.BoardUI.isTabEnabled('robot3axismcu-tab')) return;
         const cmdId = Date.now() + Math.random();
         r3CommandQueue.push({ id: cmdId, name, estTime, apiData });
         updateR3QueueUI();
@@ -423,6 +427,11 @@
     }
 
     async function processNextR3Command() {
+        if (window.BoardUI && !window.BoardUI.isTabEnabled('robot3axismcu-tab')) {
+            window.onRobotBoardDisabled();
+            return;
+        }
+        const generation = r3QueueGeneration;
         if (r3CommandQueue.length === 0) {
             r3IsExecuting = false;
             return;
@@ -446,8 +455,10 @@
             console.error('Failed to send Robot3Axis command', e);
         }
 
+        // A disabled board must not resume an old queue after re-enabling.
+        if (generation !== r3QueueGeneration) return;
         // Wait for estimated time before next command
-        setTimeout(() => {
+        r3NextTimer = setTimeout(() => {
             processNextR3Command();
         }, cmd.estTime * 1000);
     }
@@ -805,3 +816,15 @@
         }
     });
 
+
+    window.onRobotBoardDisabled = function() {
+        r3QueueGeneration++;
+        r3CommandQueue = [];
+        r3IsExecuting = false;
+        clearTimeout(r3NextTimer);
+        clearTimeout(r3StatusTimer);
+        clearInterval(r3StatusInterval);
+        if (isSequenceRunning) stopSequence();
+        document.getElementById('robot3axis-execution-ring')?.classList.remove('active');
+        updateR3QueueUI();
+    };

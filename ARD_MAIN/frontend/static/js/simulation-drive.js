@@ -6,8 +6,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: cmd })
             });
-            if (!res.ok) throw new Error("Server responded with " + res.status);
-            addLog('System', `Drive command sent: ${cmd}`);
+            const result = await res.json();
+            if (!res.ok || result.status === 'error' || result.status === 'busy')
+                throw new Error(result.message || "Server responded with " + res.status);
+            addLog('System', result.status === 'queued'
+                ? `Drive command awaiting acknowledgement: ${cmd}`
+                : `DriveMCU accepted: ${cmd}`);
             return true;
         } catch (e) {
             addLog('System', `Motor command failed: ${e.message}`);
@@ -125,6 +129,8 @@
     const DEFAULT_RAIL_STEPS_PER_MM = 1000 / 23; // Same calibration as DriveMCU.
     let appliedRailStepsPerMm = DEFAULT_RAIL_STEPS_PER_MM;
     const RAIL_UNITS_PER_MM = 10.5 / 15;
+    // World Y is up, Z follows the rail/input shafts, X points to the bins.
+    const DRIVE_LAYOUT = Object.freeze({ pivotY: 6.5, trayOffset: 5.0, trayRadius: 8.5 });
     let targetRailMm = 0, railMm = 0;
     let yawAngle = 0, rollAngle = 0;
     let targetYawAngle = 0, targetRollAngle = 0;
@@ -256,15 +262,19 @@
         carriageGroup = new THREE.Group();
         scene.add(carriageGroup);
 
-        // 상부 차동 구동계 (90도 회전 적용: 모터 2기 전후 배치, 덤핑 축이 좌우 박스 방향과 일치)
+        // Input shafts run along world Z. The output carrier tilts about that
+        // same shaft, so the tray tips toward the bins at world +/-X.
         const differentialGroup = new THREE.Group();
+        differentialGroup.name = 'drive-inputs';
         differentialGroup.rotation.y = Math.PI / 2;
         carriageGroup.add(differentialGroup);
         
         carrierGroup = new THREE.Group();
-        carrierGroup.position.y = 3.5; // The tilt pivot stays at the transverse shaft.
+        carrierGroup.name = 'drive-tilt';
+        carrierGroup.position.y = DRIVE_LAYOUT.pivotY;
         carriageGroup.add(carrierGroup);
         yawGroup = new THREE.Group();
+        yawGroup.name = 'drive-spindle';
         carrierGroup.add(yawGroup); // Spin the disk about its own, possibly tilted, spindle.
 
         // Materials: 실물 '분류구조.jpg'와 완벽 일치 (White SLA/PLA 3D Printing Body)
@@ -282,6 +292,45 @@
             const edges = new THREE.EdgesGeometry(mesh.geometry);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.4 }));
             mesh.add(line);
+        };
+
+        // Equal 45-degree pitch cones share the group's origin as their apex.
+        // Tapered teeth run from toe to heel; the bore remains open. These are
+        // display meshes, not a manufacturing/involute gear specification.
+        const makeBevelGear = (name, phase = 0) => {
+            const group = new THREE.Group();
+            group.name = name;
+            group.userData = { teeth: 24, pitchAngle: Math.PI / 4 };
+            const toe = 1.15, heel = 2.8, rootDepth = 0.22, toothHeight = 0.10;
+            const profile = [
+                [0.43, toe], [toe - rootDepth, toe],
+                [heel - rootDepth, heel], [heel - 0.4, heel + 0.3],
+                [0.43, heel + 0.3], [0.43, toe]
+            ].map(([r, y]) => new THREE.Vector2(r, y));
+            const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), matBevelBeige);
+            group.add(body);
+            const positions = [];
+            const faces = [[0, 2, 3, 1], [4, 5, 7, 6], [0, 4, 6, 2],
+                           [1, 3, 7, 5], [0, 1, 5, 4], [2, 6, 7, 3]];
+            const pitch = 2 * Math.PI / group.userData.teeth;
+            for (let i = 0; i < group.userData.teeth; i++) {
+                const center = i * pitch + phase;
+                const vertices = [];
+                for (const lift of [-rootDepth, toothHeight]) {
+                    for (const y of [toe, heel]) {
+                        for (const a of [center - pitch * 0.23, center + pitch * 0.23])
+                            vertices.push([Math.sin(a) * (y + lift), y, Math.cos(a) * (y + lift)]);
+                    }
+                }
+                for (const [a, b, c, d] of faces)
+                    for (const index of [a, b, c, a, c, d]) positions.push(...vertices[index]);
+            }
+            const teeth = new THREE.BufferGeometry();
+            teeth.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            teeth.computeVertexNormals();
+            group.add(new THREE.Mesh(teeth, matBevelBeige));
+            addOutlines(body, 0xb08968);
+            return group;
         };
 
         // --- 0. Linear Rail Structure (실물 사진 기반 Z축 평행 이송계) ---
@@ -380,14 +429,14 @@
         const binHeight = 6.0;
         const binDepth = 15;
         const binY = -4.5;
-        const binOffsetX = 17.5;
+        const binOffsetX = 15.0; // Bring the open bin under the tray's 45-degree discharge edge.
         const binOffsetZ = 10.5;
 
         const binConfigs = [
-            { name: "Metal (금속/캔)", color: 0xf59e0b, pos: [-binOffsetX, binY, binOffsetZ], yaw: 90, z: binOffsetZ },
-            { name: "Others (유리/기타)", color: 0x94a3b8, pos: [-binOffsetX, binY, -binOffsetZ], yaw: 90, z: -binOffsetZ },
-            { name: "Paper (종이/팩)", color: 0x10b981, pos: [binOffsetX, binY, binOffsetZ], yaw: 270, z: binOffsetZ },
-            { name: "Plastic (플라스틱)", color: 0x3b82f6, pos: [binOffsetX, binY, -binOffsetZ], yaw: 270, z: -binOffsetZ }
+            { name: "Metal (금속/캔)", color: 0xf59e0b, pos: [-binOffsetX, binY, binOffsetZ], side: -1, z: binOffsetZ },
+            { name: "Others (유리/기타)", color: 0x94a3b8, pos: [-binOffsetX, binY, -binOffsetZ], side: -1, z: -binOffsetZ },
+            { name: "Paper (종이/팩)", color: 0x10b981, pos: [binOffsetX, binY, binOffsetZ], side: 1, z: binOffsetZ },
+            { name: "Plastic (플라스틱)", color: 0x3b82f6, pos: [binOffsetX, binY, -binOffsetZ], side: 1, z: -binOffsetZ }
         ];
 
         binMeshes = [];
@@ -467,16 +516,28 @@
             binMeshes.push({ group: bGroup, config: cfg, mesh: leftWall, mat: bMat });
         });
 
-        // 1. 차동 모터 2기 및 실물 수직 마운트 (White Upright Brackets + Heatsinks)
-        // 실물 기구 사진처럼 상단 트레이 밑면과의 간섭을 완전히 방지하도록 높이와 위치 최적화
-        const uprightMountGeom = new THREE.BoxGeometry(2.0, 5.8, 7.5);
+        // Bearing mounts leave a real shaft bore and clearance for the tray's
+        // swept volume. A solid box through the shaft concealed the old clash.
+        const mountShape = new THREE.Shape();
+        mountShape.moveTo(-2.8, -2.8);
+        mountShape.lineTo(2.8, -2.8);
+        mountShape.lineTo(2.8, DRIVE_LAYOUT.pivotY + 2.6);
+        mountShape.lineTo(-2.8, DRIVE_LAYOUT.pivotY + 2.6);
+        mountShape.closePath();
+        const shaftBore = new THREE.Path();
+        shaftBore.absarc(0, DRIVE_LAYOUT.pivotY, 0.55, 0, Math.PI * 2, true);
+        mountShape.holes.push(shaftBore);
+        const uprightMountGeom = new THREE.ExtrudeGeometry(mountShape, { depth: 1.2, bevelEnabled: false, curveSegments: 24 });
+        uprightMountGeom.translate(0, 0, -0.6).rotateY(Math.PI / 2);
         const uprightLeft = new THREE.Mesh(uprightMountGeom, matBodyWhite);
-        uprightLeft.position.set(-5.6, 2.1, 0);
+        uprightLeft.name = 'drive-mount-x';
+        uprightLeft.position.set(-5.6, 0, 0);
         addOutlines(uprightLeft, 0x94a3b8);
         differentialGroup.add(uprightLeft);
 
         const uprightRight = new THREE.Mesh(uprightMountGeom, matBodyWhite);
-        uprightRight.position.set(5.6, 2.1, 0);
+        uprightRight.name = 'drive-mount-y';
+        uprightRight.position.set(5.6, 0, 0);
         addOutlines(uprightRight, 0x94a3b8);
         differentialGroup.add(uprightRight);
 
@@ -488,7 +549,7 @@
         const mXHeat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.8, 3.8), matMotorHeatsink);
         mXHeat.position.x = -2.5;
         motorX.add(mXFrame); motorX.add(mXHeat);
-        motorX.position.set(-8.2, 3.5, 0);
+        motorX.position.set(-8.2, DRIVE_LAYOUT.pivotY, 0);
         differentialGroup.add(motorX);
 
         motorY = new THREE.Group();
@@ -497,62 +558,67 @@
         const mYHeat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.8, 3.8), matMotorHeatsink);
         mYHeat.position.x = 2.5;
         motorY.add(mYFrame); motorY.add(mYHeat);
-        motorY.position.set(8.2, 3.5, 0);
+        motorY.position.set(8.2, DRIVE_LAYOUT.pivotY, 0);
         differentialGroup.add(motorY);
 
-        // 2. 실물 베이지톤 입력 베벨 기어 2기 (Module 1.5 Bevel Gears)
-        // 모터 높이에 맞추고 직경을 실물 비율(반지름 2.3)로 조정하여 상단 트레이 겹침 완전 방지
-        const bevelGearGeom = new THREE.CylinderGeometry(1.2, 2.3, 1.4, 28);
-        // Bake the shaft alignment into the geometry. Animate only its spin axis.
-        gearX = new THREE.Mesh(bevelGearGeom.clone().rotateZ(-Math.PI / 2), matBevelBeige);
-        addOutlines(gearX, 0xb08968);
-        gearX.position.set(-3.2, 3.5, 0);
+        // Opposed side gears: narrow toe toward the shared apex, broad heel
+        // toward each motor. Static alignment is separate from shaft spin.
+        gearX = new THREE.Group();
+        gearX.name = 'drive-gear-x';
+        const bevelX = makeBevelGear('drive-bevel-x');
+        bevelX.rotation.z = Math.PI / 2;
+        gearX.add(bevelX);
+        gearX.position.y = DRIVE_LAYOUT.pivotY;
         differentialGroup.add(gearX);
 
-        gearY = new THREE.Mesh(bevelGearGeom.clone().rotateZ(Math.PI / 2), matBevelBeige);
-        addOutlines(gearY, 0xb08968);
-        gearY.position.set(3.2, 3.5, 0);
+        gearY = new THREE.Group();
+        gearY.name = 'drive-gear-y';
+        const bevelY = makeBevelGear('drive-bevel-y', Math.PI / 24);
+        bevelY.rotation.z = -Math.PI / 2;
+        gearY.add(bevelY);
+        gearY.position.y = DRIVE_LAYOUT.pivotY;
         differentialGroup.add(gearY);
 
-        // 3. 중심 회전축 (Center Transverse Shaft)
-        const hShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 10, 16), matLinearRod);
-        hShaft.rotation.z = Math.PI / 2;
-        hShaft.position.set(0, 3.5, 0);
-        addOutlines(hShaft, 0xffffff);
-        differentialGroup.add(hShaft);
+        // Separate input shafts stop at the side-gear hubs. No solid transverse
+        // shaft passes through the perpendicular output gear/spindle.
+        for (const sign of [-1, 1]) {
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 3.2, 20), matLinearRod);
+            shaft.rotation.z = Math.PI / 2;
+            shaft.position.set(sign * 4.7, DRIVE_LAYOUT.pivotY, 0);
+            differentialGroup.add(shaft);
+        }
 
-        // 4. 종동 베벨 기어 (Spider / Output Gear - Bevel Beige)
-        bottomSpider = new THREE.Mesh(bevelGearGeom, matBevelBeige);
-        addOutlines(bottomSpider, 0xb08968);
-        bottomSpider.position.set(0, 0, 0);
+        // The output pitch cone meets both input cones at the same apex.
+        bottomSpider = makeBevelGear('drive-output-bevel', Math.PI / 24);
         yawGroup.add(bottomSpider);
 
-        // 5. 상단 수직 스핀들 및 턴테이블 트레이 (White Turntable Spindle & Dish Tray)
-        // 스핀들이 기어 윗면 위로 충분히 솟아올라 트레이와 기어 간 간섭을 원천 차단
-        const spindleGeom = new THREE.CylinderGeometry(1.8, 2.0, 2.6, 24);
+        // The output spindle bridges the gear hub to the tray underside.
+        const spindleGeom = new THREE.CylinderGeometry(0.65, 0.75, 1.8, 24);
         const spindle = new THREE.Mesh(spindleGeom, matBodyWhite);
-        spindle.position.set(0, 2.3, 0);
+        spindle.position.set(0, 3.9, 0);
         addOutlines(spindle, 0x94a3b8);
         yawGroup.add(spindle);
 
-        // 실물 원형 투입/선별 트레이 (가장자리 턱이 있는 접시 형태, Y=7.5에 안전 배치)
-        const diskGeom = new THREE.CylinderGeometry(8.5, 8.2, 0.8, 36);
+        // Height and offset keep the tray clear of the carriage and bearing
+        // mounts throughout the +/-90 degree display tilt range.
+        const diskGeom = new THREE.CylinderGeometry(DRIVE_LAYOUT.trayRadius, 8.2, 0.6, 64);
         disk = new THREE.Mesh(diskGeom, matTray);
+        disk.name = 'drive-tray';
         addOutlines(disk, 0x38bdf8);
-        disk.position.set(0, 4.0, 0);
+        disk.position.set(0, DRIVE_LAYOUT.trayOffset, 0);
         yawGroup.add(disk);
 
         // A round, unmarked tray looks stationary even while it spins.
         const rotationMarkMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
         const rotationStripe = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 6), rotationMarkMat);
-        rotationStripe.position.set(0, 0.43, 3.3);
+        rotationStripe.position.set(0, 0.33, 3.3);
         disk.add(rotationStripe);
         const rotationArrow = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.4, 3), rotationMarkMat);
         rotationArrow.rotation.x = Math.PI / 2;
-        rotationArrow.position.set(0, 0.46, 6.6);
+        rotationArrow.position.set(0, 0.36, 6.6);
         disk.add(rotationArrow);
         const rotationHub = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.04, 24), rotationMarkMat);
-        rotationHub.position.y = 0.44;
+        rotationHub.position.y = 0.34;
         disk.add(rotationHub);
 
         // Grid/Floor
@@ -802,9 +868,10 @@
         gearAngleX = yawAngle + rollAngle;
         gearAngleY = yawAngle - rollAngle;
         
-        // Input gears rotate around X axis
+        // Input gears spin about their local X axis (world Z after mounting).
         if (gearX) gearX.rotation.x = gearAngleX;
-        if (gearY) gearY.rotation.x = gearAngleY;
+        // The opposed motor's positive direction is mirrored in world space.
+        if (gearY) gearY.rotation.x = -gearAngleY;
         
         // Z axis (Rail) logic - smooth transition
         gearAngleZ = THREE.MathUtils.lerp(gearAngleZ, targetAngleZ, blend);
@@ -820,7 +887,7 @@
         // Mechanism Math
         // Report: opposite motor signs tilt the tray (Roll).
         const rollDelta = rollAngle;
-        if (carrierGroup) carrierGroup.rotation.x = rollDelta;
+        if (carrierGroup) carrierGroup.rotation.z = -rollDelta;
 
         // Same motor signs spin only the output spindle and disk (Yaw).
         const yawDelta = yawAngle;
@@ -839,16 +906,16 @@
 
         // Dynamic Bin Highlight Check (타겟 수거함에 캐리지와 선회각이 정렬되었을 때 은은하게 하이라이트)
         if (binMeshes && binMeshes.length > 0) {
-            const currentYawDeg = ((predictedState.yaw % 360) + 360) % 360;
+            const dumpSide = Math.sign(predictedState.roll);
             binMeshes.forEach(b => {
                 const zDist = Math.abs((carriageGroup ? carriageGroup.position.z : 0) - b.config.z);
                 const isNearZ = zDist < 4.0;
-                // Check if yaw matches bin direction (approx within 30 deg)
-                const yawDiff = Math.abs(currentYawDeg - b.config.yaw);
-                const isMatchingYaw = yawDiff < 35 || Math.abs(yawDiff - 360) < 35;
+                // A round tray's spin does not change its gravity/downhill
+                // direction. Use the actual tilt side and rail compartment.
+                const isMatchingSide = dumpSide === b.config.side;
                 const targetMat = b.mat || (b.mesh ? b.mesh.material : null);
                 if (targetMat) {
-                    if (isNearZ && isMatchingYaw && Math.abs(predictedState.roll) > 5) {
+                    if (isNearZ && isMatchingSide && Math.abs(predictedState.roll) > 5) {
                         targetMat.opacity = 0.75;
                         targetMat.emissive = new THREE.Color(b.config.color);
                         targetMat.emissiveIntensity = 0.35;
@@ -1086,7 +1153,7 @@
 
     window.setSortingAngles = (yawDeg, rollDeg, railZMm = 0) => {
         // yaw: rotation around Y (speedX = +rad, speedY = +rad)
-        // roll: tilt around X (speedX = +rad, speedY = -rad)
+        // roll: tilt around world Z toward the bins (speedX = +rad, speedY = -rad)
         const yawRad = (yawDeg * Math.PI) / 180.0;
         const rollRad = (rollDeg * Math.PI) / 180.0;
         

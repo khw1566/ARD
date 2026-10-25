@@ -47,7 +47,7 @@
                             <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:3px;">* 수치가 낮을수록 고화질(저압축), 높을수록 고압축(저용량)</span>
                         </div>
                         <div class="input-group" style="margin-bottom: 10px;">
-                            <label for="hmi_mcu_ip">HMI MCU IP (Receiver)</label>
+                            <label for="hmi_mcu_ip" data-board-label="hmi_ip">HMI MCU IP (Receiver)</label>
                             <div style="display: flex; gap: 5px;">
                                 <input type="text" id="hmi_mcu_ip" value="{{ config.hmi_mcu_ip }}" placeholder="192.168.x.x">
                                 <button type="button" id="sync-r-ip-config" class="btn-primary" style="width: auto; padding: 0 12px; font-size: 0.8rem;">Auto</button>
@@ -383,10 +383,11 @@
 
                 <div id="hmi_mcu-tab" class="tab-content">
                     <div class="card status-card">
-                        <h2 data-i18n="hmi_settings_header">HMI 수신 보드 설정</h2>
+                        <h2 data-board-label="hmi_settings">HMI 수신 보드 설정</h2>
+                        <p data-jc-only style="color:var(--text-dim);line-height:1.6;">JC1060 연결 IP와 음성 보드는 <a href="/settings#tab-general">일반/하드웨어 설정</a>에서 변경할 수 있습니다.</p>
                         <div class="input-group">
-                            <label>HMI Image Quality: <span id="hmi-quality-val" style="color: var(--primary);">10</span></label>
-                            <input type="range" id="hmi_image_quality" min="1" max="63" value="10">
+                            <label data-legacy-only>HMI Image Quality: <span id="hmi-quality-val" style="color: var(--primary);">10</span></label>
+                            <input type="range" data-legacy-only id="hmi_image_quality" min="1" max="63" value="10">
                         </div>
                         <div class="input-group">
                             <label for="transmitter_ip">Transmitter IP</label>
@@ -401,7 +402,8 @@
                 <div id="controlmcu-tab" class="tab-content">
                     <!-- Control MCU System Status -->
                     <div class="card status-card" style="border-left: 4px solid var(--primary); margin-bottom: 20px;">
-                        <h2 style="margin-bottom: 15px; color: var(--primary);">Control MCU Status</h2>
+                        <h2 data-board-label="control" style="margin-bottom: 15px; color: var(--primary);">Control MCU Status</h2>
+                        <p data-jc-voice-note style="color:#fbbf24;">JC1060 음성 지원 펌웨어를 올린 뒤, 보드의 Voice 탭에서 VAD 또는 PTT로 녹음할 수 있습니다.</p>
                         <div class="result-item">
                             <label>System Mode:</label>
                             <span id="controlmcu-mode-display">-</span>
@@ -664,7 +666,7 @@
                     </div>
                 </div>
 
-                <div id="robot3axismcu-tab" class="tab-content">
+                <div data-board="robot3axismcu" id="robot3axismcu-tab" class="tab-content">
                     <div class="card settings-card" style="margin-bottom: 20px; border-top: 2px solid var(--primary);">
                         <h2 data-i18n="r3_settings_header">구동보드 설정 (3축 로봇)</h2>
                         <div class="input-group">

@@ -4,7 +4,7 @@
 #include "esp_err.h"
 
 // Runs one command line; returns false when it is rejected (sent as ERR:REJECTED).
-bool command_execute(const char *line);
+bool command_execute(const char *line, bool announce = true);
 void command_print_help();
 
 // Serial console (UART0) and TCP command server tasks.

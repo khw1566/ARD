@@ -27,8 +27,10 @@ with tempfile.TemporaryDirectory(prefix="ard-wifi-test-") as folder:
         f'"{shared / "third_party/qrcodegen.c"}" /Fe:"{build / "test_wifi.exe"}"\n',
         encoding="utf-8")
     subprocess.run([os.environ.get("COMSPEC", "cmd.exe"), "/c", str(script)], cwd=build, check=True)
-    for case in ["slots", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry",
-                 "manual-success", "manual-rollback", "manual-empty", "qr"]:
+    for case in ["slots", "migration", "invalid-migration", "visibility", "failed-new", "old-password", "timeout", "scan-error", "save-retry",
+                 "manual-success", "manual-rollback", "manual-empty", "qr", "slow-dhcp", "security-config",
+                 "manual-transient", "delayed-disconnect", "missing-disconnect",
+                 "manual-retry-success", "manual-lost-ip"]:
         subprocess.run([str(build / "test_wifi.exe"), case], cwd=build, check=True)
     try:
         import cv2
@@ -36,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="ard-wifi-test-") as folder:
         print("QR image decoding skipped: OpenCV unavailable")
     else:
         decoder = cv2.QRCodeDetector()
-        for i, expected in enumerate(["WIFI:T:WPA;S:ard-hmi-123456;P:ARD-123456!;;", "http://192.168.4.1/network"]):
+        for i, expected in enumerate(["WIFI:T:nopass;S:ard-hmi-123456;P:;;", "http://192.168.4.1/network"]):
             text, _, _ = decoder.detectAndDecode(cv2.imread(str(build / f"qr-{i}.pgm")))
             assert text == expected, (i, text)
         print("PASS QR image decoding (Wi-Fi credentials and setup URL)")

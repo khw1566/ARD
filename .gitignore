@@ -14,6 +14,8 @@ sdkconfig.old
 # Python / PyInstaller
 __pycache__/
 *.pyc
+/ARD_MAIN/backend/board_settings.json
+/ARD_MAIN/backend/board_settings.json.tmp
 dist/
 *.spec
 .server.lock

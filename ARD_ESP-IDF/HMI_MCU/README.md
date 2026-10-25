@@ -44,7 +44,7 @@ python -u ARD_ESP-IDF/HMI_MCU/test/sim/run_sim.py
 
 ## 네트워크 설정
 기존 ArdNetwork와 같습니다. `ard-hmi-xxxxxx` AP(비밀번호 `ARD-xxxxxx!`)에 접속해
-`http://192.168.4.1/network`(로그인 `admin` / AP 비밀번호)에서 Wi-Fi와 PC 서버를 저장합니다.
+`http://192.168.4.1/network`(AP 비밀번호·웹 로그인 없음)에서 Wi-Fi와 PC 서버를 저장합니다.
 NVS `ard-network/settings` 블롭을 그대로 쓰므로 Arduino 펌웨어에서 저장한 설정이 유지되고,
 더 오래된 `hmi-cfg` 네임스페이스도 한 번 읽어옵니다. Arduino판의 DNS 캡티브 리다이렉트는 넣지 않았습니다.
 

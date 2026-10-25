@@ -55,7 +55,7 @@ def main():
                 process.terminate()
             process.wait(timeout=15)
     text = log.read_bytes()
-    cases = ['slots', 'visibility', 'failed-new', 'old-password', 'timeout', 'scan-error', 'save-retry']
+    cases = ['slots', 'migration', 'invalid-migration', 'visibility', 'failed-new', 'old-password', 'timeout', 'scan-error', 'save-retry']
     for case in cases:
         assert ('PASS ' + case).encode() in text, case
         print('PASS Wi-Fi worker:', case)
@@ -81,7 +81,7 @@ const result=jsQR(pixels,240,320,{inversionAttempts:'dontInvert'});
 if(!result||result.data!==process.argv[3])throw Error('QR decode mismatch: '+(result&&result.data));
 console.log('PASS decoded QR: '+result.data);
 """
-    for name, expected in [('wifi-qr', 'WIFI:T:WPA;S:ard-hmi-123456;P:ARD-123456!;;'),
+    for name, expected in [('wifi-qr', 'WIFI:T:nopass;S:ard-hmi-123456;P:;;'),
                            ('web-qr', 'http://192.168.4.1/network')]:
         raw = build / (name + '.rgba')
         rgb = frames[name]

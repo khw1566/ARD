@@ -25,7 +25,7 @@ static void flush(void *user, int x, int y, int w, int h, uint16_t *data) {
 }
 static const gfx_target_t target = {.width = HMI_W, .height = HMI_H, .band_h = 40, .acquire = acquire, .flush = flush};
 const char *ard_network_hostname(void) { return "ard-hmi-123456"; }
-const char *ard_network_password(void) { return "ARD-123456!"; }
+const char *ard_network_password(void) { return ""; }
 uint32_t hmi_millis(void) { return millis; }
 bool hmi_clock(char *out, size_t size) { snprintf(out, size, "12:34"); return true; }
 void hmi_model_get(hmi_model_t *out) { *out = model; }

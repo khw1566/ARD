@@ -1,5 +1,40 @@
 menu "ARD JC1060P470C"
 
+    menu "Onboard microphone and speaker (ES8311)"
+        config ARD_VOICE_MCLK
+            int "I2S MCLK GPIO"
+            range 0 54
+            default 13
+        config ARD_VOICE_BCLK
+            int "I2S BCLK GPIO"
+            range 0 54
+            default 12
+        config ARD_VOICE_WS
+            int "I2S LRCK GPIO"
+            range 0 54
+            default 10
+        config ARD_VOICE_DOUT
+            int "I2S speaker data GPIO"
+            range 0 54
+            default 9
+        config ARD_VOICE_DIN
+            int "I2S microphone data GPIO"
+            range 0 54
+            default 48
+        config ARD_VOICE_MIC_SLOT
+            int "ES8311 microphone slot (0 = left, 1 = right)"
+            range 0 1
+            default 0
+        config ARD_VOICE_MIC_GAIN_DB
+            int "Microphone analog gain (dB)"
+            range 0 42
+            default 24
+        config ARD_VOICE_MAX_SECONDS
+            int "Maximum utterance length (seconds, bounded PSRAM buffer)"
+            range 3 20
+            default 15
+    endmenu
+
     menu "Display panel"
         choice ARD_PANEL_VARIANT
             prompt "JC1060P470C panel revision"

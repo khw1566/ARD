@@ -2,12 +2,12 @@
 // HMI side of the PC link (what HMI_MCU did): polls /api/status for the other boards,
 // sends the HMI_MCU heartbeat, forwards commands for the boards that are still separate
 // (Robot3Axis, ImageSender, ControlMCU voice), AI approvals, and fetches the last camera JPEG.
-// The drive commands no longer go through the PC: the UI calls command_execute() directly.
+// All drive commands go through the PC to the existing independent DriveMCU.
 #include <stddef.h>
 #include <stdint.h>
 #include "esp_err.h"
 
-// PC_SOUND is the voice board: ControlMCU (ESP32-S3) since SoundMCU was removed.
+// PC_SOUND is the selected voice endpoint: onboard JC1060 or legacy ControlMCU.
 enum PcBoard { PC_DRIVE = 0, PC_ROBOT = 1, PC_CAM = 2, PC_SOUND = 3, PC_BOARDS = 4 };
 
 struct PcBoardState {
@@ -22,6 +22,10 @@ struct PcStatus {
     bool reachable;          // last /api/status poll succeeded
     uint32_t updatedMs;
     PcBoardState board[PC_BOARDS];
+    int32_t driveX, driveY, driveZ; // PC accepted-command estimates, not encoder feedback
+    bool drivePid;
+    float driveTemp, driveHumidity, drivePressure, driveTof;
+    double driveLat, driveLng;
     // Robot3Axis
     float robotX, robotY, robotZ;
     char robotGrab[12];
@@ -41,8 +45,12 @@ struct PcStatus {
 esp_err_t pc_link_start();
 PcStatus pc_status();                         // snapshot copy
 bool pc_send_command(PcBoard board, const char *command); // queued, false when the queue is full
+bool pc_drive_jog(float x, float y, float z); // latest input only; bounded remote steps
+void pc_drive_arm();
+void pc_drive_stop();
 void pc_send_approval(const char *id, bool approve);
 void pc_request_image();                      // fetch /api/hmi/last_image in the background
+bool pc_send_guidance(const char *cue);        // bounded PC TTS announcement for a local action
 
 // Last decoded camera frame (RGB565, PSRAM). Valid until the next pc_request_image() completes;
 // the caller holds the image lock while drawing it.

@@ -23,7 +23,7 @@ const context = vm.createContext({
     document: { getElementById: element, querySelector: () => null, querySelectorAll: () => [rotationMonitor] },
     window: {}, console, performance: { now: () => 0 },
     requestAnimationFrame: () => 1, cancelAnimationFrame() {}, addLog() {},
-    fetch: async (url, options) => { commands.push(JSON.parse(options.body).command); return { ok: true }; },
+    fetch: async (url, options) => { commands.push(JSON.parse(options.body).command); return { ok: true, json: async () => ({ status: 'success', delivery: 'accepted' }) }; },
     THREE: { MathUtils: { lerp: (a,b,t) => a+(b-a)*t, clamp: (x,a,b) => Math.min(b,Math.max(a,x)), radToDeg: x => x*180/Math.PI } },
 });
 const source = fs.readFileSync(path.join(__dirname, '../frontend/static/js/simulation-drive.js'), 'utf8');
@@ -31,10 +31,10 @@ vm.runInContext(source + `
 let testDelta=1;
 clock = {getDelta:()=>testDelta};
 angleChart = {data:{datasets:[{data:[]},{data:[]}]},update(){}};
-yawGroup={rotation:{y:0}}; carrierGroup={rotation:{x:0}}; carriageGroup={position:{z:0}};
+yawGroup={rotation:{y:0}}; carrierGroup={rotation:{x:0,z:0}}; carriageGroup={position:{z:0}};
 window.test={tick:animate, action:runSimAction, state:()=>predictedState,
  delta:value=>testDelta=value,
- transforms:()=>({yaw:yawGroup.rotation.y,roll:carrierGroup.rotation.x,rail:carriageGroup.position.z}),
+ transforms:()=>({yaw:yawGroup.rotation.y,roll:carrierGroup.rotation.z,rail:carriageGroup.position.z}),
  targets:()=>[targetAngleX,targetAngleY]};`, context);
 const w = context.window;
 function near(actual, expected) { assert.ok(Math.abs(actual-expected)<1e-9, `${actual} != ${expected}`); }
@@ -45,7 +45,7 @@ for (const [mx,my,yaw,roll] of [[90,90,90,0],[90,-90,0,90],[-90,-90,-90,0],[135,
 }
 w.setSortingAngles(90,45,0); w.test.tick();
 near(w.test.state().yaw,90); near(w.test.state().roll,45);
-near(w.test.transforms().yaw,-Math.PI/2); near(w.test.transforms().roll,Math.PI/4);
+near(w.test.transforms().yaw,-Math.PI/2); near(w.test.transforms().roll,-Math.PI/4);
 const before = Array.from(w.test.targets());
 w.test.action('dr');
 assert.deepEqual(Array.from(w.test.targets()), before, 'command must wait for server state');

@@ -12,6 +12,8 @@ typedef struct {
 
 typedef void (*pc_capture_cb_t)(const char *source);
 
+// Creates the locks behind pc_link_get_config/log/upload. Call before any task uses them.
+void pc_link_init(void);
 // Starts the poll/heartbeat task. on_capture runs when the PC queues "capture".
 void pc_link_start(pc_capture_cb_t on_capture);
 void pc_link_get_config(pc_config_t *out);

@@ -3,8 +3,10 @@
 #include <string.h>
 #include <time.h>
 #include <atomic>
+#include <math.h>
 #include "ard_network.h"
 #include "board.h"
+#include "onboard_audio.h"
 #include "cJSON.h"
 #include "driver/jpeg_decode.h"
 #include "esp_heap_caps.h"
@@ -15,21 +17,23 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "lwip/inet.h"
 
 static const char *TAG = "pc_link";
 
 namespace {
 
 constexpr uint32_t kPollMs = 3000;       // same cadence as HMI_MCU
-constexpr uint32_t kHeartbeatMs = 10000;
+constexpr uint32_t kHeartbeatMs = 3000;
 constexpr size_t kStatusMax = 16384;
 constexpr size_t kJpegMax = 512 * 1024;  // HMI_MCU capped at 40 KB; PSRAM allows full frames
 
 struct Outgoing {
-    enum Kind : uint8_t { COMMAND, APPROVAL } kind;
+    enum Kind : uint8_t { COMMAND, APPROVAL, GUIDANCE } kind;
     PcBoard board;
     bool approve;
     char text[96];
+    uint32_t queuedMs = 0;
 };
 
 const char *const kBoardKeys[PC_BOARDS] = {"drivemcu", "robot3axismcu", "imagesendermcu", "controlmcu"};
@@ -41,6 +45,10 @@ PcStatus status = {};
 QueueHandle_t outgoing;
 std::atomic<bool> imageRequested{false};
 TaskHandle_t worker;
+portMUX_TYPE driveLock = portMUX_INITIALIZER_UNLOCKED;
+float driveAxes[3] = {};
+uint32_t driveUpdated;
+bool driveArmed, driveArmRequested, driveStopRequested;
 
 jpeg_decoder_handle_t jpeg;
 uint8_t *jpegBuffer;            // compressed stream
@@ -135,6 +143,18 @@ void parseStatus(const char *text) {
         if (s.online) strlcpy(s.lastSeen, seen, sizeof(s.lastSeen));
     }
     const cJSON *robot = cJSON_GetObjectItem(cJSON_GetObjectItem(doc, "robot3axismcu"), "state_data");
+    const cJSON *drive = cJSON_GetObjectItem(doc, "drivemcu");
+    const cJSON *estimate = cJSON_GetObjectItem(drive, "command_estimate");
+    next.driveX = (int32_t)num(estimate, "mx_steps");
+    next.driveY = (int32_t)num(estimate, "my_steps");
+    next.driveZ = (int32_t)num(estimate, "mz_steps");
+    next.drivePid = cJSON_IsTrue(cJSON_GetObjectItem(cJSON_GetObjectItem(doc, "drive_settings"), "pid_mode"));
+    next.driveTemp = (float)num(drive, "env_temp", NAN);
+    next.driveHumidity = (float)num(drive, "env_humid", NAN);
+    next.drivePressure = (float)num(drive, "env_press", NAN);
+    next.driveTof = (float)num(drive, "tof_dist");
+    next.driveLat = num(drive, "gps_lat");
+    next.driveLng = num(drive, "gps_lng");
     next.robotX = (float)num(robot, "x_deg");
     next.robotY = (float)num(robot, "y_mm");
     next.robotZ = (float)num(robot, "z_mm");
@@ -158,6 +178,20 @@ void parseStatus(const char *text) {
     strlcpy(next.soundMode, str(voice, "voice_mode"), sizeof(next.soundMode));
     strlcpy(next.soundStatus, str(voice, "status"), sizeof(next.soundStatus));
     strlcpy(next.controlMode, str(voice, "mode"), sizeof(next.controlMode));
+    const cJSON *localBoard = cJSON_GetObjectItem(doc, "jc1060");
+    const cJSON *localVoice = cJSON_GetObjectItem(localBoard, "voice");
+    char localIp[16], configuredServer[65];
+    ard_network_local_ip(localIp, sizeof(localIp));
+    ard_network_server(configuredServer, sizeof(configuredServer));
+    const uint32_t configuredAddress = inet_addr(configuredServer);
+    const char *peer = configuredAddress != INADDR_NONE && configuredAddress != INADDR_ANY
+        ? configuredServer : str(doc, "server_ip", "");
+    const bool thisBoard = localIp[0] && !strcmp(str(localBoard, "ip", ""), localIp);
+    onboard_audio_pc_state(thisBoard && cJSON_IsTrue(cJSON_GetObjectItem(localVoice, "selected")),
+        strcmp(str(localVoice, "mode", "VAD"), "PTT") != 0,
+        cJSON_IsTrue(cJSON_GetObjectItem(localVoice, "busy")),
+        (uint32_t)num(localVoice, "completed_job_id"), (uint32_t)num(localVoice, "session"),
+        (int)num(localVoice, "volume", 12), (int)num(localVoice, "sensitivity", 2000), peer);
 
     const cJSON *pending = cJSON_GetObjectItem(cJSON_GetObjectItem(doc, "hmi_mcu"), "pending_action");
     next.approvalPending = cJSON_IsObject(pending);
@@ -184,20 +218,28 @@ void poll(char *buffer) {
 }
 
 void heartbeat() {
-    char ip[16], body[160];
+    char ip[16], body[256];
     ard_network_local_ip(ip, sizeof(ip));
-    snprintf(body, sizeof(body), "{\"source\":\"HMI_MCU\",\"rssi\":%d,\"ip\":\"%s\",\"board\":\"JC1060P470C\"}",
-             ard_network_rssi(), ip);
+    const auto audio = onboard_audio_status();
+    snprintf(body, sizeof(body), "{\"source\":\"HMI_MCU\",\"rssi\":%d,\"ip\":\"%s\",\"board\":\"JC1060P470C\","
+             "\"audio_ready\":%s,\"mic_ready\":%s,\"audio_packets\":%lu,\"mic_peak\":%d}",
+             ard_network_rssi(), ip, audio.ready ? "true" : "false", audio.ready ? "true" : "false",
+             (unsigned long)audio.rxPackets, audio.peak);
     http("/api/heartbeat", HTTP_METHOD_POST, body, 500);
 }
 
 void send(const Outgoing &item) {
+    // Do not replay stale motor clicks after a JPEG fetch or network outage.
+    if (item.kind == Outgoing::COMMAND && item.board == PC_DRIVE && nowMs() - item.queuedMs > 500) return;
     cJSON *doc = cJSON_CreateObject();
     const char *path;
     if (item.kind == Outgoing::APPROVAL) {
         cJSON_AddStringToObject(doc, "id", item.text);
         cJSON_AddBoolToObject(doc, "approve", item.approve);
         path = "/api/hmi/approve";
+    } else if (item.kind == Outgoing::GUIDANCE) {
+        cJSON_AddStringToObject(doc, "cue", item.text);
+        path = "/api/jc1060/guidance";
     } else {
         cJSON_AddStringToObject(doc, "command", item.text);
         path = kCommandPaths[item.board];
@@ -205,8 +247,9 @@ void send(const Outgoing &item) {
     char *json = cJSON_PrintUnformatted(doc);
     cJSON_Delete(doc);
     if (!json) return;
-    const int code = http(path, HTTP_METHOD_POST, json, 1000);
-    if (code != 200) ESP_LOGW(TAG, "POST %s -> %d", path, code);
+    const int code = http(path, HTTP_METHOD_POST, json,
+        item.kind == Outgoing::COMMAND && item.board == PC_DRIVE ? 6500 : 1000);
+    if (code != 200 && code != 202) ESP_LOGW(TAG, "POST %s -> %d", path, code);
     cJSON_free(json);
 }
 
@@ -277,6 +320,40 @@ void linkTask(void *) {
     }
 }
 
+// Independent of JPEG downloads and status polling. Only the newest axes are
+// retained; the PC accepts one finite batch and expires unsent inputs at 300 ms.
+void driveTask(void *) {
+    bool wasActive = false;
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        float x, y, z;
+        bool arm, stop, enabled;
+        portENTER_CRITICAL(&driveLock);
+        arm = driveArmRequested; stop = driveStopRequested; enabled = driveArmed;
+        driveArmRequested = driveStopRequested = false;
+        const bool fresh = nowMs() - driveUpdated < 200;
+        x = fresh && enabled ? driveAxes[0] : 0;
+        y = fresh && enabled ? driveAxes[1] : 0;
+        z = fresh && enabled ? driveAxes[2] : 0;
+        portEXIT_CRITICAL(&driveLock);
+        const bool active = x != 0 || y != 0 || z != 0;
+        if (!stop && !arm && !active && !wasActive) continue;
+        char body[160], reply[128];
+        if (stop) snprintf(body, sizeof(body), "{\"op\":\"stop\"}");
+        else if (arm) snprintf(body, sizeof(body), "{\"op\":\"arm\"}");
+        else snprintf(body, sizeof(body), "{\"op\":\"input\",\"x\":%.3f,\"y\":%.3f,\"z\":%.3f}", x, y, z);
+        const int code = http("/api/jc1060/drive", HTTP_METHOD_POST, body, 500, (uint8_t *)reply, sizeof(reply));
+        wasActive = !stop && active;
+        if (code != 200 && code != 202) {
+            portENTER_CRITICAL(&driveLock);
+            driveArmed = false;
+            driveStopRequested = wasActive;
+            portEXIT_CRITICAL(&driveLock);
+            wasActive = false;
+        }
+    }
+}
+
 } // namespace
 
 esp_err_t pc_link_start() {
@@ -293,6 +370,7 @@ esp_err_t pc_link_start() {
     engine.timeout_ms = 200;
     esp_err_t err = jpeg_new_decoder_engine(&engine, &jpeg);
     if (err != ESP_OK) return err;
+    if (xTaskCreatePinnedToCore(driveTask, "drive_input", 4096, nullptr, 4, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
     return xTaskCreatePinnedToCore(linkTask, "pc_link", 6144, nullptr, 3, &worker, 0) == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
 }
 
@@ -306,9 +384,56 @@ PcStatus pc_status() {
 }
 
 bool pc_send_command(PcBoard board, const char *command) {
+    if (board == PC_DRIVE) {
+        // Ordinary touch clicks hand over to the PC route. Do not race a late
+        // stop request against that newly issued move. E-stop has its own path
+        // even if the general command queue is full.
+        const bool stop = !strcmp(command, "x") || !strcmp(command, "stop") ||
+                          !strcmp(command, "d") || !strcmp(command, "disable");
+        if (stop) pc_drive_stop();
+        else {
+            portENTER_CRITICAL(&driveLock);
+            driveArmed = driveArmRequested = false;
+            portEXIT_CRITICAL(&driveLock);
+        }
+    }
     Outgoing item = {Outgoing::COMMAND, board, false, {}};
+    item.queuedMs = nowMs();
     strlcpy(item.text, command, sizeof(item.text));
     return outgoing && xQueueSend(outgoing, &item, 0) == pdTRUE;
+}
+
+bool pc_drive_jog(float x, float y, float z) {
+    portENTER_CRITICAL(&driveLock);
+    driveAxes[0] = x; driveAxes[1] = y; driveAxes[2] = z;
+    driveUpdated = nowMs();
+    const bool armed = driveArmed;
+    portEXIT_CRITICAL(&driveLock);
+    return armed;
+}
+
+void pc_drive_arm() {
+    portENTER_CRITICAL(&driveLock);
+    driveArmed = true;
+    driveArmRequested = true;
+    driveStopRequested = false;
+    portEXIT_CRITICAL(&driveLock);
+}
+
+void pc_drive_stop() {
+    portENTER_CRITICAL(&driveLock);
+    driveArmed = false;
+    driveArmRequested = false;
+    driveStopRequested = true;
+    portEXIT_CRITICAL(&driveLock);
+}
+
+bool pc_send_guidance(const char *cue) {
+    Outgoing item = {Outgoing::GUIDANCE, PC_SOUND, false, {}};
+    strlcpy(item.text, cue, sizeof(item.text));
+    if (!outgoing) return false;
+    return (!strcmp(cue, "emergency") ? xQueueSendToFront(outgoing, &item, 0)
+                                      : xQueueSend(outgoing, &item, 0)) == pdTRUE;
 }
 
 void pc_send_approval(const char *id, bool approve) {

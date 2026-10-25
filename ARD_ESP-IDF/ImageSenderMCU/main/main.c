@@ -144,6 +144,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ard_network_start(APP_NET_ROLE, APP_DEFAULT_SERVER);
     start_http();
+    // The capture task reads pc_link config/log right away, so its locks must exist first.
+    pc_link_init();
     // Capture task owns the camera; it must exist before any trigger source starts.
     configASSERT(xTaskCreatePinnedToCore(capture_task, "capture", 8192, NULL, 5, &capture_task_handle, 1) == pdPASS);
     pc_link_start(request_capture);

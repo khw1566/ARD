@@ -5,23 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "mbedtls/base64.h"
 #include "nvs.h"
-
-static bool authorize(httpd_req_t *req) {
-    char auth[96], plain[48], encoded[80], expected[96];
-    size_t length;
-    snprintf(plain, sizeof(plain), "admin:%s", ard_network_password());
-    if (mbedtls_base64_encode((unsigned char *)encoded, sizeof(encoded), &length,
-                             (unsigned char *)plain, strlen(plain)) != 0) return false;
-    encoded[length] = 0;
-    snprintf(expected, sizeof(expected), "Basic %s", encoded);
-    if (httpd_req_get_hdr_value_str(req, "Authorization", auth, sizeof(auth)) == ESP_OK && !strcmp(auth, expected)) return true;
-    httpd_resp_set_status(req, "401 Unauthorized");
-    httpd_resp_set_hdr(req, "WWW-Authenticate", "Basic realm=\"ARD network\"");
-    httpd_resp_sendstr(req, "Authentication required");
-    return false;
-}
 
 #include "ard_wifi_http.h"
 
@@ -39,7 +23,6 @@ static esp_err_t send_escaped(httpd_req_t *req, const char *text) {
     return ESP_OK;
 }
 static esp_err_t page(httpd_req_t *req) {
-    if (!authorize(req)) return ESP_OK;
     const ard_network_settings_t *settings = ard_network_settings();
     const char *keys[] = {"{{HOST}}", "{{STATUS}}", "{{TOKEN}}", "{{SSID}}", "{{SERVER}}", "{{PASSWORD}}"};
     const char *values[] = {ard_network_hostname(), ard_network_connected() ? "Wi-Fi 연결됨" : "Wi-Fi 미연결 · 설정 AP 사용 가능",
@@ -64,7 +47,6 @@ static esp_err_t page(httpd_req_t *req) {
 }
 
 static esp_err_t save(httpd_req_t *req) {
-    if (!authorize(req)) return ESP_OK;
     if (req->content_len <= 0 || req->content_len >= 768) return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid form length");
     char body[768], token[33];
     size_t offset = 0;

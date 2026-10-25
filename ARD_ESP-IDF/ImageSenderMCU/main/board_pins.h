@@ -19,4 +19,6 @@
 #define CAM_PIN_HREF 7
 #define CAM_PIN_PCLK 13
 
-#define CAM_XCLK_HZ 18000000
+// OV3660's driver has an explicit 16 MHz PLL path. Avoid the previous 18 MHz
+// setting while validating capture integrity with Wi-Fi enabled.
+#define CAM_XCLK_HZ 16000000

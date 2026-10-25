@@ -1,0 +1,27 @@
+LIBRARY msvcrt.dll
+EXPORTS
+__getmainargs
+_exit
+_snprintf
+printf
+fprintf
+fopen
+fclose
+fputc
+malloc
+calloc
+realloc
+free
+abs
+memchr
+memcmp
+memcpy
+memmove
+memset
+strcmp
+strncmp
+strcpy
+strchr
+strlen
+puts
+labs

@@ -516,7 +516,33 @@ h2 {
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
 }
+
+.log-resize-handle {
+    flex: 0 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ns-resize;
+    touch-action: none;
+    border-radius: 4px;
+    user-select: none;
+}
+.log-resize-handle::after {
+    content: "";
+    width: 56px;
+    height: 4px;
+    border-radius: 3px;
+    background: var(--text-dim);
+    opacity: 0.6;
+}
+.log-resize-handle:hover::after,
+.log-resize-handle:focus-visible::after,
+.log-resize-handle.is-resizing::after { background: var(--primary); opacity: 1; }
+.log-resize-handle:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+body.is-resizing-log, body.is-resizing-log * { cursor: ns-resize !important; user-select: none !important; }
 
 #log-container {
     flex: 1;

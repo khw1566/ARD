@@ -629,7 +629,7 @@
         if (typeof original !== 'function') return;
         window.switchTab = function (tabId) {
             original.apply(this, arguments);
-            if (tabId === 'hmi_mcu-tab') { view.style.display = 'flex'; start(); present(); }
+            if (window.activeDashboardTab === 'hmi_mcu-tab' && !window.BoardUI?.isJC()) { view.style.display = 'flex'; start(); present(); }
             else { view.style.display = 'none'; stop(); }
         };
         log('명령 전송 꺼짐: 버튼은 화면만 바꿉니다');

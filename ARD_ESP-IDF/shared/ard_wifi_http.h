@@ -1,7 +1,7 @@
 #pragma once
 #include "ard_wifi.h"
 
-// Include after authorize(). Streaming keeps the HTTP stack independent of AP count.
+// Open setup API. Streaming keeps the HTTP stack independent of AP count.
 static esp_err_t scan_json_string(httpd_req_t *req, const char *s) {
     if (httpd_resp_sendstr_chunk(req, "\"") != ESP_OK) return ESP_FAIL;
     for (const unsigned char *p = (const unsigned char *)s; *p; ++p) {
@@ -14,7 +14,6 @@ static esp_err_t scan_json_string(httpd_req_t *req, const char *s) {
 }
 
 static esp_err_t scan_page(httpd_req_t *req) {
-    if (!authorize(req)) return ESP_OK;
     char query[32];
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK && !strcmp(query, "refresh=1"))
         ard_wifi_request_scan();

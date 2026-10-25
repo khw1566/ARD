@@ -5,8 +5,8 @@
 #include "board.h"
 #include "cJSON.h"
 #include "commands.h"
-#include "motion.h"
-#include "sensors.h"
+#include "pc_link.h"
+#include "onboard_audio.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_task_wdt.h"
@@ -35,31 +35,27 @@ void respond(int sock, const char *request) {
     strlcpy(line, request, sizeof(line));
     for (char *p = line; *p; ++p) if (*p >= 'A' && *p <= 'Z') *p += 'a' - 'A';
     if (!strcmp(line, "ping")) {
-        MotionStatus s = {};
-        motion_status(&s, 100);
-        char reply[80];
-        snprintf(reply, sizeof(reply), "ACK:PONG,move_ms=%lu,homing_ms=%lu\n",
-                 (unsigned long)s.lastMoveMs, (unsigned long)s.lastHomingMs);
+        sendText(sock, "ACK:PONG,role=HMI\n");
+    } else if (!strcmp(line, "audio_status")) {
+        const auto s = onboard_audio_status();
+        char reply[256];
+        snprintf(reply, sizeof(reply), "{\"ready\":%s,\"recording\":%s,\"playing\":%s,\"volume\":%d,\"peak\":%d,\"clips\":%lu,\"errors\":%lu}\n",
+                 s.ready ? "true" : "false", s.recording ? "true" : "false", s.playing ? "true" : "false",
+                 s.volume, s.peak, (unsigned long)s.uploadedClips, (unsigned long)s.uploadErrors);
         sendText(sock, reply);
     } else if (!strcmp(line, "status")) {
-        MotionStatus s;
-        if (!motion_status(&s, 100)) { sendText(sock, "ERR:BUSY\n"); return; }
+        const PcStatus pc = pc_status();
         cJSON *doc = cJSON_CreateObject();
-        cJSON_AddNumberToObject(doc, "protocol", 1);
-        cJSON_AddNumberToObject(doc, "boot_id", motion_boot_id());
-        cJSON_AddBoolToObject(doc, "busy", s.busy);
-        cJSON_AddBoolToObject(doc, "stopped", s.stopped);
-        cJSON_AddBoolToObject(doc, "pid", s.pid);
-        cJSON_AddNumberToObject(doc, "x", s.x);
-        cJSON_AddNumberToObject(doc, "y", s.y);
-        cJSON_AddNumberToObject(doc, "z", s.z);
-        cJSON_AddNumberToObject(doc, "steps_per_mm", s.stepsPerMmZ);
-        cJSON_AddNumberToObject(doc, "tof_mm", sensors_tof_last());
+        cJSON_AddStringToObject(doc, "role", "HMI");
+        cJSON_AddStringToObject(doc, "board", "JC1060P470C");
+        cJSON_AddBoolToObject(doc, "pc_reachable", pc.reachable);
+        cJSON_AddStringToObject(doc, "drive_ip", pc.board[PC_DRIVE].ip);
+        cJSON_AddBoolToObject(doc, "drive_online", pc.board[PC_DRIVE].online);
         char *json = cJSON_PrintUnformatted(doc);
         cJSON_Delete(doc);
         if (json) { sendText(sock, json); sendText(sock, "\r\n"); cJSON_free(json); }
     } else {
-        sendText(sock, command_execute(line) ? "ACK:OK\r\n" : "ERR:REJECTED\r\n");
+        sendText(sock, command_execute(line, false) ? "ACK:QUEUED\r\n" : "ERR:REJECTED\r\n");
     }
 }
 

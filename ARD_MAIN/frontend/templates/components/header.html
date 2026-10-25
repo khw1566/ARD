@@ -118,7 +118,7 @@
                         <line x1="8" y1="21" x2="16" y2="21"></line>
                         <line x1="12" y1="17" x2="12" y2="21"></line>
                     </svg>
-                    <div class="status-label" data-i18n="hmi_board">HMI UI 보드</div>
+                    <div class="status-label" data-board-label="hmi">HMI UI 보드</div>
                 </div>
                 <div class="status-value"><span class="indicator status-offline" id="hmi_mcu-status"></span> <span class="val status-offline" id="hmi_mcu-status-text" data-i18n="offline">OFFLINE</span></div>
                 <div class="status-meta">
@@ -142,7 +142,7 @@
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
-                    <div class="status-label" data-i18n="drive_board">모터 구동 보드</div>
+                    <div class="status-label" data-board-label="drive">모터 구동 보드</div>
                 </div>
                 <div class="status-value"><span class="indicator status-offline" id="drivemcu-status"></span> <span class="val status-offline" id="drivemcu-status-text" data-i18n="offline">OFFLINE</span></div>
                 <div class="status-meta">
@@ -165,7 +165,7 @@
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
-                    <div class="status-label" data-i18n="control_board">제어 메인 보드</div>
+                    <div class="status-label" data-board-label="control">제어 메인 보드</div>
                 </div>
                 <div class="status-value"><span class="indicator status-offline" id="controlmcu-status"></span> <span class="val status-offline" id="controlmcu-status-text" data-i18n="offline">OFFLINE</span></div>
                 <div class="status-meta">
@@ -183,7 +183,7 @@
                 </div>
             </div>
 
-            <div class="status-box status-box-offline" id="robot3axismcu-box" style="cursor: pointer;" onclick="switchTab('robot3axismcu-tab')">
+            <div class="status-box status-box-offline" data-board="robot3axismcu" id="robot3axismcu-box" style="cursor: pointer;" onclick="switchTab('robot3axismcu-tab')">
                 <div class="status-brand">
                     <svg class="mcu-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>

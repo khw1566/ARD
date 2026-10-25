@@ -17,7 +17,7 @@ static const char ARD_PORTAL_PAGE[] =
 "<label>Wi-Fi 비밀번호<input id='password' type='text' name='password' value='{{PASSWORD}}' maxlength='64' autocomplete='off'></label>"
 "<small>비밀번호를 확인하고 수정할 수 있습니다. 공개 Wi-Fi는 비워 두세요.</small>"
 "<p><label>PC 서버 IPv4 또는 호스트 이름<input name='server' value='{{SERVER}}' required maxlength='63' placeholder='192.168.0.35 또는 pc-name.local'></label></p>"
-"<small>http://와 포트 없이 입력하세요. 연결에 성공한 Wi-Fi를 최대 16개 기억합니다. 가득 차면 가장 오래전에 성공한 항목을 교체합니다.</small>"
+"<small>http://와 포트 없이 입력하세요. 연결에 성공한 Wi-Fi를 최대 8개 기억합니다. 가득 차면 가장 오래전에 성공한 항목을 교체합니다.</small>"
 "<button type='submit'>적용 후 재시작</button></form>"
 "<small>장치를 정지시킨 뒤 설정하세요. 연결에 실패해도 설정 AP로 다시 접속할 수 있습니다.</small></main>"
 "<script>const list=document.getElementById('networks'),status=document.getElementById('scan-status'),"

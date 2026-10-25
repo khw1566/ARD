@@ -1,12 +1,13 @@
 #pragma once
 // GUITION JC1060P470C (ESP32-P4 + ESP32-C6-MINI-1U, 7" 1024x600 JD9165 MIPI-DSI, GT911).
-// One board replaces the old HMI (CYD ESP32 + ILI9341) and DriveMCU (ESP32-WROOM32D).
+// Replaces the old HMI/control terminal. DriveMCU stays an independent network board.
 //
 // Fixed on-board wiring (sources in README):
-//   I2C SDA 7 / SCL 8      GT911 (0x5D or 0x14), ES8311, ES7210, RTC; our sensors join this bus.
+//   I2C SDA 7 / SCL 8      GT911 (0x5D or 0x14), ES8311, RTC.
 //   C6 SDIO CLK 18, CMD 19, D0..D3 14..17, C6 reset 54 (same as ImageSenderMCU_P4).
-//   Backlight GPIO23, LCD reset GPIO0 (Kconfig, unverified), speaker amp enable GPIO11 (unused).
-// Expansion header (2x13): GPIO1..5, 20, 32, 33, 45..47. Motors, buzzer and GPS default there.
+//   Backlight GPIO23, LCD reset GPIO0 (Kconfig, unverified), speaker amp enable GPIO11.
+// Legacy expansion pin constants below are retained for source compatibility;
+// the HMI build does not initialize external motors, sensors, buzzer or GPS.
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
@@ -22,6 +23,11 @@
 #define PIN_I2C_SDA GPIO_NUM_7
 #define PIN_I2C_SCL GPIO_NUM_8
 #define PIN_SPK_AMP_EN GPIO_NUM_11
+#define PIN_AUDIO_MCLK ((gpio_num_t)CONFIG_ARD_VOICE_MCLK)
+#define PIN_AUDIO_BCLK ((gpio_num_t)CONFIG_ARD_VOICE_BCLK)
+#define PIN_AUDIO_WS   ((gpio_num_t)CONFIG_ARD_VOICE_WS)
+#define PIN_AUDIO_DOUT ((gpio_num_t)CONFIG_ARD_VOICE_DOUT)
+#define PIN_AUDIO_DIN  ((gpio_num_t)CONFIG_ARD_VOICE_DIN)
 
 #define PIN_LCD_RST   ((gpio_num_t)CONFIG_ARD_PIN_LCD_RST)
 #define PIN_BACKLIGHT ((gpio_num_t)CONFIG_ARD_PIN_BACKLIGHT)

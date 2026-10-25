@@ -10,10 +10,8 @@
 #include "commands.h"
 #include "controls.h"
 #include "gamepad.h"
-#include "gps.h"
-#include "motion.h"
+#include "onboard_audio.h"
 #include "pc_link.h"
-#include "sensors.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "lvgl.h"
@@ -33,6 +31,7 @@ struct Ui {
     lv_obj_t *pos, *driveState, *env, *tof, *gps, *jogSpeed, *jogSpeedLabel, *pidButton, *railLabel, *stepLabel;
     // Robot / Cam / Sound
     lv_obj_t *robotOnline, *robotInfo, *camOnline, *camInfo, *camImage, *camImageNote, *soundOnline, *soundInfo;
+    lv_obj_t *talk, *micToggle;
     // System
     lv_obj_t *netInfo, *padInfo, *padRaw, *sysInfo;
     // Approval popup
@@ -96,15 +95,26 @@ lv_obj_t *grid(lv_obj_t *parent, int w, int h) {
 
 void localCommand(lv_event_t *e) {
     const char *cmd = static_cast<const char *>(lv_event_get_user_data(e));
-    command_execute(cmd); // DriveMCU commands run here directly, no PC round trip
+    command_execute(cmd); // PC routes to the unchanged, independent DriveMCU
 }
 
 void robotCommand(lv_event_t *e) { pc_send_command(PC_ROBOT, static_cast<const char *>(lv_event_get_user_data(e))); }
 void camCommand(lv_event_t *e) { pc_send_command(PC_CAM, static_cast<const char *>(lv_event_get_user_data(e))); }
-void soundCommand(lv_event_t *e) { pc_send_command(PC_SOUND, static_cast<const char *>(lv_event_get_user_data(e))); }
+void soundCommand(lv_event_t *e) {
+    const char *cmd = static_cast<const char *>(lv_event_get_user_data(e));
+    onboard_audio_command(!strcmp(cmd, "stop") ? "audio_stop" : cmd); // immediate local feedback; the PC remains authoritative for mode/volume.
+    pc_send_command(PC_SOUND, cmd);
+}
+void talkEvent(lv_event_t *e) {
+    if (lv_event_get_code(e) == LV_EVENT_PRESSED) onboard_audio_set_ptt(true);
+    else if (lv_event_get_code(e) == LV_EVENT_RELEASED || lv_event_get_code(e) == LV_EVENT_PRESS_LOST)
+        onboard_audio_set_ptt(false);
+}
+void micToggle(lv_event_t *) { onboard_audio_set_mic(!onboard_audio_status().micEnabled); }
+void speakerTest(lv_event_t *) { onboard_audio_test(); }
 
 void estop(lv_event_t *) { command_execute("stop"); }
-void rearm(lv_event_t *) { motion_clear_stop(); }
+void rearm(lv_event_t *) { pc_drive_arm(); }
 
 // ---- Drive tab ---------------------------------------------------------------------------------
 
@@ -153,7 +163,7 @@ void buildDrive(lv_obj_t *tab) {
     lv_obj_t *left = panel(tab, 360, 470);
     lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_gap(left, 10, 0);
-    label(left, "Drive (local)", &lv_font_montserrat_28, kAccent);
+    label(left, "DriveMCU (via PC)", &lv_font_montserrat_28, kAccent);
     ui.pos = label(left, "X 0  Y 0  Z 0");
     ui.driveState = label(left, "---", &lv_font_montserrat_20, kMuted);
     ui.env = label(left, "Env: ---");
@@ -255,11 +265,20 @@ void buildCam(lv_obj_t *tab) {
 }
 
 void buildSound(lv_obj_t *tab) {
-    lv_obj_t *g = statusColumn(tab, "Voice (ControlMCU)", &ui.soundOnline, &ui.soundInfo);
-    button(g, "VAD", kOn, soundCommand, (void *)"vad");
-    button(g, "PTT", kAccent, soundCommand, (void *)"ptt");
-    button(g, "MUTE", kOff, soundCommand, (void *)"mute");
-    button(g, "PLAY", kOn, soundCommand, (void *)"play");
+    lv_obj_t *g = statusColumn(tab, "Onboard voice", &ui.soundOnline, &ui.soundInfo);
+    button(g, "VAD", kOn, soundCommand, (void *)"vad", 175);
+    button(g, "PTT", kAccent, soundCommand, (void *)"ptt", 175);
+    ui.micToggle = button(g, "MIC ON", kMuted, micToggle, nullptr, 175);
+    ui.talk = button(g, "HOLD TO TALK (PTT)", kAccent, talkEvent, nullptr, 550, 84);
+    lv_obj_add_event_cb(ui.talk, talkEvent, LV_EVENT_PRESSED, nullptr);
+    lv_obj_add_event_cb(ui.talk, talkEvent, LV_EVENT_RELEASED, nullptr);
+    lv_obj_add_event_cb(ui.talk, talkEvent, LV_EVENT_PRESS_LOST, nullptr);
+    button(g, "VOL -", kMuted, soundCommand, (void *)"vol-", 175);
+    button(g, "VOL +", kMuted, soundCommand, (void *)"vol+", 175);
+    button(g, "MUTE", kOff, soundCommand, (void *)"mute", 175);
+    button(g, "SPEAKER TEST", kAccent, speakerTest, nullptr, 175);
+    button(g, "PLAY", kOn, soundCommand, (void *)"play", 175);
+    button(g, "STOP AUDIO", kOff, soundCommand, (void *)"stop", 175);
 }
 
 // ---- System tab ------------------------------------------------------------------------------
@@ -290,8 +309,8 @@ void updateSetupQr() {
     lv_image_set_src(qrImage, &qrDsc);
     lv_obj_invalidate(qrImage);
     lv_label_set_text(qrTitle, qrWifi ? "1. Join setup Wi-Fi" : "2. Open setup page");
-    lv_label_set_text_fmt(qrNote, "AP: %s\nPassword: %s\nLogin: admin / AP password\n%s",
-                          ard_network_hostname(), ard_network_password(), ARD_SETUP_URL);
+    lv_label_set_text_fmt(qrNote, "AP: %s\nOpen Wi-Fi / No login required\n%s",
+                          ard_network_hostname(), ARD_SETUP_URL);
 }
 
 void nextSetupQr(lv_event_t *) { qrWifi = !qrWifi; updateSetupQr(); }
@@ -476,33 +495,23 @@ void refresh(lv_timer_t *) {
     const ControlStatus ctl = controls_status();
     lv_label_set_text_fmt(ui.pad, "Pad %s  %s", linkName(pad.link), ctl.mode == MODE_DRIVE ? "DRIVE" : "ROBOT");
 
-    MotionStatus m = {};
-    const bool haveMotion = motion_status(&m, 5);
-    lv_label_set_text(ui.armed, m.stopped ? "STOPPED - press RE-ARM" : ctl.lastAction);
-    lv_obj_set_style_text_color(ui.armed, m.stopped ? lv_color_hex(0xFF8A80) : lv_color_white(), 0);
+    lv_label_set_text(ui.armed, ctl.lastAction);
+    lv_obj_set_style_text_color(ui.armed, lv_color_white(), 0);
 
     switch (lv_tabview_get_tab_active(ui.tabview)) {
     case TAB_DRIVE: {
-        if (haveMotion) {
-            lv_label_set_text_fmt(ui.pos, "X %ld   Y %ld   Z %ld", (long)m.x, (long)m.y, (long)m.z);
-            lv_label_set_text_fmt(ui.driveState, "%s%s%s%s  queue %lu  last move %lu ms",
-                                  m.stopped ? "STOPPED " : "", m.busy ? "BUSY " : "IDLE ", m.jogging ? "JOG " : "",
-                                  m.pid ? "PID" : "", (unsigned long)m.queued, (unsigned long)m.lastMoveMs);
-        }
-        const EnvironmentSample env = sensors_environment();
-        char t[24] = "N/A", h[24] = "N/A", p[24] = "N/A";
-        if (env.ahtValid) { snprintf(t, sizeof(t), "%.1f C", env.temperature); snprintf(h, sizeof(h), "%.0f %%", env.humidity); }
-        if (env.bmpValid) snprintf(p, sizeof(p), "%.1f hPa", env.pressure);
-        lv_label_set_text_fmt(ui.env, "Env: %s  %s  %s", t, h, p);
-        lv_label_set_text_fmt(ui.tof, "ToF: %.0f mm (%s)", sensors_tof_last(), sensors_tof_status());
-        const GpsSnapshot g = gps_snapshot();
-        if (!g.enabled) lv_label_set_text(ui.gps, "GPS: off (gps1 to enable)");
-        else if (g.fix) lv_label_set_text_fmt(ui.gps, "GPS: %.5f, %.5f (%lu sat)", g.lat, g.lng, (unsigned long)g.satellites);
-        else lv_label_set_text_fmt(ui.gps, "GPS: searching (%lu chars)", (unsigned long)g.chars);
+        const bool online = pc.reachable && pc.board[PC_DRIVE].online;
+        if (online) lv_label_set_text_fmt(ui.pos, "PC estimate: X %ld   Y %ld   Z %ld",
+            (long)pc.driveX, (long)pc.driveY, (long)pc.driveZ);
+        else lv_label_set_text(ui.pos, "DriveMCU offline / PC unavailable");
+        lv_label_set_text_fmt(ui.driveState, "DriveMCU %s  %s", pc.board[PC_DRIVE].ip, online ? "ONLINE" : "OFFLINE");
+        lv_label_set_text_fmt(ui.env, "Drive env: %.1f C  %.0f %%  %.1f hPa", pc.driveTemp, pc.driveHumidity, pc.drivePressure);
+        lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm", pc.driveTof);
+        lv_label_set_text_fmt(ui.gps, "Drive GPS: %.5f, %.5f", pc.driveLat, pc.driveLng);
         lv_label_set_text_fmt(ui.jogSpeedLabel, "%d %%%s", ctl.speedPercent, ctl.precision ? " (precision)" : "");
         if (lv_slider_get_value(ui.jogSpeed) != ctl.speedPercent && !lv_obj_has_state(ui.jogSpeed, LV_STATE_PRESSED))
             lv_slider_set_value(ui.jogSpeed, ctl.speedPercent, LV_ANIM_OFF);
-        pidOn = m.pid;
+        pidOn = pc.drivePid;
         updateRailLabels();
         break;
     }
@@ -518,20 +527,31 @@ void refresh(lv_timer_t *) {
                               pc.camSensor, pc.camRes, pc.camQuality, pc.aiModel, pc.aiObject, pc.aiCategory);
         refreshCamImage();
         break;
-    case TAB_SOUND:
-        showBoard(ui.soundOnline, pc.board[PC_SOUND], pc.reachable);
-        lv_label_set_text_fmt(ui.soundInfo, "Mode  %s\nStatus  %s\nToggle mode  %s", pc.soundMode, pc.soundStatus,
-                              pc.controlMode);
+    case TAB_SOUND: {
+        const auto audio = onboard_audio_status();
+        lv_label_set_text(ui.soundOnline, !audio.ready ? "ES8311 unavailable" : !pc.reachable ? "PC offline" : !audio.selected ? "Select JC1060 voice on PC" : "Onboard microphone / speaker");
+        lv_obj_set_style_text_color(ui.soundOnline, audio.ready && audio.selected ? kOn : kOff, 0);
+        const char *state = audio.recording ? "RECORDING" : audio.uploading ? "UPLOADING" : audio.waiting ? "PROCESSING" :
+                            audio.playing ? "SPEAKING" : audio.micEnabled && audio.selected ? "LISTENING" : "MIC OFF";
+        lv_label_set_text_fmt(ui.soundInfo, "%s  %s\nMode %s\nMic level %d / 32767\nVolume %d / 21%s\nClips %lu  errors %lu\n\nPTT: hold TALK or gamepad RT\nVAD: automatic speech input\n\n%s",
+            state, pc.soundStatus, audio.vad ? "VAD" : "PTT", audio.peak, audio.volume, audio.muted ? " (muted)" : "",
+            (unsigned long)audio.uploadedClips, (unsigned long)audio.uploadErrors, audio.error);
+        lv_label_set_text(lv_obj_get_child(ui.micToggle, 0), audio.micEnabled ? "MIC ON" : "MIC OFF");
+        const bool canTalk = audio.ready && audio.selected && audio.micEnabled && !audio.vad &&
+                             !audio.uploading && !audio.waiting && !audio.playing;
+        // Keep the pressed button enabled until release so a recording always gets its stop event.
+        if (canTalk || audio.recording) lv_obj_remove_state(ui.talk, LV_STATE_DISABLED);
+        else lv_obj_add_state(ui.talk, LV_STATE_DISABLED);
         break;
+    }
     case TAB_SYSTEM: {
         ard_network_settings_t snapshot;
         ard_network_get_settings(&snapshot);
         const ard_network_settings_t *s = &snapshot;
         lv_label_set_text_fmt(ui.netInfo,
-                              "Configured SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nAP password: %s\n"
+                              "Configured SSID: %s\nIP: %s\nPC server: %s (%s)\n\nSetup AP: %s\nOpen Wi-Fi / No login required\n"
                               "http://192.168.4.1/network",
-                              s->ssid[0] ? s->ssid : "(not set)", ip, s->server, server, ard_network_hostname(),
-                              ard_network_password());
+                              s->ssid[0] ? s->ssid : "(not set)", ip, s->server, server, ard_network_hostname());
         lv_label_set_text_fmt(ui.sysInfo, "Heap %lu KB internal, %lu KB PSRAM\nTouch %s",
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),

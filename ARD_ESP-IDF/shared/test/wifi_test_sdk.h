@@ -10,6 +10,8 @@ typedef int esp_err_t;
 #define ESP_FAIL -1
 #define ESP_ERR_INVALID_STATE 0x103
 #define ESP_ERR_NO_MEM 0x101
+#define ESP_ERR_TIMEOUT 0x107
+#define ESP_ERR_WIFI_NOT_CONNECT 0x300f
 #define ESP_ERR_NVS_NOT_FOUND 0x1102
 #define ESP_LOGI(...) ((void)0)
 #define ESP_LOGW(...) ((void)0)
@@ -18,7 +20,7 @@ const char *esp_err_to_name(esp_err_t err);
 typedef const void *esp_event_base_t;
 #define WIFI_EVENT ((esp_event_base_t)1)
 #define IP_EVENT ((esp_event_base_t)2)
-enum { WIFI_EVENT_STA_DISCONNECTED, IP_EVENT_STA_GOT_IP, IP_EVENT_STA_LOST_IP };
+enum { WIFI_EVENT_STA_DISCONNECTED, IP_EVENT_STA_GOT_IP, IP_EVENT_STA_LOST_IP, WIFI_EVENT_STA_CONNECTED };
 typedef void (*esp_event_handler_t)(void *, esp_event_base_t, int32_t, void *);
 esp_err_t esp_event_handler_register(esp_event_base_t base, int32_t id, esp_event_handler_t fn, void *arg);
 typedef int portMUX_TYPE;
@@ -26,10 +28,16 @@ typedef int portMUX_TYPE;
 #define taskENTER_CRITICAL(x) ((void)0)
 #define taskEXIT_CRITICAL(x) ((void)0)
 int64_t esp_timer_get_time(void);
-enum { WIFI_AUTH_OPEN, WIFI_AUTH_WPA2_PSK, WIFI_ALL_CHANNEL_SCAN, WIFI_CONNECT_AP_BY_SIGNAL, WIFI_IF_STA };
+#define pdMS_TO_TICKS(ms) (ms)
+void vTaskDelay(int ticks);
+enum { WIFI_AUTH_OPEN, WIFI_AUTH_WPA2_PSK, WIFI_ALL_CHANNEL_SCAN, WIFI_CONNECT_AP_BY_SIGNAL, WIFI_IF_STA,
+       WPA3_SAE_PWE_BOTH };
 typedef struct { uint8_t ssid[33]; int rssi, authmode; } wifi_ap_record_t;
 typedef struct { struct { struct { int min, max; } active; } scan_time; } wifi_scan_config_t;
-typedef union { struct { uint8_t ssid[32], password[64]; int scan_method, sort_method; } sta; } wifi_config_t;
+typedef union { struct {
+    uint8_t ssid[32], password[64]; int scan_method, sort_method, sae_pwe_h2e;
+    struct { bool capable, required; } pmf_cfg;
+} sta; } wifi_config_t;
 esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 esp_err_t esp_wifi_scan_get_ap_records(uint16_t *count, wifi_ap_record_t *records);
 esp_err_t esp_wifi_clear_ap_list(void);

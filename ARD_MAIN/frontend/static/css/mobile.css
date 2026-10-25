@@ -73,7 +73,7 @@
     .dashboard-page #hmi-sim-view canvas { max-width: 100% !important; height: auto !important; }
     .dashboard-page .bottom-area { height: auto !important; flex-direction: column !important; gap: 12px !important; }
     .dashboard-page #angle-monitor-card { flex: none !important; height: 200px !important; }
-    .dashboard-page .log-section { height: 240px !important; flex: none !important; }
+    .dashboard-page .log-section { height: var(--log-panel-height, 240px) !important; flex: none !important; }
     .dashboard-page #log-container { overflow-wrap: anywhere; }
     .dashboard-page #voice-media-container { min-width: 0; min-height: 0 !important; }
     .dashboard-page .tabs { overflow-x: auto; }
