@@ -1,0 +1,16 @@
+[
+  {
+    "name": "remotion-best-practices",
+    "installed": true,
+    "source": "https://github.com/remotion-dev/skills",
+    "skill_path": "C:\\Users\\khw\\.codex\\skills\\remotion-best-practices\\SKILL.md",
+    "sha256": "23c5c52d379ccca73dfdc644b700bf0286518c842b3bb61441c675d1c14f8eca"
+  },
+  {
+    "name": "3dmodel",
+    "installed": true,
+    "source": "https://github.com/fletcherholt/3dmodel-skill",
+    "skill_path": "C:\\Users\\khw\\.codex\\skills\\3dmodel\\SKILL.md",
+    "sha256": "f6d637f1a1668e506d2e0c73c3c71ef28671afbbad20a38e42f0dc627fe94a4b"
+  }
+]

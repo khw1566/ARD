@@ -1,4 +1,4 @@
-// JC1060 HMI: onboard display/touch, ES8311 voice and BLE gamepad.
+// JC1060 HMI: onboard display/touch and ES8311 voice.
 // Existing DriveMCU remains a separate network endpoint controlled through the PC.
 #include <stdio.h>
 #include "ard_network.h"
@@ -6,8 +6,7 @@
 #include "bsp_display.h"
 #include "c6_update.h"
 #include "commands.h"
-#include "controls.h"
-#include "gamepad.h"
+#include "clock_sync.h"
 #include "onboard_audio.h"
 #include "pc_link.h"
 #include "ui.h"
@@ -30,8 +29,8 @@ static void fatal(const char *what, esp_err_t err) {
 }
 
 static void healthTask(void *) {
-    static const char *names[] = {"tcp_cmd", "console", "ard_network", "pc_link", "drive_input",
-                                  "lvgl", "controls", "gamepad", "ui_settings", "voice_io", "voice_rx", "voice_upload"};
+    static const char *names[] = {"tcp_cmd", "console", "ard_network", "pc_link", "drive_control",
+                                  "lvgl", "ui_settings", "voice_io", "voice_rx", "voice_upload"};
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(30000));
         printf("[Health] heap=%lu min_heap=%lu stack_free:",
@@ -74,6 +73,7 @@ extern "C" void app_main(void) {
     if ((err = onboard_audio_start(i2c)) != ESP_OK)
         ESP_LOGE(TAG, "Onboard audio failed: %s (UI/network remain available)", esp_err_to_name(err));
 
+    if ((err = clock_sync_start()) != ESP_OK) ESP_LOGW(TAG, "Clock initialization: %s", esp_err_to_name(err));
     // An older ESP-Hosted C6 associates but never passes DHCP traffic; update it first.
     if ((err = c6_firmware_check()) != ESP_OK) ESP_LOGW(TAG, "[C6] Firmware check: %s", esp_err_to_name(err));
 
@@ -85,8 +85,6 @@ extern "C" void app_main(void) {
     if ((err = command_servers_start()) != ESP_OK) fatal("command servers", err);
     if ((err = pc_link_start()) != ESP_OK) ESP_LOGE(TAG, "PC link failed: %s", esp_err_to_name(err));
 
-    if ((err = gamepad_start()) != ESP_OK) ESP_LOGE(TAG, "Gamepad (BLE) unavailable: %s", esp_err_to_name(err));
-    if ((err = controls_start()) != ESP_OK) fatal("controls", err);
     xTaskCreatePinnedToCore(healthTask, "health", 3072, nullptr, 1, nullptr, 0);
 
     onboard_audio_boot();

@@ -1453,7 +1453,7 @@ def get_safe_api_key(env_name, default_val):
         return default_val
     return key
 
-DEFAULT_GEMINI_KEY = "AQ.Ab8RN6K4WmoelQghuOv-5OND4HNOQO0PgYHmCb4sG3hVkPibVw"
+DEFAULT_GEMINI_KEY = ""
 
 CONFIG = {
     "api_key": get_safe_api_key("GEMINI_API_KEY", DEFAULT_GEMINI_KEY),
@@ -1490,11 +1490,17 @@ CONFIG = {
         "tts_style_degree": 1.5,       # 감정 세기 기본값 (0.01 ~ 2.00)
         "stt_engine": "Whisper-Local", # Whisper-Local, OpenAI-API
         "openai_api_key": os.getenv("OPENAI_API_KEY", ""),
-        "azure_api_key": os.getenv("AZURE_SPEECH_KEY", "7ng6FYWI2JjwBbM5x27dezNqNMdnlbD2s3i30fCZqgLXaAx0x6zKJQQJ99CEACNns7RXJ3w3AAAYACOGKnJS"),
+        "azure_api_key": os.getenv("AZURE_SPEECH_KEY", ""),
         "azure_region": os.getenv("AZURE_SPEECH_REGION", "koreacentral"),
         "gemini_api_key": get_safe_api_key("CONTROLMCU_API_KEY" if os.getenv("CONTROLMCU_API_KEY") else "SOUND_API_KEY", DEFAULT_GEMINI_KEY)
     }
 }
+
+# ControlMCU now owns the voice controls; retain SoundMCU compatibility for
+# existing devices while supplying the names used by the current templates.
+CONFIG["controlmcu"]["volume"] = int(os.getenv("SOUNDMCU_VOLUME", "12"))
+CONFIG["soundmcu"] = CONFIG["controlmcu"]
+CONFIG["hmi_image_quality"] = int(os.getenv("HMI_IMAGE_QUALITY", "70"))
 
 # --- Sherpa-ONNX 모델 관리 ---
 SHERPA_MODEL_DIR = os.path.join(os.path.dirname(__file__), "models", "sherpa")
@@ -1565,8 +1571,9 @@ def get_hmi_last_image():
 @app.route('/api/hmi/updates', methods=['GET'])
 def get_hmi_updates():
     """JC1060이 짧은 간격으로 조회: 선별 상태, 새 이미지 순번, 스트림 여부"""
+    import time as hmi_time
     return jsonify({"sorting": dict(sorting_status), "image_seq": hmi_image_seq,
-                    "stream": camera_stream.active})
+                    "stream": camera_stream.active, "unix_time": hmi_time.time()})
 
 @app.route('/api/imagesendermcu/command', methods=['POST'])
 @app.route('/api/transmitter/command', methods=['POST']) # Alias for main.js compatibility
@@ -3069,6 +3076,7 @@ def process_voice_command(buffer):
         update_voice_status("Idle")
 
 @app.route('/api/controlmcu/voice/chat', methods=['POST'])
+@app.route('/api/soundmcu/chat', methods=['POST'])
 def manual_chat():
     data = request.json
     text = data.get("text", "")
@@ -3130,6 +3138,7 @@ def manual_chat():
     return jsonify({"status": "queued"})
 
 @app.route('/api/controlmcu/voice/test_emotion_tts', methods=['POST'])
+@app.route('/api/soundmcu/test_emotion_tts', methods=['POST'])
 def test_emotion_tts():
     try:
         data = request.json or {}
@@ -3674,6 +3683,7 @@ def get_audio_mirror_status():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/controlmcu/voice/status', methods=['GET'])
+@app.route('/api/soundmcu/status', methods=['GET'])
 def get_controlmcu_voice_status():
     """현재 ControlMCU 음성 상태 및 설정 반환"""
     return jsonify({
@@ -3682,6 +3692,7 @@ def get_controlmcu_voice_status():
     })
 
 @app.route('/api/controlmcu/voice/settings', methods=['POST'])
+@app.route('/api/soundmcu/settings', methods=['POST'])
 def update_controlmcu_voice_settings():
     data = request.json
     # 항목별 페르소나 업데이트 (legacy support)
@@ -3740,6 +3751,7 @@ def update_controlmcu_voice_settings():
     return jsonify({"status": "success"})
 
 @app.route('/api/controlmcu/voice/voices', methods=['GET'])
+@app.route('/api/soundmcu/voices', methods=['GET'])
 def get_available_voices():
     """엔진별 사용 가능한 목소리 목록 반환"""
     engine_name = request.args.get('engine', CONFIG["controlmcu"]["tts_engine"])
@@ -4621,7 +4633,7 @@ if __name__ == '__main__':
             except Exception as e:
                 print(f"[Startup] {module!r} preload failed: {e}")
         print("[Startup] Preloading Whisper model...")
-        if get_whisper_model() is not None:
+        if os.environ.get("ARD_SKIP_WHISPER_PRELOAD") != "1" and get_whisper_model() is not None:
             print("[Startup] Whisper model ready.")
     threading.Thread(target=warm_up, daemon=True).start()
 
@@ -4640,4 +4652,8 @@ if __name__ == '__main__':
 
     # 운영 모드로 실행 (안정성 강화)
     print("Starting PC Center Server on 0.0.0.0:5000...")
-    app.run(host='0.0.0.0', port=int(os.getenv("PC_PORT", 5000)), debug=False, use_reloader=False, threaded=True)
+    if os.environ.get("ARD_USE_WAITRESS") == "1":
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=int(os.getenv("PC_PORT", 5000)), threads=32, channel_timeout=360)
+    else:
+        app.run(host='0.0.0.0', port=int(os.getenv("PC_PORT", 5000)), debug=False, use_reloader=False, threaded=True)

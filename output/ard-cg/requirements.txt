@@ -1,0 +1,2 @@
+# CAD inspection and generation of preview-only meshes. No compiler required.
+numpy>=1.26,<3

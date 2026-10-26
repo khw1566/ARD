@@ -25,6 +25,10 @@
                         <span data-i18n="menu_btn">메뉴</span>
                     </button>
                     <div class="header-dropdown-menu" id="header-dropdown-menu">
+                        {% if request.headers.get('X-ARD-Remote-Gateway') == '1' %}
+                        <a href="/_ard/logout" class="dropdown-item" style="text-decoration: none;">외부 접속 로그아웃</a>
+                        <div class="dropdown-divider"></div>
+                        {% endif %}
                         <button id="lang-toggle" class="dropdown-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                             <span>KO / EN 언어 전환</span>

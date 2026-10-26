@@ -9,7 +9,7 @@ class ConfigManager:
         self.persona_file = persona_file
 
         self.config = {
-            "api_key": "AQ.Ab8RN6K4WmoelQghuOv-5OND4HNOQO0PgYHmCb4sG3hVkPibVw",
+            "api_key": os.getenv("GEMINI_API_KEY", ""),
             "model_name": "gemini-2.5-flash-lite",
             "system_instruction": "You are a helpful AI assistant. Always respond concisely and kindly in Korean.",
 
@@ -45,7 +45,7 @@ class ConfigManager:
                 "openai_api_key": "",
                 "azure_api_key": "",
                 "azure_region": "koreacentral",
-                "gemini_api_key": "AQ.Ab8RN6K4WmoelQghuOv-5OND4HNOQO0PgYHmCb4sG3hVkPibVw",
+                "gemini_api_key": os.getenv("SOUND_API_KEY", os.getenv("GEMINI_API_KEY", "")),
                 "public_personality": "이름은 아로(ARO)입니다. 친절하고 명랑한 인공지능 로봇입니다.",
                 "private_instructions": "욕설이나 부적절한 말에 단호하게 거절하세요. 감정 태그를 사용하여 응답하세요."
             },

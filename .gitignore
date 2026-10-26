@@ -1,6 +1,14 @@
 # Legacy PlatformIO checkout is stored at ../ETC/ARD_software; GitHub main is preserved.
 /ARD_software/
 /ARD/
+/ARD_MAIN/.remote-access/
+/.playwright-cli/
+/output/playwright/
+
+# CG meshes and inspection frames can be regenerated from the committed CAD.
+/output/ard-cg/assets/
+/output/ard-cg/preview_*.png
+/output/ard-cg/video_[0-9]_*.png
 
 # Scratch work and build logs
 /tmp/
@@ -36,6 +44,7 @@ OldVersions/
 
 # OS / IDE
 .vscode/
+.vs/
 Thumbs.db
 desktop.ini
 *.lnk

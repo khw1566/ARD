@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI기반 자동화 분류장치 · 기구학 CG</title>
+<link rel="stylesheet" href="/cinematic.css">
+<div id="stage">
+ <div id="loading">CAD 장면을 준비하고 있습니다…</div>
+ <div class="topline"><span>ARD / AI기반 자동화 분류장치</span><span id="chapter"></span></div>
+ <div class="editorial"><div class="small" id="kicker"></div><h1 id="headline"></h1><div id="description"></div></div>
+ <div id="math"><div class="small">입력축 → 플레이트</div><div class="formula">ψ = (a + b) / 2</div><div class="formula">φ = (a − b) / 2</div><div class="values"><span class="a">A <b id="av">0°</b></span><span class="b">B <b id="bv">0°</b></span></div><div class="outputs">선회 ψ <b id="yv">0°</b><br>기울임 φ <b id="rv">0°</b></div><div class="footnote">a = θA / iA, b = θB / iB<br>감속 후 입력 · 동일 베벨기어비 가정<br>마주 보는 축의 입력 부호를 정규화</div></div>
+ <svg id="leaders"><path id="lineA"/><path id="lineB"/></svg><span class="part-label a" id="labelA">모터 A · 입력축</span><span class="part-label b" id="labelB">모터 B · 입력축</span>
+ <div class="subtitle" id="subtitle"></div><div class="progress"><i id="progress"></i></div>
+</div>
+<div class="controls"><button id="play">일시 정지</button><select id="shots" aria-label="장면 선택"></select><input type="range" id="seek" min="0" max="135" value="0" step="0.033333" aria-label="영상 위치"><span id="clock">0:00 / 2:15</span><button id="sound">음성 대기</button></div>
+<script src="/vendor/three.min.js"></script><script src="/cinematic.js"></script></html>

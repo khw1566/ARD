@@ -39,7 +39,8 @@ typedef struct {
     bool secure;
 } ard_network_ap_t;
 esp_err_t ard_network_scan(ard_network_ap_t *out, uint16_t capacity, uint16_t *count);
-// Connects live, waits up to 25 s for an IP, then persists the existing NVS blob.
+// Connects live: up to 25 s for association, then 30 s for DHCP (90 s total cap).
+// Persists the existing NVS blob only after the requested SSID obtains an IP.
 // Turns the setup AP off first (no DHCP lease while it runs). Failure restores
 // the previous station configuration; network_task brings the AP back if needed.
 esp_err_t ard_network_join(const char *ssid, const char *password);

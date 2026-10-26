@@ -6,7 +6,7 @@ import unittest
 from flask import Flask
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from api.jc1060_drive_routes import register_jc1060_drive_routes
+from api.jc1060_drive_routes import register_jc1060_drive_routes, joystick_rates
 
 
 class RemoteDriveTests(unittest.TestCase):
@@ -114,6 +114,83 @@ class RemoteDriveTests(unittest.TestCase):
         self.assertFalse(self.state.armed)
         self.assertEqual(self.jobs, [])
 
+    def test_pulse_speed_changes_interval_not_step_size(self):
+        self.arm()
+        self.assertEqual(self.post({"op": "pulse", "x": 0.5, "interval_ms": 200}).json["status"], "queued")
+        self.assertEqual(self.jobs[0][1], "b20,0")
+        self.complete(self.jobs[0])
+        self.now += 0.399
+        self.assertEqual(self.post({"op": "pulse", "x": 0.5, "interval_ms": 200}).json["status"], "waiting")
+        self.now += 0.002
+        self.assertEqual(self.post({"op": "pulse", "x": 0.5, "interval_ms": 200}).json["status"], "queued")
+        self.assertEqual(self.jobs[-1][1], "b20,0")
+
+    def test_pulse_cadence_begins_after_ack_and_reversal_cannot_bypass_it(self):
+        self.arm()
+        self.post({"op": "pulse", "x": 1, "interval_ms": 300})
+        self.now += 0.2
+        self.complete(self.jobs[0])
+        self.now += 0.299
+        self.assertEqual(self.post({"op": "pulse", "x": -1, "interval_ms": 300}).json["status"], "waiting")
+        self.now += 0.002
+        self.assertEqual(self.post({"op": "pulse", "x": -1, "interval_ms": 300}).json["status"], "queued")
+        self.assertEqual(self.jobs[-1][1], "b-20,0")
+
+    def test_pulse_axes_have_independent_cadence_and_no_pending_fifo(self):
+        self.arm()
+        self.post({"op": "pulse", "x": 1, "y": -0.5, "interval_ms": 200})
+        self.assertEqual(self.jobs[0][1], "b20,-20")
+        self.assertEqual(self.post({"op": "pulse", "x": 1}).json["status"], "busy")
+        self.complete(self.jobs[0])
+        self.now += 0.201
+        self.post({"op": "pulse", "x": 1, "y": -0.5, "interval_ms": 200})
+        self.assertEqual(self.jobs[-1][1], "b20,0")
+
+    def test_pulse_neutral_expires_unsent_moves_and_allows_new_hold(self):
+        self.arm()
+        self.post({"op": "pulse", "z": 0.2, "interval_ms": 640})
+        first = self.jobs[0]
+        self.assertEqual(first[1], "mzr20")
+        self.assertEqual(self.post({"op": "pulse", "x": 0}).json["status"], "neutral")
+        self.assertFalse(first[2]["allowed"]())
+        self.assertEqual(self.jobs[-1][1], "x")
+        self.complete(first, ok=False)
+        self.assertTrue(self.state.armed)
+        self.assertEqual(self.post({"op": "pulse", "z": -1}).json["status"], "queued")
+
+    def test_pulse_interval_and_deadzone_are_validated(self):
+        self.arm()
+        for value in (True, "200", 100.1, 99, 1001, float("nan")):
+            self.assertEqual(self.post({"op": "pulse", "x": 1, "interval_ms": value}).status_code, 400)
+        self.assertEqual(self.post({"op": "pulse", "x": 0.1}).json["status"], "neutral")
+        self.assertEqual(self.jobs, [])
+
+    def test_pulse_obeys_reboot_pid_busy_and_sorting_interlocks(self):
+        self.arm()
+        self.sample["busy"] = True
+        self.assertEqual(self.post({"op": "pulse", "x": 1}).json["status"], "busy")
+        self.sample["busy"] = False
+        self.sample["boot_id"] += 1
+        self.assertEqual(self.post({"op": "pulse", "x": 1}).json["status"], "disarmed")
+        self.assertEqual(self.jobs, [])
+
+    def test_pulse_expires_without_replaying_after_network_delay(self):
+        self.arm()
+        self.post({"op": "pulse", "x": 1})
+        self.now += 0.301
+        self.assertFalse(self.jobs[0][2]["allowed"]())
+
+    def test_manual_mode_disarm_does_not_cancel_sorting(self):
+        self.arm()
+        self.post({"op": "pulse", "x": 1})
+        first = self.jobs[0]
+        self.sorter.active = True
+        self.assertEqual(self.post({"op": "disarm"}).json["status"], "disarmed")
+        self.assertFalse(self.state.armed)
+        self.assertFalse(first[2]["allowed"]())
+        self.assertTrue(self.sorter.active)
+        self.assertEqual(self.jobs[-1][1], "x")
+
     def test_voice_and_ai_sender_also_take_over_from_gamepad(self):
         from test_board_settings import load_function
         self.arm()
@@ -126,6 +203,98 @@ class RemoteDriveTests(unittest.TestCase):
         self.assertFalse(self.state.armed)
         self.assertFalse(self.jobs[0][2]["allowed"]())
         self.assertEqual([j[1] for j in self.jobs[-2:]], ["x", "mxr50"])
+
+    def test_joystick_radial_deadzone_has_no_second_per_axis_deadzone(self):
+        self.arm()
+        self.assertEqual(self.post({"op": "joystick", "x": 0.14, "y": 0.14}).json["status"], "neutral")
+        self.assertEqual(self.jobs, [])
+        self.assertEqual(self.post({"op": "joystick", "x": 0.15, "y": 0.15}).json["status"], "queued")
+        self.assertEqual(self.jobs[0][1], "b20,0")
+
+    def test_joystick_quadratic_rate_paces_fixed_steps_from_ack(self):
+        self.arm()
+        self.post({"op": "joystick", "y": 0.6, "interval_ms": 200})
+        self.assertEqual(self.jobs[0][1], "b20,-20")
+        self.now += 0.1
+        self.complete(self.jobs[0])
+        self.now += 0.799
+        self.assertEqual(self.post({"op": "joystick", "y": 0.6, "interval_ms": 200}).json["status"], "waiting")
+        self.now += 0.002
+        self.assertEqual(self.post({"op": "joystick", "y": 0.6, "interval_ms": 200}).json["status"], "queued")
+        self.assertEqual(self.jobs[-1][1], "b20,-20")
+
+    def test_joystick_acceleration_does_not_keep_previous_slow_delay(self):
+        self.arm()
+        self.post({"op": "joystick", "y": 0.4, "interval_ms": 200})
+        self.complete(self.jobs[0])
+        self.now += 0.201
+        self.assertEqual(self.post({"op": "joystick", "y": 1, "interval_ms": 200}).json["status"], "queued")
+        self.assertEqual(len(self.jobs), 2)
+
+    def test_joystick_deceleration_and_reversal_obey_current_rate(self):
+        self.arm()
+        self.post({"op": "joystick", "x": 1, "interval_ms": 200})
+        self.complete(self.jobs[0])
+        self.now += 0.201
+        self.assertEqual(self.post({"op": "joystick", "x": -0.4, "interval_ms": 200}).json["status"], "waiting")
+        self.now += 3.0
+        self.assertEqual(self.post({"op": "joystick", "x": -0.4, "interval_ms": 200}).json["status"], "queued")
+        self.assertEqual(self.jobs[-1][1], "b-20,-20")
+
+    def test_joystick_deadzone_change_and_invalid_settings(self):
+        self.arm()
+        for value in (True, "20", 20.5, 4, 31, float("nan")):
+            self.assertEqual(self.post({"op": "joystick", "x": 1, "deadzone_pct": value}).status_code, 400)
+        self.assertEqual(self.post({"op": "joystick", "y": 0.3, "deadzone_pct": 30}).json["status"], "neutral")
+        self.assertEqual(self.jobs, [])
+        self.post({"op": "joystick", "y": 0.3, "deadzone_pct": 5})
+        self.assertEqual(self.jobs[0][1], "b20,-20")
+
+    def test_joystick_center_cancels_pending_motion_but_keeps_arm(self):
+        self.arm()
+        self.post({"op": "joystick", "y": 1})
+        first = self.jobs[0]
+        self.assertEqual(self.post({"op": "joystick", "y": 0.1}).json["status"], "neutral")
+        self.assertFalse(first[2]["allowed"]())
+        self.assertTrue(self.state.armed)
+        self.assertEqual(self.jobs[-1][1], "x")
+
+    def test_joystick_pending_expiry_and_board_interlocks(self):
+        self.arm()
+        self.post({"op": "joystick", "y": 1})
+        first = self.jobs[0]
+        self.assertEqual(self.post({"op": "joystick", "y": -1}).json["status"], "busy")
+        self.now += 0.301
+        self.assertFalse(first[2]["allowed"]())
+        self.complete(first)
+        self.sample["boot_id"] += 1
+        # Live hardware status is sampled before an eligible command, after
+        # cadence gating; waiting polls never send a move to the rebooted board.
+        self.now += 0.101
+        self.assertEqual(self.post({"op": "joystick", "y": 1}).json["status"], "disarmed")
+
+
+class JoystickCurveTests(unittest.TestCase):
+    def test_center_boundary_and_rail_are_independent(self):
+        self.assertEqual(joystick_rates(0, 0, 1, 20), [0, 0, 1])
+        self.assertEqual(joystick_rates(0.2, 0, -1, 20), [0, 0, -1])
+
+    def test_curve_has_fine_center_and_full_edge(self):
+        slow = joystick_rates(0, 0.4, 0, 20)
+        middle = joystick_rates(0, 0.6, 0, 20)
+        edge = joystick_rates(0, 1, 0, 20)
+        self.assertAlmostEqual(slow[0], 0.0625)
+        self.assertAlmostEqual(middle[0], 0.25)
+        self.assertAlmostEqual(edge[0], 1)
+        self.assertEqual(edge[1], -1)
+
+    def test_equal_radius_equal_peak_in_every_direction_and_bounded_corners(self):
+        import math
+        for angle in range(0, 360, 15):
+            radians = math.radians(angle)
+            axes = joystick_rates(0.6 * math.cos(radians), 0.6 * math.sin(radians), 0, 20)
+            self.assertAlmostEqual(max(abs(axes[0]), abs(axes[1])), 0.25)
+        self.assertEqual(joystick_rates(1, 1, 0, 20), [1, 0, 0])
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ bool motion_set_steps_per_mm(float factor);
 bool motion_status(MotionStatus *out, uint32_t timeoutMs);
 uint32_t motion_boot_id();
 
-// Continuous jog (gamepad / touch). Velocities are -1..1 of the per-axis jog limit and must be
+// Continuous local jog. Velocities are -1..1 of the per-axis jog limit and must be
 // refreshed at least every 300 ms, otherwise the axes decelerate to a stop (dead-man timeout).
 // Returns false while stopped (E-STOP), or while a queued move / homing owns the axes.
 bool motion_jog(float vx, float vy, float vz);

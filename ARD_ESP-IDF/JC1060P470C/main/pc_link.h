@@ -59,9 +59,16 @@ struct PcStatus {
 esp_err_t pc_link_start();
 PcStatus pc_status();                         // snapshot copy
 bool pc_send_command(PcBoard board, const char *command); // queued, false when the queue is full
-bool pc_drive_jog(float x, float y, float z); // latest input only; bounded remote steps
+// Priority controls remain available even when the general command queue is full.
 void pc_drive_arm();
 void pc_drive_stop();
+void pc_drive_disarm(); // cancel manual input without cancelling automatic sorting
+// Touch joystick: fixed finite pulses, paced by the PC. No motor speed settings change.
+// Raw normalized stick coordinates: right/rotation, forward, rail. The PC
+// applies one radial deadzone and a nonlinear response before mixing axes.
+bool pc_drive_joystick(float rotation, float forward, float rail, int intervalMs, int deadzonePct);
+void pc_drive_neutral();
+bool pc_drive_is_armed();
 void pc_send_approval(const char *id, bool approve);
 void pc_request_image();                      // fetch /api/hmi/last_image in the background
                                               // (also automatic whenever the PC receives a new frame)

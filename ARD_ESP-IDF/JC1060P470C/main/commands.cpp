@@ -31,7 +31,6 @@ void command_print_help() {
     printf("\n--- JC1060 HMI ---\n"
            "Drive commands: forwarded through the PC to the existing DriveMCU.\n"
            "b<x>,<y> mxr<n> myr<n> mzr<n> home e d x stop\n"
-           "Gamepad: START re-arm, B stop, sticks finite remote jog pulses.\n"
            "vol=<0..21> mute unmute audio_stop audio_status audio_test\n"
            "vad ptt audio_mic_on audio_mic_off; w Wi-Fi; h help\n"
            "server=<PC IP or host> (serial console only)\nJC1060> ");

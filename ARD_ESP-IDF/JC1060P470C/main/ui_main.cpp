@@ -1,5 +1,6 @@
 #include "ui_main.h"
 #include "ui_text.h"
+#include "ui_layout.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,7 +72,7 @@ lv_obj_t *box(lv_obj_t *parent, int x, int y, int w, int h, lv_color_t color, in
     lv_obj_set_style_border_width(obj, 0, 0);
     lv_obj_set_style_radius(obj, radius, 0);
     lv_obj_set_style_pad_all(obj, 0, 0);
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+    ui_layout::lockScroll(obj);
     lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
     return obj;
 }
@@ -79,7 +80,9 @@ lv_obj_t *box(lv_obj_t *parent, int x, int y, int w, int h, lv_color_t color, in
 lv_obj_t *panel(lv_obj_t *parent, int x, int y, int w, int h, const char *title) {
     lv_obj_t *p = box(parent, x, y, w, h, kPanel);
     lv_obj_set_style_pad_all(p, 14, 0);
-    text(p, title, 0, 0, &ard_font_20, kAccent);
+    lv_obj_t *heading = text(p, title, 0, 0, &ard_font_20, kAccent);
+    lv_obj_set_width(heading, w - 28);
+    lv_label_set_long_mode(heading, LV_LABEL_LONG_WRAP);
     return p;
 }
 
@@ -135,7 +138,9 @@ void buildDisk(lv_obj_t *page) {
     }
     text(p, "90" DEG, kCx + kR + 34, kCy + 68, &ard_font_16, kMuted);
     text(p, "270" DEG, kCx - kR - 70, kCy + 68, &ard_font_16, kMuted);
-    text(p, "Bins: top row rail +15 mm, bottom row -15 mm", 0, 292, &ard_font_16, kMuted);
+    lv_obj_t *note = text(p, "Bins: top row rail +15 mm, bottom row -15 mm", 0, 274, &ard_font_16, kMuted);
+    lv_obj_set_size(note, 392, 38);
+    lv_label_set_long_mode(note, LV_LABEL_LONG_WRAP);
     v.target = box(p, 0, 0, 18, 18, kTarget, LV_RADIUS_CIRCLE);
     lv_obj_add_flag(v.target, LV_OBJ_FLAG_HIDDEN);
     v.pointerPts[0] = {kCx, kCy};
@@ -184,6 +189,7 @@ void stopSorting(lv_event_t *) {
 
 lv_obj_t *actionButton(lv_obj_t *parent, const char *caption, int x, int w, lv_color_t color, lv_event_cb_t cb) {
     lv_obj_t *b = lv_button_create(parent);
+    ui_layout::lockScroll(b);
     lv_obj_set_pos(b, x, 260);
     lv_obj_set_size(b, w, 50);
     lv_obj_set_style_bg_color(b, color, 0);
@@ -375,8 +381,7 @@ void animate(lv_timer_t *) {
 } // namespace
 
 void ui_main_create(lv_obj_t *page) {
-    lv_obj_set_style_pad_all(page, 12, 0);
-    lv_obj_clear_flag(page, LV_OBJ_FLAG_SCROLLABLE);
+    ui_layout::page(page);
     buildSteps(page);
     buildDisk(page);
     buildTrayAndRail(page);

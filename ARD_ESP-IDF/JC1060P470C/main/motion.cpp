@@ -76,7 +76,7 @@ void setEnable(int axis, bool enabled) {
     gpio_set_level(kEnablePins[axis], anyOnPin ? 0 : 1);
 }
 
-// Gamepad / touch jog: per-motor velocity in -1..1 of the jog speed limit.
+// Local jog: per-motor velocity in -1..1 of the jog speed limit.
 float jogInput[3] = {0, 0, 0};
 uint32_t jogStamp = 0;
 bool jogging[3] = {false, false, false};

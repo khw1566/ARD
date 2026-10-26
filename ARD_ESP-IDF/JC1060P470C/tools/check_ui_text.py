@@ -8,9 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = ['ui.cpp', 'ui_main.cpp', 'ui_settings.cpp', 'controls.cpp', 'c6_update.cpp']
-# Strings formatted before display (controls.cpp note("Mode: DRIVE%s") with an empty argument).
-FORMATTED = {'Mode: DRIVE': 'Mode: DRIVE%s', 'Mode: ROBOT': 'Mode: ROBOT%s'}
+SOURCES = ['ui.cpp', 'ui_main.cpp', 'ui_settings.cpp', 'c6_update.cpp']
 MACROS = {'DEG': '\\xC2\\xB0', 'CONFIG_ARD_DEFAULT_SERVER': '<SERVER>'}
 
 
@@ -60,7 +58,7 @@ def main():
         used.update(literals((ROOT / 'main' / name).read_text(encoding='utf-8')))
     table = literals((ROOT / 'main/ui_text.cpp').read_text(encoding='utf-8'))
     keys = [s for s in table if s.isascii() and s not in ('nvs.h', 'sdkconfig.h', 'ard-ui', 'lang', 'ui_text.h', 'C')]
-    missing = [k for k in keys if FORMATTED.get(k, k) not in used]
+    missing = [k for k in keys if k not in used]
     for key in missing:
         print('NO MATCH:', key)
     print(f'{len(keys)} keys checked, {len(missing)} without a matching UI string')

@@ -44,7 +44,6 @@ TaskHandle_t tasks[3];
 int16_t *clip;
 
 std::atomic<bool> ready{false}, micEnabled{true}, selected{false}, vad{true}, ptt{false};
-std::atomic<bool> gamepadPtt{false};
 std::atomic<bool> recording{false}, playing{false}, uploading{false}, remoteBusy{false}, muted{false};
 std::atomic<bool> dirty{false}, workersGo{false};
 std::atomic<int> volume{12}, peak{0}, threshold{2000}, cue{0};
@@ -216,7 +215,7 @@ void ioTask(void *) {
         const bool speech = maximum > speechLevel;
         // Follow only non-speech frames, slowly (about 4 s), so speech never raises it.
         if (permitted && !capture.recording && !speech) noiseFloor += (maximum - noiseFloor) / 256;
-        const voice_capture_event_t event = voice_capture_step(&capture, permitted, mode, ptt.load() || gamepadPtt.load(),
+        const voice_capture_event_t event = voice_capture_step(&capture, permitted, mode, ptt.load(),
             speech, kFrame, (uint32_t)kMaxSamples - kPreSamples, kRate * 3 / 4);
         if (event == VOICE_START) {
             count = 0;
@@ -418,7 +417,6 @@ void onboard_audio_pc_state(bool enabled, bool mode, bool busy, uint32_t complet
     threshold.store(sensitivity < 100 ? 100 : sensitivity > 32767 ? 32767 : sensitivity);
 }
 void onboard_audio_set_ptt(bool held) { ptt.store(held); }
-void onboard_audio_set_gamepad_ptt(bool held) { gamepadPtt.store(held); }
 void onboard_audio_set_mic(bool enabled) {
     micEnabled.store(enabled);
     if (!enabled) ptt.store(false);

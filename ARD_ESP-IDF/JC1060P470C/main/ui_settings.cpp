@@ -1,5 +1,6 @@
 #include "ui_settings.h"
 #include "ui_text.h"
+#include "ui_layout.h"
 #include <cstdio>
 #include <cstring>
 #include <initializer_list>
@@ -45,11 +46,11 @@ bool serverPending;
 bool ready;
 struct Widgets {
     lv_obj_t *tabs, *brightness, *brightnessValue, *brightnessStatus;
-    lv_obj_t *scan, *list, *ssid, *password, *connect, *status, *connection, *keyboard;
+    lv_obj_t *scan, *list, *scanPrevious, *scanNext, *scanPage, *ssid, *password, *connect, *status, *connection, *keyboard;
     lv_obj_t *server, *serverSave, *serverStatus, *serverCurrent;
     lv_obj_t *volume, *volumeValue, *mute, *soundStatus;
     ard_network_ap_t aps[ARD_WIFI_SCAN_MAX];
-    uint16_t count;
+    uint16_t count, firstNetwork;
     uint32_t generation = UINT32_MAX, brightnessGeneration = UINT32_MAX, serverGeneration = UINT32_MAX;
     bool savedSsidLoaded, serverLoaded, soundMuted;
 } ui;
@@ -130,6 +131,7 @@ lv_obj_t *button(lv_obj_t *parent, const char *caption, int x, int y, int width,
     lv_obj_t *button = lv_button_create(parent);
     lv_obj_set_pos(button, x, y);
     lv_obj_set_size(button, width, 46);
+    ui_layout::lockScroll(button);
     lv_obj_set_style_bg_color(button, accent, 0);
     lv_obj_add_event_cb(button, callback, LV_EVENT_CLICKED, data);
     lv_obj_t *label = lv_label_create(button);
@@ -220,6 +222,42 @@ void selectNetwork(lv_event_t *event) {
                       : known ? "Saved password loaded. Check it, then Connect."
                       : "Enter the Wi-Fi password, then Connect.");
     hideKeyboard();
+}
+
+constexpr uint16_t kNetworksPerPage = 4;
+
+void showNetworks() {
+    lv_obj_clean(ui.list);
+    const uint16_t pages = ui.count ? (ui.count + kNetworksPerPage - 1) / kNetworksPerPage : 1;
+    lv_label_set_text_fmt(ui.scanPage, "%u / %u", static_cast<unsigned>(ui.firstNetwork / kNetworksPerPage + 1),
+                          static_cast<unsigned>(pages));
+    lv_obj_set_state(ui.scanPrevious, LV_STATE_DISABLED, ui.firstNetwork == 0);
+    lv_obj_set_state(ui.scanNext, LV_STATE_DISABLED, ui.firstNetwork + kNetworksPerPage >= ui.count);
+    for (uint16_t row = 0; row < kNetworksPerPage && ui.firstNetwork + row < ui.count; ++row) {
+        const uint16_t index = ui.firstNetwork + row;
+        char caption[96];
+        std::snprintf(caption, sizeof(caption), "%s\n%d dBm  %s", ui.aps[index].ssid,
+                      ui.aps[index].rssi, ui_tr(ui.aps[index].secure ? "Password" : "Open"));
+        lv_obj_t *item = button(ui.list, caption, 0, row * 58, 310, selectNetwork,
+                               reinterpret_cast<void *>(static_cast<uintptr_t>(index + 1)));
+        lv_obj_set_height(item, 54);
+        lv_obj_set_style_pad_all(item, 4, 0);
+        lv_obj_t *captionLabel = lv_obj_get_child(item, 0);
+        lv_obj_set_style_text_font(captionLabel, &ard_font_16, 0);
+        lv_obj_set_width(captionLabel, 302);
+        lv_label_set_long_mode(captionLabel, LV_LABEL_LONG_WRAP);
+    }
+}
+
+void changeNetworkPage(lv_event_t *event) {
+    taskENTER_CRITICAL(&resultLock);
+    const bool busy = result.phase == Phase::Scanning || result.phase == Phase::Joining;
+    taskEXIT_CRITICAL(&resultLock);
+    if (busy) return;
+    const bool next = reinterpret_cast<intptr_t>(lv_event_get_user_data(event)) > 0;
+    if (next && ui.firstNetwork + kNetworksPerPage < ui.count) ui.firstNetwork += kNetworksPerPage;
+    else if (!next && ui.firstNetwork >= kNetworksPerPage) ui.firstNetwork -= kNetworksPerPage;
+    showNetworks();
 }
 
 void connect(lv_event_t *) {
@@ -330,6 +368,8 @@ void buildServer(lv_obj_t *page) {
     lv_obj_set_size(ui.server, 520, 46);
     lv_obj_set_style_text_font(ui.server, &ard_font_20, 0);
     lv_textarea_set_one_line(ui.server, true);
+    lv_obj_remove_flag(ui.server, static_cast<lv_obj_flag_t>(LV_OBJ_FLAG_SCROLL_CHAIN | LV_OBJ_FLAG_SCROLL_ON_FOCUS));
+    lv_obj_set_scroll_dir(ui.server, LV_DIR_HOR);
     lv_textarea_set_max_length(ui.server, 63);
     lv_textarea_set_placeholder_text(ui.server, "e.g. 192.168.0.35");
     lv_obj_add_event_cb(ui.server, editField, LV_EVENT_FOCUSED, nullptr);
@@ -463,6 +503,8 @@ lv_obj_t *input(lv_obj_t *parent, int y, uint32_t maximum, const char *placehold
     lv_obj_set_size(field, 600, 46);
     lv_obj_set_style_text_font(field, &ard_font_20, 0);
     lv_textarea_set_one_line(field, true);
+    lv_obj_remove_flag(field, static_cast<lv_obj_flag_t>(LV_OBJ_FLAG_SCROLL_CHAIN | LV_OBJ_FLAG_SCROLL_ON_FOCUS));
+    lv_obj_set_scroll_dir(field, LV_DIR_HOR);
     lv_textarea_set_max_length(field, maximum);
     lv_textarea_set_placeholder_text(field, placeholder);
     lv_obj_add_event_cb(field, editField, LV_EVENT_FOCUSED, nullptr);
@@ -473,10 +515,19 @@ lv_obj_t *input(lv_obj_t *parent, int y, uint32_t maximum, const char *placehold
 void buildNetwork(lv_obj_t *page) {
     text(page, "Nearby Wi-Fi", 16, 10, 300, &ard_font_28);
     ui.scan = button(page, "Search Wi-Fi", 16, 54, 318, scan);
-    ui.list = lv_list_create(page);
+    ui.list = lv_obj_create(page);
     lv_obj_set_pos(ui.list, 16, 112);
-    lv_obj_set_size(ui.list, 318, 284);
+    lv_obj_set_size(ui.list, 318, 244);
+    lv_obj_set_style_border_width(ui.list, 0, 0);
+    lv_obj_set_style_pad_all(ui.list, 4, 0);
+    ui_layout::lockScroll(ui.list);
     text(ui.list, "Press Search Wi-Fi", 0, 0, 270, &ard_font_16);
+    ui.scanPrevious = button(page, "<", 16, 364, 68, changeNetworkPage, reinterpret_cast<void *>(static_cast<intptr_t>(-1)));
+    ui.scanPage = text(page, "1 / 1", 102, 376, 146, &ard_font_16);
+    lv_obj_set_style_text_align(ui.scanPage, LV_TEXT_ALIGN_CENTER, 0);
+    ui.scanNext = button(page, ">", 266, 364, 68, changeNetworkPage, reinterpret_cast<void *>(static_cast<intptr_t>(1)));
+    lv_obj_add_state(ui.scanPrevious, LV_STATE_DISABLED);
+    lv_obj_add_state(ui.scanNext, LV_STATE_DISABLED);
     ui.connection = text(page, "Wi-Fi starting...", 368, 8, 600, &ard_font_16);
     text(page, "Wi-Fi name (SSID)", 368, 52, 590);
     ui.ssid = input(page, 80, 32, "Choose a network or enter its name");
@@ -494,24 +545,22 @@ void buildNetwork(lv_obj_t *page) {
 esp_err_t ui_settings_create(lv_obj_t *page) {
     requests = xQueueCreate(1, sizeof(Request));
     if (!requests) return ESP_ERR_NO_MEM;
-    lv_obj_set_style_pad_all(page, 0, 0);
-    lv_obj_clear_flag(page, LV_OBJ_FLAG_SCROLLABLE);
+    ui_layout::page(page, 0);
     ui.tabs = lv_tabview_create(page);
     lv_obj_set_size(ui.tabs, LV_PCT(100), LV_PCT(100));
     lv_tabview_set_tab_bar_size(ui.tabs, 48);
+    ui_layout::tabview(ui.tabs);
     lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabs), &ard_font_20, 0);
     lv_obj_t *display = lv_tabview_add_tab(ui.tabs, "Display");
     lv_obj_t *sound = lv_tabview_add_tab(ui.tabs, "Sound");
     lv_obj_t *network = lv_tabview_add_tab(ui.tabs, "Network");
     lv_obj_t *server = lv_tabview_add_tab(ui.tabs, "Server");
     for (lv_obj_t *tab : {display, sound, network, server}) {
-        lv_obj_set_style_pad_all(tab, 0, 0);
+        ui_layout::page(tab, 0);
         lv_obj_set_style_bg_color(tab, lv_color_white(), 0);
         lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
-        lv_obj_clear_flag(tab, LV_OBJ_FLAG_SCROLLABLE);
     }
-    // Nested tabs use their buttons; keep horizontal gestures for the main tabs.
-    lv_obj_clear_flag(lv_tabview_get_content(ui.tabs), LV_OBJ_FLAG_SCROLLABLE);
+    // Both levels use tab buttons, so control drags cannot switch pages.
     lv_obj_add_event_cb(ui.tabs, settingsTabChanged, LV_EVENT_VALUE_CHANGED, nullptr);
     buildDisplay(display);
     buildSound(sound);
@@ -575,6 +624,8 @@ void ui_settings_poll(bool visible) {
             if (busy) lv_obj_add_state(control, LV_STATE_DISABLED);
             else lv_obj_remove_state(control, LV_STATE_DISABLED);
         }
+        lv_obj_set_state(ui.scanPrevious, LV_STATE_DISABLED, busy || ui.firstNetwork == 0);
+        lv_obj_set_state(ui.scanNext, LV_STATE_DISABLED, busy || ui.firstNetwork + kNetworksPerPage >= ui.count);
         switch (snapshot.phase) {
         case Phase::Scanning: lv_label_set_text(ui.status, "Searching for nearby Wi-Fi..."); break;
         case Phase::Joining: lv_label_set_text(ui.status, "Connecting... Waiting for an IP address."); break;
@@ -585,16 +636,8 @@ void ui_settings_poll(bool visible) {
         case Phase::ScanDone:
             ui.count = snapshot.count;
             std::memcpy(ui.aps, snapshot.aps, sizeof(ui.aps));
-            lv_obj_clean(ui.list);
-            for (uint16_t i = 0; i < ui.count; ++i) {
-                char caption[96];
-                std::snprintf(caption, sizeof(caption), "%s\n%d dBm  %s", ui.aps[i].ssid,
-                              ui.aps[i].rssi, ui_tr(ui.aps[i].secure ? "Password" : "Open"));
-                lv_obj_t *row = lv_list_add_button(ui.list, nullptr, caption);
-                lv_obj_set_style_text_font(row, &ard_font_16, 0);
-                lv_obj_add_event_cb(row, selectNetwork, LV_EVENT_CLICKED,
-                                    reinterpret_cast<void *>(static_cast<uintptr_t>(i + 1)));
-            }
+            ui.firstNetwork = 0;
+            showNetworks();
             lv_label_set_text(ui.status, ui.count ? "Select a network from the list." : "No networks found. Search again or enter a hidden SSID.");
             break;
         case Phase::Failed:
@@ -619,7 +662,7 @@ void ui_settings_poll(bool visible) {
         }
         scan(nullptr); // Populate nearby networks automatically when settings first opens.
     }
-    // Follow VOL -/+ on the Voice tab, the gamepad and the PC, except while dragging.
+    // Follow VOL -/+ on the Voice tab and the PC, except while dragging.
     const OnboardAudioStatus audio = onboard_audio_status();
     if (!lv_obj_has_state(ui.volume, LV_STATE_PRESSED) && lv_slider_get_value(ui.volume) != audio.volume) {
         lv_slider_set_value(ui.volume, audio.volume, LV_ANIM_OFF);

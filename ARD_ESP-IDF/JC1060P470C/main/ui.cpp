@@ -1,17 +1,18 @@
 #include "ui.h"
 #include "ui_main.h"
 #include "ui_settings.h"
+#include "ui_layout.h"
 #include "ui_text.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <cmath>
+#include <initializer_list>
 #include "ard_network.h"
 #include "ard_setup_qr.h"
 #include "board.h"
 #include "bsp_display.h"
 #include "commands.h"
-#include "controls.h"
-#include "gamepad.h"
 #include "onboard_audio.h"
 #include "pc_link.h"
 #include "esp_heap_caps.h"
@@ -28,27 +29,34 @@ enum Tab { TAB_MAIN, TAB_DRIVE, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TA
 
 struct Ui {
     lv_obj_t *tabview;
-    lv_obj_t *clock, *net, *pc, *pad, *armed;
+    lv_obj_t *clock, *net, *pc;
     // Drive
-    lv_obj_t *pos, *driveState, *env, *tof, *gps, *jogSpeed, *jogSpeedLabel, *pidButton, *railLabel, *stepLabel;
+    lv_obj_t *pos, *driveState, *env, *tof, *gps, *pidButton, *railLabel, *stepLabel;
+    lv_obj_t *driveMode, *driveSteps, *driveContinuous, *driveControlState;
+    lv_obj_t *driveStepSettings, *driveContinuousSettings, *driveDeadzone, *deadzoneValue;
+    lv_obj_t *joystick, *joystickKnob, *joystickDeadzone, *joystickLevel, *driveInterval, *driveSpeed;
     // Cam / Sound
-    lv_obj_t *camOnline, *camInfo, *camImage, *camImageNote, *camStream, *soundOnline, *soundInfo;
-    lv_obj_t *talk, *micToggle;
+    lv_obj_t *camOnline, *camInfo, *camImage, *camViewport, *camImageNote, *camStream, *soundOnline, *soundInfo;
+    lv_obj_t *talk, *micToggle, *micToggleText, *micState;
     // System
-    lv_obj_t *netInfo, *padInfo, *padRaw, *sysInfo;
+    lv_obj_t *netInfo, *sysInfo;
     // Approval popup
     lv_obj_t *approval, *approvalText;
     char approvalId[40];
 };
 
 Ui ui;
-int railTarget = 145, zStep = 50;   // same defaults and ranges as HMI_MCU page 4
+int railTarget = 145, unitStep = 50; // finite quantitative moves, 1..2000 steps
 bool pidOn = false;
 uint8_t *imageCopy;
 size_t imageCopySize;
 lv_image_dsc_t imageDsc;
 uint32_t imageSeq = 0;
-volatile int pendingTabStep = 0;
+bool continuousMode = true, joystickHeld, railHeld;
+float joystickX, joystickY, railZ;
+lv_indev_t *driveTouch;
+void stopDriveGesture(bool disarm = false);
+void refreshMicUi();
 
 // ---- helpers ---------------------------------------------------------------------------------
 
@@ -65,6 +73,7 @@ lv_obj_t *button(lv_obj_t *parent, const char *text, lv_color_t color, lv_event_
                  int w = 150, int h = 64) {
     lv_obj_t *b = lv_button_create(parent);
     lv_obj_set_size(b, w, h);
+    ui_layout::lockScroll(b);
     lv_obj_set_style_bg_color(b, color, 0);
     lv_obj_set_style_radius(b, 10, 0);
     lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, data);
@@ -81,6 +90,7 @@ lv_obj_t *panel(lv_obj_t *parent, int w, int h) {
     lv_obj_set_style_border_width(p, 0, 0);
     lv_obj_set_style_radius(p, 12, 0);
     lv_obj_set_style_pad_all(p, 14, 0);
+    ui_layout::lockScroll(p);
     return p;
 }
 
@@ -92,6 +102,7 @@ lv_obj_t *grid(lv_obj_t *parent, int w, int h) {
     lv_obj_set_style_pad_all(g, 4, 0);
     lv_obj_set_style_pad_gap(g, 10, 0);
     lv_obj_set_flex_flow(g, LV_FLEX_FLOW_ROW_WRAP);
+    ui_layout::lockScroll(g);
     return g;
 }
 
@@ -111,18 +122,23 @@ void talkEvent(lv_event_t *e) {
     else if (lv_event_get_code(e) == LV_EVENT_RELEASED || lv_event_get_code(e) == LV_EVENT_PRESS_LOST)
         onboard_audio_set_ptt(false);
 }
-void micToggle(lv_event_t *) { onboard_audio_set_mic(!onboard_audio_status().micEnabled); }
+void micToggle(lv_event_t *) {
+    onboard_audio_set_mic(!onboard_audio_status().micEnabled);
+    refreshMicUi(); // immediate local feedback, independent of the PC poll
+}
 void speakerTest(lv_event_t *) { onboard_audio_test(); }
 
-void estop(lv_event_t *) { command_execute("stop"); }
-void rearm(lv_event_t *) { pc_drive_arm(); }
+void estop(lv_event_t *) { stopDriveGesture(true); command_execute("stop"); }
+void rearm(lv_event_t *) { stopDriveGesture(); pc_drive_arm(); }
 
 // ---- Drive tab ---------------------------------------------------------------------------------
 
+constexpr float kStickTravel = 142.0f;
+int shownStickPercent = -1;
+
 void updateRailLabels() {
-    char text[48];
-    snprintf(text, sizeof(text), ui_tr(pidOn ? "PID target: %d mm" : "Z step: %d steps"), pidOn ? railTarget : zStep);
-    lv_label_set_text(ui.railLabel, text);
+    if (ui.stepLabel) lv_label_set_text_fmt(ui.stepLabel, "Unit step: %d steps", unitStep);
+    if (ui.railLabel) lv_label_set_text_fmt(ui.railLabel, pidOn ? "PID target: %d mm" : "Z step: %d steps", pidOn ? railTarget : unitStep);
     if (ui.pidButton) lv_label_set_text(lv_obj_get_child(ui.pidButton, 0), pidOn ? "PID: ON" : "PID: OFF");
 }
 
@@ -133,7 +149,7 @@ void pidToggle(lv_event_t *) {
 }
 
 void railAdjust(lv_event_t *e) {
-    const int dir = (int)(intptr_t)lv_event_get_user_data(e);
+    const int dir = static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
     char cmd[24];
     if (pidOn) {
         railTarget += dir * 5;
@@ -141,63 +157,286 @@ void railAdjust(lv_event_t *e) {
         if (railTarget > 175) railTarget = 175;
         snprintf(cmd, sizeof(cmd), "mzt%d", railTarget);
     } else {
-        // HMI_MCU sent "mzs+50" here, which overwrote the Steps/mm calibration.
-        // The intent was moving the rail by the step size, so this sends a Z move.
-        snprintf(cmd, sizeof(cmd), "mzr%d", dir * zStep);
+        snprintf(cmd, sizeof(cmd), "mzr%d", dir * unitStep);
     }
     command_execute(cmd);
     updateRailLabels();
 }
 
-void zStepChange(lv_event_t *e) {
-    zStep += (int)(intptr_t)lv_event_get_user_data(e) * 10;
-    if (zStep < 10) zStep = 10;
-    if (zStep > 2000) zStep = 2000;
+void stepChange(lv_event_t *e) {
+    unitStep += static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
+    if (unitStep < 1) unitStep = 1;
+    if (unitStep > 2000) unitStep = 2000;
     updateRailLabels();
 }
 
-void jogSpeedChanged(lv_event_t *) { controls_set_speed(lv_slider_get_value(ui.jogSpeed)); }
+void stepPreset(lv_event_t *e) {
+    unitStep = static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
+    updateRailLabels();
+}
+
+void stepMove(lv_event_t *e) {
+    // FW, BW, CW, CCW, X+, X-, Y+, Y-. One bounded batch per tap.
+    static const int direction[8][2] = {{1,-1}, {-1,1}, {1,1}, {-1,-1}, {1,0}, {-1,0}, {0,1}, {0,-1}};
+    const int move = static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
+    if (move < 0 || move >= 8) return;
+    char cmd[32];
+    snprintf(cmd, sizeof(cmd), "b%d,%d", direction[move][0] * unitStep, direction[move][1] * unitStep);
+    command_execute(cmd);
+}
+
+void refreshStickLevel() {
+    if (!ui.joystickLevel || !ui.driveDeadzone) return;
+    const float radius = std::fmin(1.0f, std::hypot(joystickX, joystickY));
+    const float deadzone = lv_slider_get_value(ui.driveDeadzone) / 100.0f;
+    const float distance = radius <= deadzone ? 0.0f : (radius - deadzone) / (1.0f - deadzone);
+    const int rounded = static_cast<int>(std::lround(distance * distance * 100.0f));
+    const int percent = radius <= deadzone ? 0 : (rounded > 0 ? rounded : 1);
+    if (percent == shownStickPercent) return;
+    shownStickPercent = percent;
+    if (percent == 0) lv_label_set_text(ui.joystickLevel, "Dead zone / stopped");
+    else lv_label_set_text_fmt(ui.joystickLevel, "Stick strength: %d %%", percent);
+    lv_obj_set_style_text_color(ui.joystickLevel, percent ? kAccent : kMuted, 0);
+}
+
+void stopDriveGesture(bool disarm) {
+    joystickHeld = railHeld = false;
+    joystickX = joystickY = railZ = 0;
+    driveTouch = nullptr;
+    if (ui.joystickKnob) lv_obj_align(ui.joystickKnob, LV_ALIGN_CENTER, 0, 0);
+    refreshStickLevel();
+    if (disarm) pc_drive_disarm();
+    else pc_drive_neutral();
+}
+
+void driveModeChange(lv_event_t *) {
+    stopDriveGesture(true);
+    continuousMode = !continuousMode;
+    lv_label_set_text(lv_obj_get_child(ui.driveMode, 0), continuousMode ? "Mode: continuous" : "Mode: single step");
+    for (lv_obj_t *obj : {ui.driveSteps, ui.driveStepSettings})
+        lv_obj_update_flag(obj, LV_OBJ_FLAG_HIDDEN, continuousMode);
+    for (lv_obj_t *obj : {ui.driveContinuous, ui.driveContinuousSettings})
+        lv_obj_update_flag(obj, LV_OBJ_FLAG_HIDDEN, !continuousMode);
+}
+
+void joystickEvent(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) { stopDriveGesture(); return; }
+    if (!continuousMode || (code != LV_EVENT_PRESSED && code != LV_EVENT_PRESSING)) return;
+    driveTouch = lv_indev_active();
+    if (!driveTouch) return;
+    lv_point_t point;
+    lv_indev_get_point(driveTouch, &point);
+    lv_area_t bounds;
+    lv_obj_get_coords(ui.joystick, &bounds);
+    float x = (point.x - (bounds.x1 + lv_obj_get_width(ui.joystick) / 2.0f)) / kStickTravel;
+    float y = (point.y - (bounds.y1 + lv_obj_get_height(ui.joystick) / 2.0f)) / kStickTravel;
+    const float radius = std::hypot(x, y);
+    if (radius > 1) { x /= radius; y /= radius; }
+    joystickX = x; joystickY = y;
+    joystickHeld = true;
+    lv_obj_align(ui.joystickKnob, LV_ALIGN_CENTER, static_cast<int>(x * kStickTravel), static_cast<int>(y * kStickTravel));
+    refreshStickLevel();
+}
+
+void railHoldEvent(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) { stopDriveGesture(); return; }
+    if (!continuousMode || (code != LV_EVENT_PRESSED && code != LV_EVENT_PRESSING)) return;
+    driveTouch = lv_indev_active();
+    railHeld = true;
+    railZ = static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
+}
+
+void driveSpeedChange(lv_event_t *) {
+    const int interval = 100 + (100 - lv_slider_get_value(ui.driveSpeed)) * 6;
+    lv_label_set_text_fmt(ui.driveInterval, "Command interval: %d ms", interval);
+}
+
+void deadzoneChange(lv_event_t *) {
+    stopDriveGesture();
+    const int percent = lv_slider_get_value(ui.driveDeadzone);
+    lv_label_set_text_fmt(ui.deadzoneValue, "Dead zone: %d %%", percent);
+    const int diameter = static_cast<int>(2 * kStickTravel * percent / 100.0f);
+    lv_obj_set_size(ui.joystickDeadzone, diameter, diameter);
+    lv_obj_center(ui.joystickDeadzone);
+}
+
+void driveTouchTick(lv_timer_t *) {
+    if (!continuousMode || (!joystickHeld && !railHeld)) return;
+    const auto pc = pc_status();
+    if (!driveTouch || lv_indev_get_state(driveTouch) != LV_INDEV_STATE_PRESSED ||
+        lv_tabview_get_tab_active(ui.tabview) != TAB_DRIVE || pc.approvalPending ||
+        !pc.reachable || !pc.board[PC_DRIVE].online || pc.drivePid || pc.sorting.running ||
+        !ard_network_connected()) { stopDriveGesture(true); return; }
+    const int interval = 100 + (100 - lv_slider_get_value(ui.driveSpeed)) * 6;
+    // Send the raw stick once. The PC applies the radial curve before the
+    // differential mix; its legacy per-axis deadzone is not applied again.
+    pc_drive_joystick(joystickX, -joystickY, railZ, interval, lv_slider_get_value(ui.driveDeadzone));
+}
+
+void driveTabChange(lv_event_t *e) {
+    if (lv_event_get_target(e) == ui.tabview && lv_tabview_get_tab_active(ui.tabview) != TAB_DRIVE)
+        stopDriveGesture(true);
+}
+
+lv_obj_t *driveArea(lv_obj_t *parent, int x, int y, int w, int h) {
+    lv_obj_t *obj = lv_obj_create(parent);
+    lv_obj_remove_style_all(obj);
+    lv_obj_set_pos(obj, x, y);
+    lv_obj_set_size(obj, w, h);
+    ui_layout::lockScroll(obj);
+    return obj;
+}
 
 void buildDrive(lv_obj_t *tab) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
-    lv_obj_t *left = panel(tab, 360, 470);
-    lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_gap(left, 10, 0);
-    label(left, "DriveMCU (via PC)", &ard_font_28, kAccent);
-    ui.pos = label(left, "X 0  Y 0  Z 0");
-    ui.driveState = label(left, "---", &ard_font_20, kMuted);
-    ui.env = label(left, "Env: ---");
-    ui.tof = label(left, "ToF: ---");
-    ui.gps = label(left, "GPS: off");
-    label(left, "Gamepad jog speed", &ard_font_16, kMuted);
-    ui.jogSpeed = lv_slider_create(left);
-    lv_obj_set_width(ui.jogSpeed, 300);
-    lv_slider_set_range(ui.jogSpeed, 10, 100);
-    lv_slider_set_value(ui.jogSpeed, controls_status().speedPercent, LV_ANIM_OFF);
-    lv_obj_add_event_cb(ui.jogSpeed, jogSpeedChanged, LV_EVENT_VALUE_CHANGED, nullptr);
-    ui.jogSpeedLabel = label(left, "", &ard_font_16, kMuted);
+    lv_obj_t *left = panel(tab, 564, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(left, 12, 0);
+    label(left, "DriveMCU (via PC)", &ard_font_20, kAccent);
+    ui.driveState = label(left, "---", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.driveState, 0, 28);
+    lv_obj_set_size(ui.driveState, 280, 22);
+    ui.driveMode = button(left, "Mode: continuous", kAccent, driveModeChange, nullptr, 244, 44);
+    lv_obj_set_pos(ui.driveMode, 296, 0);
+    ui.driveControlState = label(left, "Press RE-ARM to move", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.driveControlState, 0, 56);
+    lv_obj_set_size(ui.driveControlState, 540, 36);
+    ui.pos = label(left, "X 0  Y 0  Z 0", &ard_font_16);
+    ui.env = label(left, "Env: ---", &ard_font_16);
+    ui.tof = label(left, "ToF: ---", &ard_font_16);
+    ui.gps = label(left, "GPS: off", &ard_font_16);
+    int y = 102;
+    for (lv_obj_t *item : {ui.pos, ui.env, ui.tof, ui.gps}) {
+        lv_obj_set_pos(item, 0, y); y += 28;
+        lv_obj_set_size(item, 540, 24);
+        lv_label_set_long_mode(item, LV_LABEL_LONG_WRAP);
+    }
+    lv_obj_t *power = driveArea(left, 0, 220, 540, 48);
+    const char *powerText[] = {"Enable", "Disable", "PID: OFF", "HOME"};
+    const char *powerCommand[] = {"e", "d", nullptr, "home"};
+    for (int i = 0; i < 4; ++i) {
+        lv_obj_t *b = button(power, powerText[i], i == 0 ? kOn : i == 1 ? kOff : kMuted,
+                             i == 2 ? pidToggle : localCommand, const_cast<char *>(powerCommand[i]), 129, 48);
+        lv_obj_set_pos(b, i * 137, 0);
+        if (i == 2) ui.pidButton = b;
+    }
 
-    lv_obj_t *right = grid(tab, 600, 480);
-    // Same moves as HMI_MCU Drive pages 2-4.
-    button(right, "Disk FW", kAccent, localCommand, (void *)"b45,-45");
-    button(right, "Disk BW", kAccent, localCommand, (void *)"b-45,45");
-    button(right, "Rot CW", kAccent, localCommand, (void *)"b45,45");
-    button(right, "Rot CCW", kAccent, localCommand, (void *)"b-45,-45");
-    button(right, "X +50", kMuted, localCommand, (void *)"b50,0");
-    button(right, "X -50", kMuted, localCommand, (void *)"b-50,0");
-    button(right, "Y +50", kMuted, localCommand, (void *)"b0,50");
-    button(right, "Y -50", kMuted, localCommand, (void *)"b0,-50");
-    ui.pidButton = button(right, "PID: OFF", kMuted, pidToggle, nullptr);
-    button(right, "Rail +", kAccent, railAdjust, (void *)(intptr_t)1);
-    button(right, "Rail -", kAccent, railAdjust, (void *)(intptr_t)-1);
-    button(right, "Step +10", kMuted, zStepChange, (void *)(intptr_t)1, 150, 64);
-    button(right, "HOME", kOff, localCommand, (void *)"home");
-    button(right, "Enable", kOn, localCommand, (void *)"e");
-    button(right, "Disable", kMuted, localCommand, (void *)"d");
-    button(right, "Step -10", kMuted, zStepChange, (void *)(intptr_t)-1, 150, 64);
-    ui.railLabel = label(right, "", &ard_font_20, kMuted);
+    ui.driveStepSettings = driveArea(left, 0, 280, 540, 144);
+    ui.stepLabel = label(ui.driveStepSettings, "", &ard_font_20, kAccent);
+    for (int dir : {-1, 1}) {
+        lv_obj_t *b = button(ui.driveStepSettings, dir < 0 ? "-1" : "+1", kMuted, stepChange,
+                             reinterpret_cast<void *>(static_cast<intptr_t>(dir)), 76, 44);
+        lv_obj_set_pos(b, dir < 0 ? 0 : 88, 34);
+        lv_obj_add_event_cb(b, stepChange, LV_EVENT_LONG_PRESSED_REPEAT,
+                            reinterpret_cast<void *>(static_cast<intptr_t>(dir)));
+    }
+    const int presets[] = {1, 10, 50, 100, 500, 1000, 2000};
+    for (int i = 0; i < 7; ++i) {
+        char caption[12]; snprintf(caption, sizeof(caption), "%d", presets[i]);
+        lv_obj_t *b = button(ui.driveStepSettings, caption, kAccent, stepPreset,
+                             reinterpret_cast<void *>(static_cast<intptr_t>(presets[i])), 76, 44);
+        lv_obj_set_pos(b, i < 4 ? 184 + i * 88 : 272 + (i - 4) * 88, i < 4 ? 34 : 94);
+    }
+    ui.railLabel = label(ui.driveStepSettings, "", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.railLabel, 0, 96);
+    lv_obj_set_size(ui.railLabel, 260, 42);
+    lv_label_set_long_mode(ui.railLabel, LV_LABEL_LONG_WRAP);
+
+    ui.driveContinuousSettings = driveArea(left, 0, 280, 540, 144);
+    for (int dir : {1, -1}) {
+        lv_obj_t *b = button(ui.driveContinuousSettings, dir > 0 ? "Rail +" : "Rail -", kAccent,
+                             railHoldEvent, reinterpret_cast<void *>(static_cast<intptr_t>(dir)), 130, 60);
+        lv_obj_set_pos(b, dir > 0 ? 0 : 142, 0);
+        lv_obj_add_flag(b, LV_OBJ_FLAG_PRESS_LOCK);
+        for (lv_event_code_t code : {LV_EVENT_PRESSED, LV_EVENT_PRESSING, LV_EVENT_RELEASED, LV_EVENT_PRESS_LOST})
+            lv_obj_add_event_cb(b, railHoldEvent, code, reinterpret_cast<void *>(static_cast<intptr_t>(dir)));
+    }
+    lv_obj_t *railTitle = label(ui.driveContinuousSettings, "Rail: hold to move", &ard_font_16, kAccent);
+    lv_obj_set_pos(railTitle, 0, 72);
+    lv_obj_t *note = label(ui.driveContinuousSettings, "Fixed 20-step pulses", &ard_font_16, kMuted);
+    lv_obj_set_pos(note, 0, 108);
+    ui.driveInterval = label(ui.driveContinuousSettings, "", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.driveInterval, 300, 0);
+    ui.driveSpeed = lv_slider_create(ui.driveContinuousSettings);
+    lv_obj_set_pos(ui.driveSpeed, 308, 32);
+    lv_obj_set_size(ui.driveSpeed, 216, 18);
+    ui_layout::lockScroll(ui.driveSpeed);
+    lv_slider_set_range(ui.driveSpeed, 10, 100);
+    lv_slider_set_value(ui.driveSpeed, 65, LV_ANIM_OFF);
+    lv_obj_add_event_cb(ui.driveSpeed, driveSpeedChange, LV_EVENT_VALUE_CHANGED, nullptr);
+    ui.deadzoneValue = label(ui.driveContinuousSettings, "", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.deadzoneValue, 300, 66);
+    ui.driveDeadzone = lv_slider_create(ui.driveContinuousSettings);
+    lv_obj_set_pos(ui.driveDeadzone, 308, 102);
+    lv_obj_set_size(ui.driveDeadzone, 216, 18);
+    ui_layout::lockScroll(ui.driveDeadzone);
+    lv_slider_set_range(ui.driveDeadzone, 5, 30);
+    lv_slider_set_value(ui.driveDeadzone, 20, LV_ANIM_OFF);
+    lv_obj_add_event_cb(ui.driveDeadzone, deadzoneChange, LV_EVENT_VALUE_CHANGED, nullptr);
+
+    lv_obj_t *right = panel(tab, 424, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(right, 12, 0);
+    ui.driveSteps = driveArea(right, 0, 0, 400, 424);
+    label(ui.driveSteps, "Quantitative move", &ard_font_20, kAccent);
+    const char *moves[] = {"Disk FW", "Disk BW", "Rot CW", "Rot CCW", "X +", "X -", "Y +", "Y -"};
+    for (int i = 0; i < 8; ++i) {
+        lv_obj_t *b = button(ui.driveSteps, moves[i], kAccent, stepMove,
+                             reinterpret_cast<void *>(static_cast<intptr_t>(i)), 194, 64);
+        lv_obj_set_pos(b, (i % 2) * 206, 40 + (i / 2) * 76);
+    }
+    for (int dir : {1, -1}) {
+        lv_obj_t *b = button(ui.driveSteps, dir > 0 ? "Rail +" : "Rail -", kAccent, railAdjust,
+                             reinterpret_cast<void *>(static_cast<intptr_t>(dir)), 194, 64);
+        lv_obj_set_pos(b, dir > 0 ? 0 : 206, 344);
+    }
+
+    ui.driveContinuous = driveArea(right, 0, 0, 400, 424);
+    label(ui.driveContinuous, "Disk / rotation", &ard_font_20, kAccent);
+    ui.joystick = driveArea(ui.driveContinuous, 20, 32, 360, 360);
+    lv_obj_set_style_radius(ui.joystick, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(ui.joystick, lv_color_hex(0xE0EAF0), 0);
+    lv_obj_set_style_bg_opa(ui.joystick, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(ui.joystick, 2, 0);
+    lv_obj_set_style_border_color(ui.joystick, kAccent, 0);
+    lv_obj_add_flag(ui.joystick, LV_OBJ_FLAG_PRESS_LOCK);
+    for (lv_event_code_t code : {LV_EVENT_PRESSED, LV_EVENT_PRESSING, LV_EVENT_RELEASED, LV_EVENT_PRESS_LOST})
+        lv_obj_add_event_cb(ui.joystick, joystickEvent, code, nullptr);
+    for (int axis : {0, 1}) {
+        lv_obj_t *guide = driveArea(ui.joystick, 0, 0, axis == 0 ? 284 : 2, axis == 0 ? 2 : 284);
+        lv_obj_set_style_bg_color(guide, lv_color_hex(0xB7CCD9), 0);
+        lv_obj_set_style_bg_opa(guide, LV_OPA_COVER, 0);
+        lv_obj_remove_flag(guide, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_center(guide);
+    }
+    ui.joystickDeadzone = driveArea(ui.joystick, 0, 0, 56, 56);
+    lv_obj_set_style_radius(ui.joystickDeadzone, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(ui.joystickDeadzone, kOn, 0);
+    lv_obj_set_style_bg_opa(ui.joystickDeadzone, LV_OPA_20, 0);
+    lv_obj_set_style_border_width(ui.joystickDeadzone, 2, 0);
+    lv_obj_set_style_border_color(ui.joystickDeadzone, kOn, 0);
+    lv_obj_remove_flag(ui.joystickDeadzone, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_center(ui.joystickDeadzone);
+    lv_obj_align(label(ui.joystick, "^", &ard_font_20, kAccent), LV_ALIGN_TOP_MID, 0, 6);
+    lv_obj_align(label(ui.joystick, "v", &ard_font_20, kAccent), LV_ALIGN_BOTTOM_MID, 0, -6);
+    lv_obj_align(label(ui.joystick, "<", &ard_font_20, kAccent), LV_ALIGN_LEFT_MID, 6, 0);
+    lv_obj_align(label(ui.joystick, ">", &ard_font_20, kAccent), LV_ALIGN_RIGHT_MID, -6, 0);
+    ui.joystickKnob = driveArea(ui.joystick, 0, 0, 48, 48);
+    lv_obj_set_style_radius(ui.joystickKnob, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(ui.joystickKnob, kAccent, 0);
+    lv_obj_set_style_bg_opa(ui.joystickKnob, LV_OPA_COVER, 0);
+    lv_obj_remove_flag(ui.joystickKnob, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_center(ui.joystickKnob);
+    ui.joystickLevel = label(ui.driveContinuous, "", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.joystickLevel, 0, 398);
+    lv_obj_set_size(ui.joystickLevel, 400, 24);
+    lv_obj_set_style_text_align(ui.joystickLevel, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_add_flag(ui.driveSteps, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(ui.driveStepSettings, LV_OBJ_FLAG_HIDDEN);
     updateRailLabels();
+    driveSpeedChange(nullptr);
+    deadzoneChange(nullptr);
 }
 
 // ---- Cam / Sound tabs (boards that are still separate, through the PC) --------------------------
@@ -205,14 +444,15 @@ void buildDrive(lv_obj_t *tab) {
 lv_obj_t *statusColumn(lv_obj_t *tab, const char *title, lv_obj_t **online, lv_obj_t **info) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
-    lv_obj_t *left = panel(tab, 360, 470);
+    lv_obj_t *left = panel(tab, 360, ui_layout::kPageHeight);
     lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_gap(left, 8, 0);
     label(left, title, &ard_font_28, kAccent);
     *online = label(left, "Offline", &ard_font_20, kOff);
-    *info = label(left, "---");
+    *info = label(left, "---", &ard_font_16);
     lv_label_set_long_mode(*info, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(*info, 330);
-    return grid(tab, 600, 480);
+    return grid(tab, ui_layout::kPageWidth - 372, ui_layout::kPageHeight);
 }
 
 // The PC drives the preview (ImageSender only knows single captures); ask for the opposite state.
@@ -226,27 +466,57 @@ void viewImage(lv_event_t *) {
 void buildCam(lv_obj_t *tab) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
-    lv_obj_t *left = panel(tab, 300, 470);
-    lv_obj_set_flex_flow(left, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_gap(left, 8, 0);
+    lv_obj_t *left = panel(tab, 348, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(left, 12, 0);
     label(left, "Camera", &ard_font_28, kAccent);
-    ui.camOnline = label(left, "Offline", &ard_font_20, kOff);
+    ui.camOnline = label(left, "Offline", &ard_font_16, kOff);
+    lv_obj_set_pos(ui.camOnline, 0, 40);
+    lv_obj_set_size(ui.camOnline, 324, 40);
+    lv_label_set_long_mode(ui.camOnline, LV_LABEL_LONG_WRAP);
     ui.camInfo = label(left, "---", &ard_font_16);
     lv_label_set_long_mode(ui.camInfo, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(ui.camInfo, 270);
-    lv_obj_t *g = grid(left, 280, 220);
+    lv_obj_set_pos(ui.camInfo, 0, 84);
+    lv_obj_set_size(ui.camInfo, 324, 212);
+    lv_obj_t *g = grid(left, 324, 120);
+    lv_obj_set_pos(g, 0, 304);
     lv_obj_set_style_pad_gap(g, 8, 0);
-    button(g, "SHOT", kAccent, camCommand, (void *)"capture", 125, 56);
-    button(g, "VIEW", kOn, viewImage, nullptr, 125, 56);
-    button(g, "AI ANALYZE", kAccent, camCommand, (void *)"analyze", 125, 56);
-    ui.camStream = button(g, "STREAM", kMuted, streamToggle, nullptr, 125, 56);
+    button(g, "SHOT", kAccent, camCommand, (void *)"capture", 154, 52);
+    button(g, "VIEW", kOn, viewImage, nullptr, 154, 52);
+    button(g, "AI ANALYZE", kAccent, camCommand, (void *)"analyze", 154, 52);
+    ui.camStream = button(g, "STREAM", kMuted, streamToggle, nullptr, 154, 52);
 
-    lv_obj_t *view = panel(tab, 660, 470);
+    lv_obj_t *view = panel(tab, ui_layout::kPageWidth - 360, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(view, 12, 0);
     lv_obj_set_style_bg_color(view, lv_color_hex(0x101418), 0);
-    ui.camImage = lv_image_create(view);
+    ui.camViewport = lv_obj_create(view);
+    lv_obj_remove_style_all(ui.camViewport);
+    lv_obj_set_size(ui.camViewport, LV_PCT(100), 392);
+    ui_layout::lockScroll(ui.camViewport);
+    ui.camImage = lv_image_create(ui.camViewport);
+    ui_layout::lockScroll(ui.camImage);
+    lv_obj_set_size(ui.camImage, 1, 1);
+    // Use a destination-sized image object. Scaling an original-sized object
+    // leaves its large layout bounds behind and can scroll or clip the page.
+    lv_image_set_inner_align(ui.camImage, LV_IMAGE_ALIGN_STRETCH);
     lv_obj_center(ui.camImage);
-    ui.camImageNote = label(view, "New captures appear here automatically", &ard_font_20, lv_color_white());
+    ui.camImageNote = label(view, "New captures appear here automatically", &ard_font_16, lv_color_white());
+    lv_obj_set_size(ui.camImageNote, LV_PCT(100), 24);
+    lv_obj_set_style_text_align(ui.camImageNote, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(ui.camImageNote, LV_LABEL_LONG_WRAP);
     lv_obj_align(ui.camImageNote, LV_ALIGN_BOTTOM_MID, 0, 0);
+}
+
+void refreshMicUi() {
+    if (!ui.micToggleText || !ui.micState) return;
+    const bool enabled = onboard_audio_status().micEnabled;
+    lv_label_set_text(ui.micToggleText, enabled ? "Turn mic off" : "Turn mic on");
+    lv_label_set_text(ui.micState, enabled ? "MIC ON" : "MIC OFF");
+    lv_obj_set_style_text_color(ui.micState, enabled ? kOn : kOff, 0);
+    lv_obj_set_style_bg_color(ui.micToggle, enabled ? kOn : kOff, 0);
+    lv_obj_set_style_bg_color(ui.micToggle, kOn, LV_STATE_CHECKED);
+    if (enabled) lv_obj_add_state(ui.micToggle, LV_STATE_CHECKED);
+    else lv_obj_remove_state(ui.micToggle, LV_STATE_CHECKED);
+    lv_obj_invalidate(ui.micToggle);
 }
 
 void buildSound(lv_obj_t *tab) {
@@ -254,6 +524,10 @@ void buildSound(lv_obj_t *tab) {
     button(g, "VAD", kOn, soundCommand, (void *)"vad", 175);
     button(g, "PTT", kAccent, soundCommand, (void *)"ptt", 175);
     ui.micToggle = button(g, "MIC ON", kMuted, micToggle, nullptr, 175);
+    ui.micToggleText = lv_obj_get_child(ui.micToggle, 0);
+    ui.micState = label(g, "", &ard_font_16, kMuted);
+    lv_obj_set_width(ui.micState, 550);
+    refreshMicUi();
     ui.talk = button(g, "HOLD TO TALK (PTT)", kAccent, talkEvent, nullptr, 550, 84);
     lv_obj_add_event_cb(ui.talk, talkEvent, LV_EVENT_PRESSED, nullptr);
     lv_obj_add_event_cb(ui.talk, talkEvent, LV_EVENT_RELEASED, nullptr);
@@ -267,10 +541,6 @@ void buildSound(lv_obj_t *tab) {
 }
 
 // ---- System tab ------------------------------------------------------------------------------
-
-void pairPad(lv_event_t *) { gamepad_pair(); }
-void forgetPad(lv_event_t *) { gamepad_forget(); }
-void modeToggle(lv_event_t *) { controls_set_mode(controls_status().mode == MODE_DRIVE ? MODE_ROBOT : MODE_DRIVE); }
 
 lv_obj_t *qrPanel, *qrImage, *qrTitle, *qrNote;
 lv_image_dsc_t qrDsc;
@@ -324,23 +594,15 @@ void showSetupQr(lv_event_t *) {
 void buildSystem(lv_obj_t *tab) {
     lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_gap(tab, 12, 0);
-    lv_obj_t *net = panel(tab, 470, 470);
+    lv_obj_t *net = panel(tab, ui_layout::kPageWidth, ui_layout::kPageHeight);
     lv_obj_set_flex_flow(net, LV_FLEX_FLOW_COLUMN);
     label(net, "Network", &ard_font_28, kAccent);
     ui.netInfo = label(net, "---", &ard_font_16);
+    lv_obj_set_width(ui.netInfo, ui_layout::kPageWidth - 28);
+    lv_label_set_long_mode(ui.netInfo, LV_LABEL_LONG_WRAP);
     button(net, "Setup QR", kAccent, showSetupQr, nullptr, 200, 40);
     ui.sysInfo = label(net, "", &ard_font_16, kMuted);
 
-    lv_obj_t *pad = panel(tab, 490, 470);
-    lv_obj_set_flex_flow(pad, LV_FLEX_FLOW_COLUMN);
-    label(pad, "Gamepad (BLE via C6)", &ard_font_28, kAccent);
-    ui.padInfo = label(pad, "---", &ard_font_16);
-    ui.padRaw = label(pad, "", &ard_font_16, kMuted);
-    lv_obj_t *g = grid(pad, 460, 90);
-    lv_obj_set_flex_flow(g, LV_FLEX_FLOW_ROW);
-    button(g, "Pair new", kAccent, pairPad, nullptr, 140, 56);
-    button(g, "Forget", kOff, forgetPad, nullptr, 140, 56);
-    button(g, "Drive/Robot", kMuted, modeToggle, nullptr, 150, 56);
 }
 
 // ---- status bar + popup ------------------------------------------------------------------------
@@ -354,6 +616,7 @@ void approvalAnswer(lv_event_t *e) {
 void buildApproval() {
     ui.approval = lv_obj_create(lv_layer_top());
     lv_obj_set_size(ui.approval, 600, 320);
+    ui_layout::lockScroll(ui.approval);
     lv_obj_center(ui.approval);
     lv_obj_set_style_border_color(ui.approval, kAccent, 0);
     lv_obj_set_style_border_width(ui.approval, 4, 0);
@@ -372,7 +635,7 @@ void buildApproval() {
 
 void buildBar(lv_obj_t *screen) {
     lv_obj_t *bar = lv_obj_create(screen);
-    lv_obj_set_size(bar, LV_PCT(100), 72);
+    lv_obj_set_size(bar, LV_PCT(100), ui_layout::kBarHeight);
     lv_obj_align(bar, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(bar, kBar, 0);
     lv_obj_set_style_radius(bar, 0, 0);
@@ -381,15 +644,13 @@ void buildBar(lv_obj_t *screen) {
     lv_obj_t *title = label(bar, "ARD", &ard_font_28, lv_color_white());
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 0, 0);
     ui.clock = label(bar, "--:--", &ard_font_28, lv_color_white());
+    lv_obj_set_width(ui.clock, 104);
+    lv_label_set_long_mode(ui.clock, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui.clock, LV_ALIGN_LEFT_MID, 80, 0);
     ui.net = label(bar, "Wi-Fi --", &ard_font_16, lv_color_white());
     lv_obj_align(ui.net, LV_ALIGN_LEFT_MID, 190, -12);
     ui.pc = label(bar, "PC --", &ard_font_16, lv_color_white());
     lv_obj_align(ui.pc, LV_ALIGN_LEFT_MID, 190, 12);
-    ui.pad = label(bar, "Pad --", &ard_font_16, lv_color_white());
-    lv_obj_align(ui.pad, LV_ALIGN_LEFT_MID, 430, -12);
-    ui.armed = label(bar, "", &ard_font_16, lv_color_white());
-    lv_obj_align(ui.armed, LV_ALIGN_LEFT_MID, 430, 12);
     lv_obj_t *arm = button(bar, "RE-ARM", kMuted, rearm, nullptr, 120, 56);
     lv_obj_align(arm, LV_ALIGN_RIGHT_MID, -200, 0);
     lv_obj_t *stop = button(bar, "E-STOP", kOff, estop, nullptr, 180, 60);
@@ -398,16 +659,6 @@ void buildBar(lv_obj_t *screen) {
 }
 
 // ---- periodic refresh ---------------------------------------------------------------------------
-
-const char *linkName(GamepadLink link) {
-    switch (link) {
-    case GAMEPAD_CONNECTED: return "connected";
-    case GAMEPAD_CONNECTING: return "connecting";
-    case GAMEPAD_PAIRING: return "pairing";
-    case GAMEPAD_SEARCHING: return "searching";
-    default: return "off";
-    }
-}
 
 void showBoard(lv_obj_t *online, const PcBoardState &b, bool reachable) {
     lv_label_set_text_fmt(online, "%s  %s", ui_tr(!reachable ? "PC offline" : b.online ? "Online" : "Offline"), b.ip);
@@ -436,10 +687,22 @@ void refreshCamImage() {
                 imageDsc.header.stride = img.stride * 2;
                 imageDsc.data = imageCopy;
                 imageDsc.data_size = bytes;
+                lv_obj_update_layout(ui.camViewport);
+                const int32_t availableW = lv_obj_get_content_width(ui.camViewport);
+                const int32_t availableH = lv_obj_get_content_height(ui.camViewport);
+                if (img.width && img.height && availableW > 0 && availableH > 0) {
+                    int32_t width = availableW;
+                    int32_t height = static_cast<int32_t>(static_cast<int64_t>(img.height) * width / img.width);
+                    if (height > availableH) {
+                        height = availableH;
+                        width = static_cast<int32_t>(static_cast<int64_t>(img.width) * height / img.height);
+                    }
+                    lv_obj_set_size(ui.camImage, width > 0 ? width : 1, height > 0 ? height : 1);
+                    // LVGL 9.2.2 computes STRETCH in set_src; commit the new
+                    // destination bounds before it reads the object's size.
+                    lv_obj_update_layout(ui.camImage);
+                }
                 lv_image_set_src(ui.camImage, &imageDsc);
-                // Fill the 630x440 viewer, enlarging small captures too (aspect kept).
-                const uint32_t sx = 630 * 256 / img.width, sy = 440 * 256 / img.height;
-                lv_image_set_scale(ui.camImage, sx < sy ? sx : sy);
                 lv_obj_center(ui.camImage);
                 lv_label_set_text_fmt(ui.camImageNote, "%ux%u", img.width, img.height);
             }
@@ -451,16 +714,12 @@ void refreshCamImage() {
 }
 
 void refresh(lv_timer_t *) {
-    if (pendingTabStep) {
-        const int count = TAB_COUNT;
-        int next = ((int)lv_tabview_get_tab_active(ui.tabview) + pendingTabStep + count) % count;
-        pendingTabStep = 0;
-        lv_tabview_set_active(ui.tabview, next, LV_ANIM_OFF);
-    }
     time_t now = time(nullptr);
     struct tm local;
     localtime_r(&now, &local);
     if (local.tm_year >= 120) lv_label_set_text_fmt(ui.clock, "%02d:%02d", local.tm_hour, local.tm_min);
+    else lv_label_set_text(ui.clock, "Sync...");
+    refreshMicUi();
 
     char ip[16];
     ard_network_local_ip(ip, sizeof(ip));
@@ -473,13 +732,6 @@ void refresh(lv_timer_t *) {
     ard_network_server(server, sizeof(server));
     lv_label_set_text_fmt(ui.pc, "PC %s %s", server, pc.reachable ? ui_tr("OK") : "--");
 
-    const GamepadInfo pad = gamepad_info();
-    const ControlStatus ctl = controls_status();
-    lv_label_set_text_fmt(ui.pad, "Pad %s  %s", ui_tr(linkName(pad.link)), ui_tr(ctl.mode == MODE_DRIVE ? "DRIVE" : "ROBOT"));
-
-    lv_label_set_text(ui.armed, ctl.lastAction);
-    lv_obj_set_style_text_color(ui.armed, lv_color_white(), 0);
-
     switch (lv_tabview_get_tab_active(ui.tabview)) {
     case TAB_DRIVE: {
         const bool online = pc.reachable && pc.board[PC_DRIVE].online;
@@ -490,11 +742,13 @@ void refresh(lv_timer_t *) {
         lv_label_set_text_fmt(ui.env, "Drive env: %.1f C  %.0f %%  %.1f hPa", pc.driveTemp, pc.driveHumidity, pc.drivePressure);
         lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm", pc.driveTof);
         lv_label_set_text_fmt(ui.gps, "Drive GPS: %.5f, %.5f", pc.driveLat, pc.driveLng);
-        lv_label_set_text_fmt(ui.jogSpeedLabel, "%d %%%s", ctl.speedPercent, ctl.precision ? ui_tr(" (precision)") : "");
-        if (lv_slider_get_value(ui.jogSpeed) != ctl.speedPercent && !lv_obj_has_state(ui.jogSpeed, LV_STATE_PRESSED))
-            lv_slider_set_value(ui.jogSpeed, ctl.speedPercent, LV_ANIM_OFF);
         pidOn = pc.drivePid;
         updateRailLabels();
+        const bool armed = pc_drive_is_armed();
+        lv_label_set_text(ui.driveControlState, !continuousMode ? "One move per tap" :
+                          !online ? "DriveMCU offline / PC unavailable" : pc.drivePid ? "Turn PID off for continuous motion" :
+                          pc.sorting.running ? "Sorting is running" : armed ? "Ready: hold to move" : "Press RE-ARM to move");
+        lv_obj_set_style_text_color(ui.driveControlState, continuousMode && !armed ? kOff : kOn, 0);
         break;
     }
     case TAB_CAM:
@@ -509,13 +763,14 @@ void refresh(lv_timer_t *) {
         const auto audio = onboard_audio_status();
         lv_label_set_text(ui.soundOnline, !audio.ready ? "ES8311 unavailable" : !pc.reachable ? "PC offline" : !audio.selected ? "Select JC1060 voice on PC" : "Onboard microphone / speaker");
         lv_obj_set_style_text_color(ui.soundOnline, audio.ready && audio.selected ? kOn : kOff, 0);
-        const char *state = audio.recording ? "RECORDING" : audio.uploading ? "UPLOADING" : audio.waiting ? "PROCESSING" :
-                            audio.playing ? "SPEAKING" : audio.micEnabled && audio.selected ? "LISTENING" : "MIC OFF";
-        lv_label_set_text_fmt(ui.soundInfo, "%s  %s\nMode %s\nMic level %d / 32767\nVolume %d / 21%s\nClips %lu  errors %lu\n\nPTT: hold TALK or gamepad RT\nVAD: automatic speech input\n\n%s",
+        const char *state = !audio.micEnabled ? "MIC OFF" : !audio.ready ? "ES8311 unavailable" :
+                            !audio.selected ? "Select JC1060 voice on PC" : audio.recording ? "RECORDING" :
+                            audio.uploading ? "UPLOADING" : audio.waiting ? "PROCESSING" :
+                            audio.playing ? "SPEAKING" : "LISTENING";
+        lv_label_set_text_fmt(ui.soundInfo, "%s  %s\nMode %s\nMic level %d / 32767\nVolume %d / 21%s\nClips %lu  errors %lu\n\nPTT: hold TALK\nVAD: automatic speech input\n\n%s",
             ui_tr(state), pc.soundStatus, ui_tr(audio.vad ? "VAD" : "PTT"), audio.peak, audio.volume,
             audio.muted ? ui_tr(" (muted)") : "",
             (unsigned long)audio.uploadedClips, (unsigned long)audio.uploadErrors, audio.error);
-        lv_label_set_text(lv_obj_get_child(ui.micToggle, 0), audio.micEnabled ? "MIC ON" : "MIC OFF");
         const bool canTalk = audio.ready && audio.selected && audio.micEnabled && !audio.vad &&
                              !audio.uploading && !audio.waiting && !audio.playing;
         // Keep the pressed button enabled until release so a recording always gets its stop event.
@@ -535,26 +790,6 @@ void refresh(lv_timer_t *) {
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
                               (unsigned long)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
                               ui_tr(bsp_touch_ready() ? "OK" : "not found"));
-        if (pad.link == GAMEPAD_CONNECTED)
-            lv_label_set_text_fmt(ui.padInfo, "%s\n%s  reports %lu  battery %d%%", pad.name, pad.address,
-                                  (unsigned long)pad.reports, pad.battery);
-        else
-            lv_label_set_text_fmt(ui.padInfo, "%s\nPair: hold the pad's pairing button,\nthen press 'Pair new'.",
-                                  ui_tr(linkName(pad.link)));
-        GamepadState st;
-        if (gamepad_state(&st)) {
-            char pressed[96] = "";
-            for (int i = 0; i < 32; ++i)
-                if (st.buttons & (1u << i)) {
-                    char n[6];
-                    snprintf(n, sizeof(n), "%d ", i + 1);
-                    strlcat(pressed, n, sizeof(pressed));
-                }
-            lv_label_set_text_fmt(ui.padRaw, "L %.2f %.2f  R %.2f %.2f\nLT %.2f RT %.2f hat %d\nbuttons: %s", st.lx,
-                                  st.ly, st.rx, st.ry, st.lt, st.rt, st.hat, pressed);
-        } else {
-            lv_label_set_text(ui.padRaw, "");
-        }
         break;
     }
     }
@@ -567,8 +802,6 @@ void refresh(lv_timer_t *) {
         lv_obj_add_flag(ui.approval, LV_OBJ_FLAG_HIDDEN); // answered elsewhere (PC dashboard)
     }
 }
-
-void tabStep(int direction) { pendingTabStep = direction; } // applied by the LVGL timer
 
 } // namespace
 
@@ -605,11 +838,12 @@ esp_err_t ui_start() {
     lv_obj_t *screen = lv_screen_active();
     lv_obj_set_style_bg_color(screen, lv_color_white(), 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+    ui_layout::page(screen, 0);
     buildBar(screen);
     ui.tabview = lv_tabview_create(screen);
-    lv_tabview_set_tab_bar_size(ui.tabview, 56);
-    lv_obj_set_size(ui.tabview, LCD_H_RES, LCD_V_RES - 72);
+    lv_tabview_set_tab_bar_size(ui.tabview, ui_layout::kTabBarHeight);
+    lv_obj_set_size(ui.tabview, LCD_H_RES, LCD_V_RES - ui_layout::kBarHeight);
+    ui_layout::tabview(ui.tabview);
     lv_obj_align(ui.tabview, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabview), &ard_font_20, 0);
     // Main (sorting sequence) is first, so it is the screen shown after boot.
@@ -628,12 +862,14 @@ esp_err_t ui_start() {
     lv_obj_set_style_bg_opa(content, LV_OPA_COVER, 0);
     for (int i = 0; i < TAB_COUNT; ++i) {
         lv_obj_t *page = lv_obj_get_child(content, i);
+        ui_layout::page(page, i == TAB_SETTINGS ? 0 : ui_layout::kPagePadding);
         lv_obj_set_style_bg_color(page, lv_color_white(), 0);
         lv_obj_set_style_bg_opa(page, LV_OPA_COVER, 0);
     }
     buildApproval();
+    lv_obj_add_event_cb(ui.tabview, driveTabChange, LV_EVENT_VALUE_CHANGED, nullptr);
+    lv_timer_create(driveTouchTick, 50, nullptr);
     lv_timer_create(refresh, 250, nullptr);
     bsp_lvgl_unlock();
-    controls_on_tab_step(tabStep);
     return ESP_OK;
 }

@@ -4,6 +4,7 @@
 #include <strings.h>
 #include "BoundedLine.h"
 #include "ard_network.h"
+#include "wifi_debug.h"
 #include "board.h"
 #include "cJSON.h"
 #include "commands.h"
@@ -139,7 +140,9 @@ void consoleTask(void *) {
                 strlcpy(command, line.value(), sizeof(command));
                 line.reset();
                 // Serial only: TCP clients on the network must not redirect the PC link.
-                if (!strncasecmp(command, "server=", 7)) {
+                if (!strcmp(command, "wifi_debug")) {
+                    wifi_debug_dump("console");
+                } else if (!strncasecmp(command, "server=", 7)) {
                     const esp_err_t err = ard_network_set_server(command + 7);
                     if (err == ESP_OK) printf("OK: PC server %s\n", command + 7);
                     else printf("ERR:SERVER %s\n", esp_err_to_name(err));

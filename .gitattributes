@@ -1,0 +1,2 @@
+# Preserve the vendored dependency bytes and the documented SHA-256 on all hosts.
+output/ard-cg/vendor/three.min.js -text

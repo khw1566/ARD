@@ -1,5 +1,14 @@
 menu "ARD JC1060P470C"
 
+    config ARD_WIFI_DIAGNOSTICS
+        bool "Trace station DHCP and network packet counters"
+        default y
+        select ESP_NETIF_RECEIVE_REPORT_ERRORS
+        help
+            Logs DHCP message headers, TX/RX errors, IP configuration and DHCP
+            client state every five seconds. No packet payloads or passwords
+            are logged. Disable after diagnosing the connection problem.
+
     menu "Onboard microphone and speaker (ES8311)"
         config ARD_VOICE_MCLK
             int "I2S MCLK GPIO"
@@ -131,12 +140,5 @@ menu "ARD JC1060P470C"
         default "192.168.0.35"
         help
             Used until a server is saved from the setup portal (/network).
-
-    config ARD_ENABLE_GAMEPAD
-        bool "BLE HID gamepad over the ESP32-C6"
-        default y
-        depends on BT_NIMBLE_ENABLED
-        help
-            Uses the C6 Bluetooth controller through ESP-Hosted (VHCI) with the NimBLE host on the P4.
 
 endmenu

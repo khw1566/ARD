@@ -4,9 +4,11 @@
 #include <time.h>
 #include <atomic>
 #include <math.h>
+#include <cmath>
 #include "ard_network.h"
 #include "board.h"
 #include "onboard_audio.h"
+#include "clock_sync.h"
 #include "cJSON.h"
 #include "driver/jpeg_decode.h"
 #include "esp_heap_caps.h"
@@ -50,9 +52,12 @@ std::atomic<uint32_t> imageSeqSeen{0};
 PcRequestResult sortingResult = {};   // guarded by driveLock (short critical sections)
 TaskHandle_t worker;
 portMUX_TYPE driveLock = portMUX_INITIALIZER_UNLOCKED;
+bool driveArmRequested, driveStopRequested, driveDisarmRequested;
+bool driveArmed, driveActive, driveNeutralRequested;
 float driveAxes[3] = {};
-uint32_t driveUpdated;
-bool driveArmed, driveArmRequested, driveStopRequested;
+int driveIntervalMs = 300;
+int driveDeadzonePct = 20;
+uint32_t driveInputAt, driveGeneration;
 
 jpeg_decoder_handle_t jpeg;
 uint8_t *jpegBuffer;            // compressed stream
@@ -241,6 +246,8 @@ bool pollUpdates(char *buffer) {
     // A PC program from before /api/hmi/updates still reports sorting progress.
     if (code == 404) code = http("/api/sorting/status", HTTP_METHOD_GET, nullptr, 1000, (uint8_t *)buffer, kStatusMax);
     if (code == 200) doc = cJSON_Parse(buffer);
+    const cJSON *epoch = cJSON_GetObjectItem(doc, "unix_time");
+    if (cJSON_IsNumber(epoch)) clock_sync_from_pc(epoch->valuedouble);
     // A new frame on the PC (capture, sorting, live preview) is fetched right away.
     const cJSON *seq = cJSON_GetObjectItem(doc, "image_seq");
     if (cJSON_IsNumber(seq) && seq->valuedouble > 0) {
@@ -394,37 +401,70 @@ void linkTask(void *) {
     }
 }
 
-// Independent of JPEG downloads and status polling. Only the newest axes are
-// retained; the PC accepts one finite batch and expires unsent inputs at 300 ms.
+// Stop and arm have their own path, independent of the general command queue,
+// JPEG downloads and status polling.
 void driveTask(void *) {
-    bool wasActive = false;
+    uint32_t lastPulse = 0;
     for (;;) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        float x, y, z;
-        bool arm, stop, enabled;
+        vTaskDelay(pdMS_TO_TICKS(25));
+        bool arm, stop, disarm, neutral, pulse;
+        float axes[3];
+        int interval, deadzone;
+        uint32_t generation;
         portENTER_CRITICAL(&driveLock);
-        arm = driveArmRequested; stop = driveStopRequested; enabled = driveArmed;
-        driveArmRequested = driveStopRequested = false;
-        const bool fresh = nowMs() - driveUpdated < 200;
-        x = fresh && enabled ? driveAxes[0] : 0;
-        y = fresh && enabled ? driveAxes[1] : 0;
-        z = fresh && enabled ? driveAxes[2] : 0;
-        portEXIT_CRITICAL(&driveLock);
-        const bool active = x != 0 || y != 0 || z != 0;
-        if (!stop && !arm && !active && !wasActive) continue;
-        char body[160], reply[128];
-        if (stop) snprintf(body, sizeof(body), "{\"op\":\"stop\"}");
-        else if (arm) snprintf(body, sizeof(body), "{\"op\":\"arm\"}");
-        else snprintf(body, sizeof(body), "{\"op\":\"input\",\"x\":%.3f,\"y\":%.3f,\"z\":%.3f}", x, y, z);
-        const int code = http("/api/jc1060/drive", HTTP_METHOD_POST, body, 500, (uint8_t *)reply, sizeof(reply));
-        wasActive = !stop && active;
-        if (code != 200 && code != 202) {
-            portENTER_CRITICAL(&driveLock);
-            driveArmed = false;
-            driveStopRequested = wasActive;
-            portEXIT_CRITICAL(&driveLock);
-            wasActive = false;
+        arm = driveArmRequested; stop = driveStopRequested;
+        disarm = driveDisarmRequested;
+        driveArmRequested = driveStopRequested = driveDisarmRequested = false;
+        // No event updates for 250 ms: cease new pulses and send neutral.
+        if (driveActive && nowMs() - driveInputAt >= 250) {
+            driveActive = false;
+            driveNeutralRequested = true;
         }
+        neutral = driveNeutralRequested;
+        driveNeutralRequested = false;
+        pulse = driveArmed && driveActive && nowMs() - lastPulse >= 100;
+        memcpy(axes, driveAxes, sizeof(axes));
+        interval = driveIntervalMs;
+        deadzone = driveDeadzonePct;
+        generation = driveGeneration;
+        portEXIT_CRITICAL(&driveLock);
+        if (!stop && !disarm && !arm && !neutral && !pulse) continue;
+        const auto pc = pc_status();
+        if (pulse && (!pc.reachable || nowMs() - pc.updatedMs > 6000 ||
+                      !pc.board[PC_DRIVE].online || pc.drivePid || pc.sorting.running ||
+                      !ard_network_connected())) {
+            pc_drive_disarm();
+            continue;
+        }
+        char body[160];
+        if (stop) snprintf(body, sizeof(body), "{\"op\":\"stop\"}");
+        else if (disarm) snprintf(body, sizeof(body), "{\"op\":\"disarm\"}");
+        else if (arm) snprintf(body, sizeof(body), "{\"op\":\"arm\"}");
+        else if (neutral) snprintf(body, sizeof(body), "{\"op\":\"pulse\",\"x\":0,\"y\":0,\"z\":0}");
+        else {
+            lastPulse = nowMs();
+            snprintf(body, sizeof(body), "{\"op\":\"joystick\",\"x\":%.3f,\"y\":%.3f,\"z\":%.3f,\"interval_ms\":%d,\"deadzone_pct\":%d}",
+                     axes[0], axes[1], axes[2], interval, deadzone);
+        }
+        char reply[128];
+        const int code = http("/api/jc1060/drive", HTTP_METHOD_POST, body, 500, (uint8_t *)reply, sizeof(reply));
+        cJSON *result = (code == 200 || code == 202) ? cJSON_Parse(reply) : nullptr;
+        const bool armed = arm && !stop && !disarm && !strcmp(str(result, "status", ""), "armed");
+        cJSON_Delete(result);
+        portENTER_CRITICAL(&driveLock);
+        if (generation == driveGeneration) {
+            if (arm) driveArmed = armed;
+            if (stop || disarm || (code != 200 && code != 202)) {
+                driveArmed = false;
+                driveActive = false;
+                driveNeutralRequested = false;
+                // A failed in-flight pulse may have been accepted. Ask to stop
+                // once on the independent path; never replay the pulse.
+                if (pulse && !stop && !disarm && !arm && !neutral) driveDisarmRequested = true;
+            }
+        }
+        portEXIT_CRITICAL(&driveLock);
+        if (code != 200 && code != 202) ESP_LOGW(TAG, "Drive control -> %d (disarmed)", code);
     }
 }
 
@@ -444,7 +484,7 @@ esp_err_t pc_link_start() {
     engine.timeout_ms = 200;
     esp_err_t err = jpeg_new_decoder_engine(&engine, &jpeg);
     if (err != ESP_OK) return err;
-    if (xTaskCreatePinnedToCore(driveTask, "drive_input", 4096, nullptr, 4, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreatePinnedToCore(driveTask, "drive_control", 6144, nullptr, 4, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
     return xTaskCreatePinnedToCore(linkTask, "pc_link", 6144, nullptr, 3, &worker, 0) == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
 }
 
@@ -467,7 +507,9 @@ bool pc_send_command(PcBoard board, const char *command) {
         if (stop) pc_drive_stop();
         else {
             portENTER_CRITICAL(&driveLock);
-            driveArmed = driveArmRequested = false;
+            ++driveGeneration;
+            driveArmed = driveActive = driveNeutralRequested = false;
+            driveArmRequested = false;
             portEXIT_CRITICAL(&driveLock);
         }
     }
@@ -477,28 +519,63 @@ bool pc_send_command(PcBoard board, const char *command) {
     return outgoing && xQueueSend(outgoing, &item, 0) == pdTRUE;
 }
 
-bool pc_drive_jog(float x, float y, float z) {
-    portENTER_CRITICAL(&driveLock);
-    driveAxes[0] = x; driveAxes[1] = y; driveAxes[2] = z;
-    driveUpdated = nowMs();
-    const bool armed = driveArmed;
-    portEXIT_CRITICAL(&driveLock);
-    return armed;
-}
-
 void pc_drive_arm() {
     portENTER_CRITICAL(&driveLock);
-    driveArmed = true;
+    ++driveGeneration;
+    driveArmed = driveActive = false;
     driveArmRequested = true;
-    driveStopRequested = false;
     portEXIT_CRITICAL(&driveLock);
 }
 
 void pc_drive_stop() {
     portENTER_CRITICAL(&driveLock);
-    driveArmed = false;
+    ++driveGeneration;
+    driveArmed = driveActive = driveNeutralRequested = false;
     driveArmRequested = false;
+    driveDisarmRequested = false;
     driveStopRequested = true;
+    portEXIT_CRITICAL(&driveLock);
+}
+
+void pc_drive_disarm() {
+    portENTER_CRITICAL(&driveLock);
+    ++driveGeneration;
+    driveArmed = driveActive = driveNeutralRequested = false;
+    driveArmRequested = false;
+    driveDisarmRequested = true;
+    portEXIT_CRITICAL(&driveLock);
+}
+
+bool pc_drive_is_armed() {
+    portENTER_CRITICAL(&driveLock);
+    const bool armed = driveArmed;
+    portEXIT_CRITICAL(&driveLock);
+    return armed;
+}
+
+bool pc_drive_joystick(float x, float y, float z, int intervalMs, int deadzonePct) {
+    if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) || fabsf(x) > 1 || fabsf(y) > 1 ||
+        fabsf(z) > 1 || intervalMs < 100 || intervalMs > 1000 || deadzonePct < 5 || deadzonePct > 30) return false;
+    if (std::hypot(x, y) <= deadzonePct / 100.0f) x = y = 0;
+    portENTER_CRITICAL(&driveLock);
+    const bool armed = driveArmed;
+    if (armed) {
+        driveAxes[0] = x; driveAxes[1] = y; driveAxes[2] = z;
+        driveIntervalMs = intervalMs;
+        driveDeadzonePct = deadzonePct;
+        driveInputAt = nowMs();
+        if (driveActive && x == 0 && y == 0 && z == 0) driveNeutralRequested = true;
+        driveActive = x != 0 || y != 0 || z != 0;
+    }
+    portEXIT_CRITICAL(&driveLock);
+    return armed;
+}
+
+void pc_drive_neutral() {
+    portENTER_CRITICAL(&driveLock);
+    if (driveActive) driveNeutralRequested = true;
+    driveActive = false;
+    memset(driveAxes, 0, sizeof(driveAxes));
     portEXIT_CRITICAL(&driveLock);
 }
 

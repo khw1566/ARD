@@ -1,0 +1,3 @@
+- Do not re-analyze the entire repository unless explicitly requested.
+- Limit context collection to files directly related to the current prompt.
+- Apply targeted diffs instead of rewriting or scanning unrelated directories.ㄴ

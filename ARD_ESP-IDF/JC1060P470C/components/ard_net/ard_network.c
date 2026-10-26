@@ -1,6 +1,9 @@
 #include "ard_network.h"
 #include "ard_wifi.h"
 #include "ard_setup_qr.h"
+#include "wifi_join_deadline.h"
+#include "wifi_debug.h"
+#include "wifi_station_mac.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +33,8 @@
 static const char *TAG = "ARD_NET";
 static ard_network_settings_t settings = {.version = 1};
 static char hostname[48], password[16], token[33], server_address[65], sta_ip[16];
-static bool sta_ready, wifi_ok;
+static bool sta_ready, sta_associated, wifi_ok;
+static int64_t sta_associated_at;
 static int sta_rssi = -127;
 static bool settings_loaded, resolve_now;
 static SemaphoreHandle_t wifi_ops;
@@ -299,12 +303,13 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
     // successful touch connection under the preceding history entry.
     err = ard_wifi_begin_manual(&next);
     if (err == ESP_OK) {
-        const int64_t deadline = esp_timer_get_time() + 25000000LL;
+        const int64_t started_at = esp_timer_get_time();
         bool joined = false;
-        while (esp_timer_get_time() < deadline) {
+        for (;;) {
             // network_task is gated by wifi_ops during live setup. Keep the
             // shared worker running here so disconnects trigger bounded retries.
             ard_wifi_tick();
+            wifi_debug_poll("join");
             if (ard_network_connected()) {
                 wifi_ap_record_t ap;
                 if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK && !strncmp((char *)ap.ssid, next.ssid, 32)) {
@@ -312,6 +317,11 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
                     break;
                 }
             }
+            taskENTER_CRITICAL(&state_lock);
+            const bool associated = sta_associated;
+            const int64_t associated_at = sta_associated_at;
+            taskEXIT_CRITICAL(&state_lock);
+            if (ard_join_deadline_expired(esp_timer_get_time(), started_at, associated, associated_at)) break;
             vTaskDelay(pdMS_TO_TICKS(100));
         }
         err = joined ? store_settings(&next) : ESP_ERR_TIMEOUT;
@@ -322,6 +332,7 @@ esp_err_t ard_network_join(const char *ssid, const char *station_password) {
         taskEXIT_CRITICAL(&state_lock);
         ESP_LOGI(TAG, "Wi-Fi settings saved after successful connection");
     } else {
+        if (err == ESP_ERR_TIMEOUT) wifi_debug_dump("join-timeout");
         esp_err_t restore = ard_wifi_begin_manual(&previous);
         if (restore != ESP_OK) ESP_LOGW(TAG, "Previous Wi-Fi profile restore failed: %s", esp_err_to_name(restore));
         ESP_LOGW(TAG, "Wi-Fi setup failed: %s; previous profile restore: %s",
@@ -342,6 +353,15 @@ static void wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
         ESP_LOGI(TAG, "Wi-Fi connected: %s", sta_ip);
     } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_CONNECTED) {
         const wifi_event_sta_connected_t *event = data;
+        // Registered before the IDF default connected handler: fix the host's
+        // identity before that handler raises the interface and starts DHCP.
+        esp_err_t mac_err = ard_wifi_sync_station_mac();
+        if (mac_err != ESP_OK)
+            ESP_LOGE(TAG, "STA MAC synchronization before DHCP failed: %s", esp_err_to_name(mac_err));
+        taskENTER_CRITICAL(&state_lock);
+        sta_associated = true;
+        sta_associated_at = esp_timer_get_time();
+        taskEXIT_CRITICAL(&state_lock);
         ESP_LOGI(TAG, "Wi-Fi associated: %.32s %02x:%02x:%02x:%02x:%02x:%02x ch%d auth %d; waiting for DHCP address",
                  (const char *)event->ssid, event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3],
                  event->bssid[4], event->bssid[5], event->channel, event->authmode);
@@ -349,9 +369,15 @@ static void wifi_event(void *arg, esp_event_base_t base, int32_t id, void *data)
         const wifi_event_sta_disconnected_t *event = data;
         taskENTER_CRITICAL(&state_lock);
         sta_ready = false;
+        sta_associated = false;
         taskEXIT_CRITICAL(&state_lock);
         // Authentication/AP failures before DHCP need diagnostics too.
         ESP_LOGW(TAG, "Wi-Fi disconnected (reason %d)", event->reason);
+    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_STOP) {
+        taskENTER_CRITICAL(&state_lock);
+        sta_ready = false;
+        sta_associated = false;
+        taskEXIT_CRITICAL(&state_lock);
     } else if (base == WIFI_EVENT && id == WIFI_EVENT_AP_STACONNECTED) {
         taskENTER_CRITICAL(&state_lock);
         ++ap_clients;
@@ -459,6 +485,7 @@ static void network_task(void *arg) {
             }
             xSemaphoreGive(wifi_ops);
         }
+        wifi_debug_poll("background");
         if (ready && now - last_resolve >= RESOLVE_US) {
             last_resolve = now;
             resolve_server();
@@ -522,6 +549,7 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
              (unsigned long)esp_random(), (unsigned long)esp_random(), (unsigned long)esp_random());
     if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event, NULL)) != ESP_OK) return err;
     if ((err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, wifi_event, NULL)) != ESP_OK) return err;
+    wifi_debug_init();
     err = start_wifi();
     taskENTER_CRITICAL(&state_lock);
     wifi_ok = err == ESP_OK;
@@ -542,6 +570,6 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
     } else ESP_LOGE(TAG, "mDNS init failed; use the AP IP");
     ard_setup_qr_init(hostname, password);
     ard_network_print_setup();
-    if (xTaskCreate(network_task, "ard_network", 4096, NULL, 3, NULL) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreate(network_task, "ard_network", 6144, NULL, 3, NULL) != pdPASS) return ESP_ERR_NO_MEM;
     return err;
 }
