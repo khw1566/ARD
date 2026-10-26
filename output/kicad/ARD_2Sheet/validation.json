@@ -1,0 +1,28 @@
+{
+  "native_sheets": 2,
+  "pdf_pages": 2,
+  "all_exported_nets_match": true,
+  "source_signal_connections_retained": 75,
+  "current_unused_inputs_omitted": [
+    {
+      "terminal": "SW1",
+      "gpio": "13",
+      "reason": "current DriveMCU board.h declares manual inputs unused"
+    },
+    {
+      "terminal": "SW2",
+      "gpio": "14",
+      "reason": "current DriveMCU board.h declares manual inputs unused"
+    },
+    {
+      "terminal": "POT_WIPER",
+      "gpio": "34",
+      "reason": "current DriveMCU board.h declares manual inputs unused"
+    }
+  ],
+  "power_topology_matches_user_description": true,
+  "erc_errors": 0,
+  "erc_warnings": 26,
+  "warning_type": "isolated_pin_label: unresolved TBD terminals only",
+  "electrical_review": "consistency check only; no datasheet rating, PCB, hardware or firmware-build validation"
+}

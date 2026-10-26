@@ -1,0 +1,16 @@
+{
+  "welcome": {"ko": "직접 참여해 보세요. 화면을 터치하면 시작합니다.", "en": "You can take part. Touch the screen to begin."},
+  "touch": {"ko": "제어 화면입니다. 원하는 탭을 선택하세요.", "en": "Choose a tab to explore the controls."},
+  "drive": {"ko": "재가동을 누르고 조이스틱을 움직이세요. 손을 떼면 멈춥니다.", "en": "Press re-arm. Hold the joystick to move. Release to stop."},
+  "rail": {"ko": "레일 제어입니다. 이동 범위를 확인하고 조작하세요.", "en": "Rail controls. Check the travel range before moving."},
+  "camera": {"ko": "카메라와 선별 순서를 확인한 뒤 시작하세요.", "en": "Check the camera and sorting sequence before starting."},
+  "voice": {"ko": "음성 제어입니다. 말하기 버튼을 누르고 이야기하세요.", "en": "Voice controls. Hold the talk button while speaking."},
+  "settings": {"ko": "설정에서 밝기, 음량, 화면 보호기를 변경할 수 있습니다.", "en": "Settings include brightness, volume, and the screensaver."},
+  "stop": {"ko": "비상정지를 요청했습니다. 장치가 멈췄는지 확인하세요.", "en": "Emergency stop requested. Check that the robot has stopped."},
+  "rearm": {"ko": "수동 제어가 준비되었습니다. 주변을 확인하고 조작하세요.", "en": "Manual control is ready. Check the area before moving."},
+  "offline": {"ko": "피씨 연결이 끊겼습니다. 연결 상태를 확인하세요.", "en": "The computer is offline. Please check the connection."},
+  "online": {"ko": "피씨에 연결되었습니다.", "en": "Connected to the computer."},
+  "sorting_start": {"ko": "선별을 진행합니다. 움직이는 장치에서 손을 떼세요.", "en": "Sorting is running. Keep hands clear of moving parts."},
+  "sorting_done": {"ko": "피씨에서 선별 완료를 보고했습니다. 결과를 확인하세요.", "en": "The computer reports sorting complete. Check the result."},
+  "safety": {"ko": "장치에 손을 넣지 마세요. 필요하면 비상정지를 누르세요.", "en": "Keep hands clear. Press emergency stop when needed."}
+}

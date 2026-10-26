@@ -33,6 +33,7 @@ typedef struct {
     int tof_mm;
     bool pid_mode;
     int pid_target;     // mm
+    int pid_min, pid_max; // Z safety limits (ToF mm) from the PC, 70..120 by default
     int z_step;
     int hb_ms;
     int i2c_hz;

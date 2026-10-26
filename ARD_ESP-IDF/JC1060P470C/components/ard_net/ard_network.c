@@ -570,6 +570,6 @@ esp_err_t ard_network_start(const char *role, const char *legacy_namespace, cons
     } else ESP_LOGE(TAG, "mDNS init failed; use the AP IP");
     ard_setup_qr_init(hostname, password);
     ard_network_print_setup();
-    if (xTaskCreate(network_task, "ard_network", 6144, NULL, 3, NULL) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreatePinnedToCore(network_task, "ard_network", 6144, NULL, 3, NULL, 0) != pdPASS) return ESP_ERR_NO_MEM;
     return err;
 }

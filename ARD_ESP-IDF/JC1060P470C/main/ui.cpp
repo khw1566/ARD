@@ -1,6 +1,9 @@
 #include "ui.h"
 #include "ui_main.h"
 #include "ui_settings.h"
+#include "ui_screensaver.h"
+#include "visitor_voice.h"
+#include "runtime_health.h"
 #include "ui_layout.h"
 #include "ui_text.h"
 #include <stdio.h>
@@ -25,10 +28,12 @@ namespace {
 const lv_color_t kBar = lv_color_hex(0x1F2A36), kAccent = lv_color_hex(0x0B6E99), kOn = lv_color_hex(0x1E9E50),
                  kOff = lv_color_hex(0xB3261E), kMuted = lv_color_hex(0x5F6B76), kPanel = lv_color_hex(0xF2F4F6);
 
-enum Tab { TAB_MAIN, TAB_DRIVE, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TAB_COUNT };
+enum Tab { TAB_MAIN, TAB_DRIVE, TAB_RAIL, TAB_CAM, TAB_SOUND, TAB_SYSTEM, TAB_SETTINGS, TAB_COUNT };
 
 struct Ui {
     lv_obj_t *tabview;
+    lv_obj_t *railMode, *railModeText, *railLive, *railGains, *railTargetSlider, *railTargetText, *railMessage;
+    lv_obj_t *railPidArea, *railOpenArea, *railStart, *railStop, *railPresets[4];
     lv_obj_t *clock, *net, *pc;
     // Drive
     lv_obj_t *pos, *driveState, *env, *tof, *gps, *pidButton, *railLabel, *stepLabel;
@@ -46,8 +51,15 @@ struct Ui {
 };
 
 Ui ui;
-int railTarget = 145, unitStep = 50; // finite quantitative moves, 1..2000 steps
+int railTarget = 120, unitStep = 50; // finite quantitative moves, 1..2000 steps
 bool pidOn = false;
+bool noticeVisible = false;
+bool railRequestPending = false, railDraft = true;
+uint32_t railRequestSequence = 0, railRequestStart = 0;
+// After a local PID/target change the PC still reports the old board state for up to ~1 s.
+constexpr uint32_t kRailHoldMs = 1500;
+uint32_t railHoldStart = 0;
+bool railHold = false;
 uint8_t *imageCopy;
 size_t imageCopySize;
 lv_image_dsc_t imageDsc;
@@ -128,38 +140,68 @@ void micToggle(lv_event_t *) {
 }
 void speakerTest(lv_event_t *) { onboard_audio_test(); }
 
-void estop(lv_event_t *) { stopDriveGesture(true); command_execute("stop"); }
+void estop(lv_event_t *) {
+    stopDriveGesture(true); command_execute("stop");
+}
 void rearm(lv_event_t *) { stopDriveGesture(); pc_drive_arm(); }
+
+void saverEnter() {
+    stopDriveGesture(true);
+    onboard_audio_set_ptt(false);
+}
+void saverWake() {
+    visitor_voice_cancel();
+    lv_tabview_set_active(ui.tabview, TAB_MAIN, LV_ANIM_OFF);
+    visitor_voice_request(VisitorVoice::Touch, ui_language() == UI_LANG_KO);
+}
+
+void tabVoice(lv_event_t *event) {
+    if (lv_event_get_target(event) != ui.tabview || ui_screensaver_active()) return;
+    const VisitorVoice voices[] = {VisitorVoice::Touch, VisitorVoice::Drive, VisitorVoice::Rail,
+        VisitorVoice::Camera, VisitorVoice::Voice, VisitorVoice::Settings, VisitorVoice::Settings};
+    const unsigned tab = lv_tabview_get_tab_active(ui.tabview);
+    if (tab < TAB_COUNT) visitor_voice_request(voices[tab], ui_language() == UI_LANG_KO);
+}
 
 // ---- Drive tab ---------------------------------------------------------------------------------
 
 constexpr float kStickTravel = 142.0f;
 int shownStickPercent = -1;
 
+void setState(lv_obj_t *obj, lv_state_t state, bool on) {
+    if (on) lv_obj_add_state(obj, state);
+    else lv_obj_remove_state(obj, state);
+}
+void disableRailArea(lv_obj_t *obj, bool disabled) {
+    setState(obj, LV_STATE_DISABLED, disabled);
+    for (uint32_t i = 0; i < lv_obj_get_child_count(obj); ++i)
+        disableRailArea(lv_obj_get_child(obj, i), disabled);
+}
+
 void updateRailLabels() {
     if (ui.stepLabel) lv_label_set_text_fmt(ui.stepLabel, "Unit step: %d steps", unitStep);
-    if (ui.railLabel) lv_label_set_text_fmt(ui.railLabel, pidOn ? "PID target: %d mm" : "Z step: %d steps", pidOn ? railTarget : unitStep);
-    if (ui.pidButton) lv_label_set_text(lv_obj_get_child(ui.pidButton, 0), pidOn ? "PID: ON" : "PID: OFF");
+    if (ui.railLabel) lv_label_set_text_fmt(ui.railLabel, pc_status().railPidMode ? "PID target: %d mm" : "Z step: %d steps", pc_status().railPidMode ? railTarget : unitStep);
+    if (ui.pidButton) lv_label_set_text(lv_obj_get_child(ui.pidButton, 0), "Rail controls");
 }
 
 void pidToggle(lv_event_t *) {
-    const bool want = !pidOn;
-    if (command_execute(want ? "mzm1" : "mzm0")) pidOn = want;
-    updateRailLabels();
+    stopDriveGesture(true);
+    lv_tabview_set_active(ui.tabview, TAB_RAIL, LV_ANIM_OFF);
 }
 
 void railAdjust(lv_event_t *e) {
     const int dir = static_cast<int>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
-    char cmd[24];
-    if (pidOn) {
+    const auto pc = pc_status();
+    if (pc.railPidMode) {
         railTarget += dir * 5;
-        if (railTarget < 145) railTarget = 145;
-        if (railTarget > 175) railTarget = 175;
-        snprintf(cmd, sizeof(cmd), "mzt%d", railTarget);
+        if (railTarget < pc.railMin) railTarget = pc.railMin;
+        if (railTarget > pc.railMax) railTarget = pc.railMax;
+        pc_rail_request("target", railTarget);
+        railHold = true;
+        railHoldStart = lv_tick_get();
     } else {
-        snprintf(cmd, sizeof(cmd), "mzr%d", dir * unitStep);
+        pc_rail_request("step", dir * unitStep);
     }
-    command_execute(cmd);
     updateRailLabels();
 }
 
@@ -242,6 +284,7 @@ void joystickEvent(lv_event_t *e) {
 void railHoldEvent(lv_event_t *e) {
     const lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) { stopDriveGesture(); return; }
+    if (pc_status().railPidMode) return; // continuous signed steps belong to open loop only
     if (!continuousMode || (code != LV_EVENT_PRESSED && code != LV_EVENT_PRESSING)) return;
     driveTouch = lv_indev_active();
     railHeld = true;
@@ -249,8 +292,7 @@ void railHoldEvent(lv_event_t *e) {
 }
 
 void driveSpeedChange(lv_event_t *) {
-    const int interval = 100 + (100 - lv_slider_get_value(ui.driveSpeed)) * 6;
-    lv_label_set_text_fmt(ui.driveInterval, "Command interval: %d ms", interval);
+    lv_label_set_text_fmt(ui.driveInterval, "Max speed: %d %%", static_cast<int>(lv_slider_get_value(ui.driveSpeed)));
 }
 
 void deadzoneChange(lv_event_t *) {
@@ -267,12 +309,11 @@ void driveTouchTick(lv_timer_t *) {
     const auto pc = pc_status();
     if (!driveTouch || lv_indev_get_state(driveTouch) != LV_INDEV_STATE_PRESSED ||
         lv_tabview_get_tab_active(ui.tabview) != TAB_DRIVE || pc.approvalPending ||
-        !pc.reachable || !pc.board[PC_DRIVE].online || pc.drivePid || pc.sorting.running ||
+        !pc.reachable || !pc.board[PC_DRIVE].online || pc.sorting.running ||
         !ard_network_connected()) { stopDriveGesture(true); return; }
-    const int interval = 100 + (100 - lv_slider_get_value(ui.driveSpeed)) * 6;
     // Send the raw stick once. The PC applies the radial curve before the
     // differential mix; its legacy per-axis deadzone is not applied again.
-    pc_drive_joystick(joystickX, -joystickY, railZ, interval, lv_slider_get_value(ui.driveDeadzone));
+    pc_drive_joystick(joystickX, -joystickY, railZ, lv_slider_get_value(ui.driveSpeed), lv_slider_get_value(ui.driveDeadzone));
 }
 
 void driveTabChange(lv_event_t *e) {
@@ -300,7 +341,7 @@ void buildDrive(lv_obj_t *tab) {
     lv_obj_set_size(ui.driveState, 280, 22);
     ui.driveMode = button(left, "Mode: continuous", kAccent, driveModeChange, nullptr, 244, 44);
     lv_obj_set_pos(ui.driveMode, 296, 0);
-    ui.driveControlState = label(left, "Press RE-ARM to move", &ard_font_16, kMuted);
+    ui.driveControlState = label(left, "Touch the stick to move", &ard_font_16, kMuted);
     lv_obj_set_pos(ui.driveControlState, 0, 56);
     lv_obj_set_size(ui.driveControlState, 540, 36);
     ui.pos = label(left, "X 0  Y 0  Z 0", &ard_font_16);
@@ -314,7 +355,7 @@ void buildDrive(lv_obj_t *tab) {
         lv_label_set_long_mode(item, LV_LABEL_LONG_WRAP);
     }
     lv_obj_t *power = driveArea(left, 0, 220, 540, 48);
-    const char *powerText[] = {"Enable", "Disable", "PID: OFF", "HOME"};
+    const char *powerText[] = {"Enable", "Disable", "Rail controls", "HOME"};
     const char *powerCommand[] = {"e", "d", nullptr, "home"};
     for (int i = 0; i < 4; ++i) {
         lv_obj_t *b = button(power, powerText[i], i == 0 ? kOn : i == 1 ? kOff : kMuted,
@@ -355,7 +396,7 @@ void buildDrive(lv_obj_t *tab) {
     }
     lv_obj_t *railTitle = label(ui.driveContinuousSettings, "Rail: hold to move", &ard_font_16, kAccent);
     lv_obj_set_pos(railTitle, 0, 72);
-    lv_obj_t *note = label(ui.driveContinuousSettings, "Fixed 20-step pulses", &ard_font_16, kMuted);
+    lv_obj_t *note = label(ui.driveContinuousSettings, "Smooth velocity control", &ard_font_16, kMuted);
     lv_obj_set_pos(note, 0, 108);
     ui.driveInterval = label(ui.driveContinuousSettings, "", &ard_font_16, kMuted);
     lv_obj_set_pos(ui.driveInterval, 300, 0);
@@ -364,7 +405,7 @@ void buildDrive(lv_obj_t *tab) {
     lv_obj_set_size(ui.driveSpeed, 216, 18);
     ui_layout::lockScroll(ui.driveSpeed);
     lv_slider_set_range(ui.driveSpeed, 10, 100);
-    lv_slider_set_value(ui.driveSpeed, 65, LV_ANIM_OFF);
+    lv_slider_set_value(ui.driveSpeed, 100, LV_ANIM_OFF);
     lv_obj_add_event_cb(ui.driveSpeed, driveSpeedChange, LV_EVENT_VALUE_CHANGED, nullptr);
     ui.deadzoneValue = label(ui.driveContinuousSettings, "", &ard_font_16, kMuted);
     lv_obj_set_pos(ui.deadzoneValue, 300, 66);
@@ -437,6 +478,159 @@ void buildDrive(lv_obj_t *tab) {
     updateRailLabels();
     driveSpeedChange(nullptr);
     deadzoneChange(nullptr);
+}
+
+// ---- Dedicated rail controls: selected control mode is separate from PID motor ON/OFF ----
+bool requestRail(const char *op, int value = 0) {
+    if (railRequestPending) return false;
+    railRequestSequence = pc_rail_result().sequence;
+    if (!pc_rail_request(op, value)) {
+        lv_label_set_text(ui.railMessage, "Rail request unavailable");
+        return false;
+    }
+    railRequestPending = true;
+    railRequestStart = lv_tick_get();
+    lv_label_set_text(ui.railMessage, "Waiting for PC / board ACK...");
+    return true;
+}
+
+void railModeChanged(lv_event_t *) {
+    const bool wantPid = lv_obj_has_state(ui.railMode, LV_STATE_CHECKED);
+    requestRail(wantPid ? "pid" : "open_loop");
+    // Selection follows the PC's saved mode, never optimistic local queue acceptance.
+    setState(ui.railMode, LV_STATE_CHECKED, pc_status().railPidMode);
+}
+void railTargetChanged(lv_event_t *) {
+    railTarget = lv_slider_get_value(ui.railTargetSlider);
+    railDraft = true;
+    lv_label_set_text_fmt(ui.railTargetText, "Target: %d mm", railTarget);
+}
+void railTargetNudge(lv_event_t *e) {
+    const int dir = (int)(intptr_t)lv_event_get_user_data(e);
+    lv_slider_set_value(ui.railTargetSlider, railTarget + dir, LV_ANIM_OFF);
+    railTargetChanged(nullptr);
+}
+void railPreset(lv_event_t *e) {
+    const auto pc = pc_status();
+    const int values[] = {pc.railPlus, pc.railCenter, pc.railMinus, pc.railCapture};
+    const int index = (int)(intptr_t)lv_event_get_user_data(e);
+    if (index < 0 || index > 3) return;
+    lv_slider_set_value(ui.railTargetSlider, values[index], LV_ANIM_OFF);
+    railTargetChanged(nullptr); // preset selection does not move the rail
+}
+void railMoveTarget(lv_event_t *) { requestRail("target", railTarget); }
+void railStopTarget(lv_event_t *) { requestRail("stop"); }
+void railStepMove(lv_event_t *e) {
+    const int dir = (int)(intptr_t)lv_event_get_user_data(e);
+    requestRail("step", dir * unitStep);
+}
+void railUnitChanged(lv_event_t *e) {
+    unitStep += (int)(intptr_t)lv_event_get_user_data(e);
+    if (unitStep < 1) unitStep = 1;
+    if (unitStep > 2000) unitStep = 2000;
+    updateRailLabels();
+}
+
+void buildRail(lv_obj_t *tab) {
+    lv_obj_set_flex_flow(tab, LV_FLEX_FLOW_ROW);
+    lv_obj_set_style_pad_gap(tab, 12, 0);
+    lv_obj_t *left = panel(tab, 484, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(left, 12, 0);
+    lv_obj_t *title = label(left, "Rail control", &ard_font_28, kAccent);
+    lv_obj_set_pos(title, 0, 0);
+    ui.railModeText = label(left, "Rail mode: waiting", &ard_font_20, kAccent);
+    lv_obj_set_pos(ui.railModeText, 0, 44);
+    ui.railMode = lv_switch_create(left);
+    lv_obj_set_pos(ui.railMode, 356, 42); lv_obj_set_size(ui.railMode, 88, 42);
+    lv_obj_add_event_cb(ui.railMode, railModeChanged, LV_EVENT_VALUE_CHANGED, nullptr);
+    ui.railLive = label(left, "ToF: ---", &ard_font_20);
+    lv_obj_set_pos(ui.railLive, 0, 100); lv_obj_set_size(ui.railLive, 452, 150);
+    lv_label_set_long_mode(ui.railLive, LV_LABEL_LONG_WRAP);
+    ui.railGains = label(left, "Board P / I / D: ---", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.railGains, 0, 260); lv_obj_set_width(ui.railGains, 452);
+    ui.railMessage = label(left, "Select mode, then press MOVE", &ard_font_16, kMuted);
+    lv_obj_set_pos(ui.railMessage, 0, 308); lv_obj_set_size(ui.railMessage, 452, 60);
+    lv_label_set_long_mode(ui.railMessage, LV_LABEL_LONG_WRAP);
+    ui.railStop = button(left, "STOP RAIL", kOff, railStopTarget, nullptr, 452, 48);
+    lv_obj_set_pos(ui.railStop, 0, 372);
+    lv_obj_t *right = panel(tab, 504, ui_layout::kPageHeight);
+    lv_obj_set_style_pad_all(right, 12, 0);
+    ui.railPidArea = driveArea(right, 0, 0, 480, 432);
+    ui.railTargetText = label(ui.railPidArea, "Target: 120 mm", &ard_font_28, kAccent);
+    ui.railTargetSlider = lv_slider_create(ui.railPidArea);
+    lv_obj_set_pos(ui.railTargetSlider, 16, 60); lv_obj_set_size(ui.railTargetSlider, 448, 24);
+    lv_slider_set_range(ui.railTargetSlider, 60, 130);
+    lv_slider_set_value(ui.railTargetSlider, 120, LV_ANIM_OFF);
+    lv_obj_add_event_cb(ui.railTargetSlider, railTargetChanged, LV_EVENT_VALUE_CHANGED, nullptr);
+    for (int dir : {-1, 1}) {
+        lv_obj_t *b = button(ui.railPidArea, dir < 0 ? "-1 mm" : "+1 mm", kMuted,
+            railTargetNudge, (void *)(intptr_t)dir, 230, 48);
+        lv_obj_set_pos(b, dir < 0 ? 0 : 242, 104);
+    }
+    const char *presets[] = {"Metal/Paper", "Center", "Plastic/Glass", "Home"}; // Home: sequence origin ToF
+    for (int i = 0; i < 4; ++i) {
+        ui.railPresets[i] = button(ui.railPidArea, presets[i], kAccent, railPreset, (void *)(intptr_t)i, 230, 66);
+        lv_obj_set_pos(ui.railPresets[i], (i % 2) * 242, 172 + (i / 2) * 80);
+    }
+    ui.railStart = button(ui.railPidArea, "MOVE TO TARGET", kOn, railMoveTarget, nullptr, 472, 60);
+    lv_obj_set_pos(ui.railStart, 0, 352);
+    ui.railOpenArea = driveArea(right, 0, 0, 480, 432);
+    label(ui.railOpenArea, "Open loop / signed steps", &ard_font_20, kAccent);
+    lv_obj_t *note = label(ui.railOpenArea, "ToF is display only in open loop", &ard_font_16, kMuted);
+    lv_obj_set_pos(note, 0, 42);
+    for (int dir : {-1, 1}) {
+        lv_obj_t *unit = button(ui.railOpenArea, dir < 0 ? "Unit -10" : "Unit +10", kMuted,
+            railUnitChanged, (void *)(intptr_t)(dir * 10), 230, 60);
+        lv_obj_set_pos(unit, dir < 0 ? 0 : 242, 108);
+        lv_obj_t *move = button(ui.railOpenArea, dir < 0 ? "Z - steps" : "Z + steps", kAccent,
+            railStepMove, (void *)(intptr_t)dir, 230, 76);
+        lv_obj_set_pos(move, dir < 0 ? 0 : 242, 208);
+    }
+}
+
+void refreshRail(const PcStatus &pc) {
+    const auto result = pc_rail_result();
+    if (railRequestPending && result.sequence != railRequestSequence) {
+        railRequestPending = false;
+        if (result.code == 200) {
+            railDraft = false;
+            lv_label_set_text(ui.railMessage, "Accepted; check live motion status");
+        } else lv_label_set_text_fmt(ui.railMessage, "Rail request failed: HTTP %d", result.code);
+    }
+    if (railRequestPending && lv_tick_elaps(railRequestStart) > 8000) {
+        railRequestPending = false;
+        lv_label_set_text(ui.railMessage, "Rail request timed out; check status");
+    }
+    const bool available = pc.reachable && pc.board[PC_DRIVE].online && pc.driveLive && pc.railConfigValid && !pc.sorting.running;
+    setState(ui.railMode, LV_STATE_CHECKED, pc.railPidMode);
+    setState(ui.railMode, LV_STATE_DISABLED, !available || railRequestPending);
+    lv_label_set_text(ui.railModeText, !pc.railConfigValid ? "Rail mode: waiting" : pc.railPidMode ? "Rail mode: PID" : "Rail mode: open loop");
+    lv_obj_update_flag(ui.railPidArea, LV_OBJ_FLAG_HIDDEN, !pc.railPidMode);
+    lv_obj_update_flag(ui.railOpenArea, LV_OBJ_FLAG_HIDDEN, pc.railPidMode);
+    disableRailArea(ui.railPidArea, !available || railRequestPending);
+    disableRailArea(ui.railOpenArea, !available || railRequestPending || pc.driveBusy || pc.drivePid);
+    setState(ui.railStart, LV_STATE_DISABLED, !available || railRequestPending || !pc.driveTofOk || (pc.driveBusy && !pc.drivePid));
+    setState(ui.railStop, LV_STATE_DISABLED, !available || railRequestPending);
+    if (pc.railConfigValid) {
+        lv_slider_set_range(ui.railTargetSlider, pc.railMin, pc.railMax);
+        if (!railDraft && !railRequestPending && pc.driveRailTarget > 0) railTarget = pc.driveRailTarget;
+        lv_slider_set_value(ui.railTargetSlider, railTarget, LV_ANIM_OFF);
+        lv_label_set_text_fmt(ui.railTargetText, "Target: %d mm", railTarget);
+        const char *names[] = {"Metal/Paper", "Center", "Plastic/Glass", "Home"};
+        const int values[] = {pc.railPlus, pc.railCenter, pc.railMinus, pc.railCapture};
+        for (int i = 0; i < 4; ++i) {
+            char text[64]; snprintf(text, sizeof(text), "%s\n%d mm", ui_tr(names[i]), values[i]);
+            lv_label_set_text(lv_obj_get_child(ui.railPresets[i], 0), text);
+        }
+    }
+    if (!available) lv_label_set_text(ui.railLive, "Rail state unavailable / sorting active");
+    else if (!pc.driveTofOk) lv_label_set_text_fmt(ui.railLive, "ToF unavailable (%s)\nBoard target: %d mm\nPID: %s\nUnit: %d steps",
+        pc.driveTofStatus, pc.driveRailTarget, pc.drivePid ? "ON" : "OFF", unitStep);
+    else lv_label_set_text_fmt(ui.railLive, "ToF: %.1f mm (%s)\nBoard target: %d mm\nError: %.1f mm\nPID: %s / %s\nUnit: %d steps",
+        pc.driveTof, pc.driveTofStatus, pc.driveRailTarget, pc.driveTof - pc.driveRailTarget,
+        pc.drivePid ? "ON" : "OFF", pc.driveRailSettled ? ui_tr("settled") : ui_tr("moving / stopped"), unitStep);
+    if (pc.railGainsValid) lv_label_set_text_fmt(ui.railGains, "Board P / I / D: %.3f / %.3f / %.3f", pc.railP, pc.railI, pc.railD);
+    else lv_label_set_text(ui.railGains, "Board P / I / D: ---");
 }
 
 // ---- Cam / Sound tabs (boards that are still separate, through the PC) --------------------------
@@ -648,9 +842,16 @@ void buildBar(lv_obj_t *screen) {
     lv_label_set_long_mode(ui.clock, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui.clock, LV_ALIGN_LEFT_MID, 80, 0);
     ui.net = label(bar, "Wi-Fi --", &ard_font_16, lv_color_white());
+    lv_obj_set_width(ui.net, 330);
+    lv_label_set_long_mode(ui.net, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui.net, LV_ALIGN_LEFT_MID, 190, -12);
     ui.pc = label(bar, "PC --", &ard_font_16, lv_color_white());
+    lv_obj_set_width(ui.pc, 330);
+    lv_label_set_long_mode(ui.pc, LV_LABEL_LONG_CLIP);
     lv_obj_align(ui.pc, LV_ALIGN_LEFT_MID, 190, 12);
+    lv_obj_t *saver = button(bar, "Screensaver", kAccent, ui_screensaver_enter, nullptr, 128, 56);
+    lv_obj_align(saver, LV_ALIGN_LEFT_MID, 526, 0);
+    lv_obj_set_style_text_font(lv_obj_get_child(saver, 0), &ard_font_16, 0);
     lv_obj_t *arm = button(bar, "RE-ARM", kMuted, rearm, nullptr, 120, 56);
     lv_obj_align(arm, LV_ALIGN_RIGHT_MID, -200, 0);
     lv_obj_t *stop = button(bar, "E-STOP", kOff, estop, nullptr, 180, 60);
@@ -714,6 +915,7 @@ void refreshCamImage() {
 }
 
 void refresh(lv_timer_t *) {
+    runtime_health_beat(HealthBeat::Ui);
     time_t now = time(nullptr);
     struct tm local;
     localtime_r(&now, &local);
@@ -726,8 +928,25 @@ void refresh(lv_timer_t *) {
     if (ard_network_connected()) lv_label_set_text_fmt(ui.net, "Wi-Fi %s  %d dBm", ip, ard_network_rssi());
     else lv_label_set_text(ui.net, ard_network_setup_ap_active() ? "Wi-Fi offline (setup AP on)" : "Wi-Fi offline");
     const PcStatus pc = pc_status();
-    ui_settings_poll(lv_tabview_get_tab_active(ui.tabview) == TAB_SETTINGS && !pc.approvalPending);
-    ui_main_poll(pc, lv_tabview_get_tab_active(ui.tabview) == TAB_MAIN);
+    ui_screensaver_poll(pc.approvalPending || noticeVisible);
+    // Announce confirmed state transitions once; never infer successful motion.
+    static bool observed = false, wasReachable = false, wasSorting = false, wasArmed = false;
+    const bool armedNow = pc_drive_is_armed();
+    if (observed && !ui_screensaver_active()) {
+        if (pc.reachable != wasReachable)
+            visitor_voice_request(pc.reachable ? VisitorVoice::Online : VisitorVoice::Offline, ui_language() == UI_LANG_KO);
+        if (armedNow && !wasArmed) visitor_voice_request(VisitorVoice::Rearm, ui_language() == UI_LANG_KO);
+        if (pc.reachable && pc.sorting.valid) {
+            if (pc.sorting.running && !wasSorting)
+                visitor_voice_request(VisitorVoice::SortingStart, ui_language() == UI_LANG_KO);
+            if (!pc.sorting.running && wasSorting && !strcmp(pc.sorting.phase, "done"))
+                visitor_voice_request(VisitorVoice::SortingDone, ui_language() == UI_LANG_KO);
+        }
+    }
+    observed = true; wasReachable = pc.reachable; wasArmed = armedNow;
+    if (pc.reachable && pc.sorting.valid) wasSorting = pc.sorting.running;
+    ui_settings_poll(lv_tabview_get_tab_active(ui.tabview) == TAB_SETTINGS && !pc.approvalPending && !ui_screensaver_active());
+    ui_main_poll(pc, lv_tabview_get_tab_active(ui.tabview) == TAB_MAIN && !ui_screensaver_active());
     char server[65];
     ard_network_server(server, sizeof(server));
     lv_label_set_text_fmt(ui.pc, "PC %s %s", server, pc.reachable ? ui_tr("OK") : "--");
@@ -740,17 +959,31 @@ void refresh(lv_timer_t *) {
         else lv_label_set_text(ui.pos, "DriveMCU offline / PC unavailable");
         lv_label_set_text_fmt(ui.driveState, "DriveMCU %s  %s", pc.board[PC_DRIVE].ip, ui_tr(online ? "ONLINE" : "OFFLINE"));
         lv_label_set_text_fmt(ui.env, "Drive env: %.1f C  %.0f %%  %.1f hPa", pc.driveTemp, pc.driveHumidity, pc.drivePressure);
-        lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm", pc.driveTof);
+        if (pc.driveLive && pc.drivePid)
+            lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm  %s  PID %s", pc.driveTof, pc.driveTofStatus,
+                                  pc.driveRailSettled ? "settled" : "moving");
+        else if (pc.driveLive)
+            lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm  %s", pc.driveTof, pc.driveTofStatus);
+        else
+            lv_label_set_text_fmt(ui.tof, "Drive ToF: %.0f mm", pc.driveTof);
         lv_label_set_text_fmt(ui.gps, "Drive GPS: %.5f, %.5f", pc.driveLat, pc.driveLng);
-        pidOn = pc.drivePid;
+        // The PID button and target follow the board, also after changes from the PC.
+        if (railHold && lv_tick_elaps(railHoldStart) >= kRailHoldMs) railHold = false;
+        if (!railHold) {
+            pidOn = pc.drivePid;
+            if (pc.driveLive && pc.driveRailTarget > 0) railTarget = pc.driveRailTarget;
+        }
         updateRailLabels();
         const bool armed = pc_drive_is_armed();
         lv_label_set_text(ui.driveControlState, !continuousMode ? "One move per tap" :
-                          !online ? "DriveMCU offline / PC unavailable" : pc.drivePid ? "Turn PID off for continuous motion" :
-                          pc.sorting.running ? "Sorting is running" : armed ? "Ready: hold to move" : "Press RE-ARM to move");
-        lv_obj_set_style_text_color(ui.driveControlState, continuousMode && !armed ? kOff : kOn, 0);
+                          !online ? "DriveMCU offline / PC unavailable" : pc.sorting.running ? "Sorting is running" :
+                          pc.drivePid ? "Rail jog turns PID off" : armed ? "Ready: hold to move" : "Touch the stick to move");
+        lv_obj_set_style_text_color(ui.driveControlState, continuousMode && (!online || pc.sorting.running) ? kOff : kOn, 0);
         break;
     }
+    case TAB_RAIL:
+        refreshRail(pc);
+        break;
     case TAB_CAM:
         showBoard(ui.camOnline, pc.board[PC_CAM], pc.reachable);
         lv_label_set_text(lv_obj_get_child(ui.camStream, 0), pc.cameraStream ? "STOP STREAM" : "STREAM");
@@ -808,6 +1041,8 @@ void refresh(lv_timer_t *) {
 void ui_notice(const char *text) {
     static lv_obj_t *notice, *noticeText;
     if (!bsp_lvgl_lock(1000)) return;
+    noticeVisible = text != nullptr;
+    if (noticeVisible) ui_screensaver_poll(true);
     if (!notice && text) {
         notice = lv_obj_create(lv_layer_top());
         lv_obj_set_size(notice, 700, 200);
@@ -840,6 +1075,7 @@ esp_err_t ui_start() {
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
     ui_layout::page(screen, 0);
     buildBar(screen);
+    ui_screensaver_init(saverEnter, saverWake);
     ui.tabview = lv_tabview_create(screen);
     lv_tabview_set_tab_bar_size(ui.tabview, ui_layout::kTabBarHeight);
     lv_obj_set_size(ui.tabview, LCD_H_RES, LCD_V_RES - ui_layout::kBarHeight);
@@ -849,6 +1085,7 @@ esp_err_t ui_start() {
     // Main (sorting sequence) is first, so it is the screen shown after boot.
     ui_main_create(lv_tabview_add_tab(ui.tabview, "Main"));
     buildDrive(lv_tabview_add_tab(ui.tabview, "Drive"));
+    buildRail(lv_tabview_add_tab(ui.tabview, "Rail"));
     buildCam(lv_tabview_add_tab(ui.tabview, "Cam"));
     buildSound(lv_tabview_add_tab(ui.tabview, "Voice"));
     buildSystem(lv_tabview_add_tab(ui.tabview, "System"));
@@ -868,6 +1105,7 @@ esp_err_t ui_start() {
     }
     buildApproval();
     lv_obj_add_event_cb(ui.tabview, driveTabChange, LV_EVENT_VALUE_CHANGED, nullptr);
+    lv_obj_add_event_cb(ui.tabview, tabVoice, LV_EVENT_VALUE_CHANGED, nullptr);
     lv_timer_create(driveTouchTick, 50, nullptr);
     lv_timer_create(refresh, 250, nullptr);
     bsp_lvgl_unlock();

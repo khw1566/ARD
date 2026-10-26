@@ -1,0 +1,4 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>ARD v2 영상 출력</title>
+<style>body{margin:24px;background:#efede7;color:#242a2b;font:16px 'Malgun Gothic',sans-serif}button{padding:12px 20px;border:1px solid #777;background:#efede7;color:#242a2b}button:disabled{opacity:.4}#preview{display:block;width:100%;max-width:1200px;margin-top:20px}iframe{position:fixed;left:0;top:0;width:1920px;height:1080px;border:0;opacity:0;pointer-events:none;z-index:-1}</style>
+<h1>ARD 발표 영상 v2 · 1080p / 30fps</h1><button id="test" disabled>시험 프레임 확인</button> <button id="render" disabled>영상 렌더링 시작</button><p id="status">CAD 준비 중…</p><pre id="log"></pre><canvas id="preview" width="1920" height="1080"></canvas>
+<iframe id="source" src="/cinematic.html?export=1&still=1"></iframe><script src="/export_video_v2.js"></script></html>

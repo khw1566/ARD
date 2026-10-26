@@ -8,6 +8,10 @@
 #include "commands.h"
 #include "clock_sync.h"
 #include "onboard_audio.h"
+#include "visitor_voice.h"
+#include "voice_upload_http.h"
+#include "runtime_health.h"
+#include "ui_text.h"
 #include "pc_link.h"
 #include "ui.h"
 #include "esp_event.h"
@@ -28,27 +32,15 @@ static void fatal(const char *what, esp_err_t err) {
     esp_restart();
 }
 
-static void healthTask(void *) {
-    static const char *names[] = {"tcp_cmd", "console", "ard_network", "pc_link", "drive_control",
-                                  "lvgl", "ui_settings", "voice_io", "voice_rx", "voice_upload"};
-    for (;;) {
-        vTaskDelay(pdMS_TO_TICKS(30000));
-        printf("[Health] heap=%lu min_heap=%lu stack_free:",
-               (unsigned long)esp_get_free_heap_size(), (unsigned long)esp_get_minimum_free_heap_size());
-        for (const char *name : names) {
-            TaskHandle_t task = xTaskGetHandle(name);
-            if (task) printf(" %s=%u", name, (unsigned)uxTaskGetStackHighWaterMark(task));
-        }
-        printf("\n");
-    }
-}
-
 static void startPortal() {
     httpd_handle_t server = nullptr;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.lru_purge_enable = true;
+    config.max_uri_handlers = 16;
+    config.stack_size = 6144;
     if (httpd_start(&server, &config) != ESP_OK || ard_network_register_http(server) != ESP_OK)
         ESP_LOGE(TAG, "Setup portal (port 80) failed");
+    else if (voice_upload_http_register(server) != ESP_OK) ESP_LOGE(TAG, "Voice upload routes failed");
 }
 
 extern "C" void app_main(void) {
@@ -85,8 +77,12 @@ extern "C" void app_main(void) {
     if ((err = command_servers_start()) != ESP_OK) fatal("command servers", err);
     if ((err = pc_link_start()) != ESP_OK) ESP_LOGE(TAG, "PC link failed: %s", esp_err_to_name(err));
 
-    xTaskCreatePinnedToCore(healthTask, "health", 3072, nullptr, 1, nullptr, 0);
+    if ((err = runtime_health_start()) != ESP_OK)
+        ESP_LOGW(TAG, "Scheduler diagnostics failed: %s", esp_err_to_name(err));
+    if ((err = visitor_voice_start()) != ESP_OK)
+        ESP_LOGW(TAG, "SD guidance failed: %s", esp_err_to_name(err));
 
     onboard_audio_boot();
+    visitor_voice_request(VisitorVoice::Welcome, ui_language() == UI_LANG_KO);
     command_print_help();
 }

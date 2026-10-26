@@ -18,6 +18,8 @@ class SortingIntegrationTests(unittest.TestCase):
         import socket
         env={'CONFIG':{'imagesendermcu':{'command':None},'imagesendermcu_ip':''},'socket':socket}
         load_function('trigger_image_capture',env)
+        from core.camera_control import CameraControl
+        env['camera_control'] = CameraControl(lambda: '', lambda cmd: env['CONFIG']['imagesendermcu'].update(command=cmd))
         load_function('request_sorting_capture',env)()
         self.assertEqual(env['CONFIG']['imagesendermcu']['command'],'capture')
 

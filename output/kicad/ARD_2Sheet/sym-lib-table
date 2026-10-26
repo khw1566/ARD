@@ -1,0 +1,1 @@
+(sym_lib_table (version 7) (lib (name "ARD2") (type "KiCad") (uri "${KIPRJMOD}/ARD2.kicad_sym") (options "") (descr "ARD logical board/module ports")))

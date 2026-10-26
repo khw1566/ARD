@@ -68,8 +68,8 @@ static const char *const CAM_RES_PX[] = {"640x480", "800x600", "1024x768", "1280
 static const int CAM_QUALITY[] = {5, 10, 20, 40};
 #define COUNT(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
-#define PID_MIN 145
-#define PID_MAX 175
+#define PID_MIN 70   /* Z safety limits (ToF mm) when the PC does not report the board's */
+#define PID_MAX 120
 #define PID_STEP 5
 #define Z_STEP_DELTA 10
 
@@ -351,15 +351,16 @@ static void info_drive(int page, int y) {
     } else {
         gfx_text(8, y + 26, "Z-Control |", C_TEXT, 1, GFX_TL);
         gfx_text(100, y + 26, m->pid_mode ? "PID" : "OPEN", m->pid_mode ? C_ON : C_OFF, 1, GFX_TL);
-        // Rail gauge: 145..175 mm mapped onto the bar, ToF marker left, target right.
+        // Rail gauge: PID_MIN..PID_MAX mm mapped onto the bar, ToF marker left, target right.
         const int rx = 140, ry = y + 30, rh = 110;
         gfx_fill_rect(rx, ry, 6, rh, C_SEP);
-        int tof = m->has_tof ? m->tof_mm : PID_MIN;
-        int ty = ry + rh - (tof - PID_MIN) * rh / (PID_MAX - PID_MIN);
+        const int lo = m->pid_min, hi = m->pid_max;
+        int tof = m->has_tof ? m->tof_mm : lo;
+        int ty = ry + rh - (tof - lo) * rh / (hi - lo);
         ty = ty < ry ? ry : ty > ry + rh ? ry + rh : ty;
         if (m->has_tof) gfx_fill_rect(rx - 10, ty - 1, 10, 3, C_ON);
         if (m->pid_mode) {
-            int gy = ry + rh - (m->pid_target - PID_MIN) * rh / (PID_MAX - PID_MIN);
+            int gy = ry + rh - (m->pid_target - lo) * rh / (hi - lo);
             gy = gy < ry ? ry : gy > ry + rh ? ry + rh : gy;
             gfx_fill_rect(rx + 6, gy - 1, 10, 3, C_ACC2);
         }
@@ -657,7 +658,7 @@ static void press_button(const btn_t *b) {
         break;
     case BA_TARGET: {
         int v = m->pid_target + b->arg;
-        v = v < PID_MIN ? PID_MIN : v > PID_MAX ? PID_MAX : v;
+        v = v < m->pid_min ? m->pid_min : v > m->pid_max ? m->pid_max : v;
         snprintf(cmd, sizeof(cmd), "mzt%d", v);
         edit(BA_TARGET, 0, v, NULL);
         hmi_send_command(target, cmd);

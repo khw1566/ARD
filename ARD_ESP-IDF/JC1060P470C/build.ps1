@@ -15,6 +15,18 @@ $env:IDF_CCACHE_ENABLE = "0"
 $env:IDF_PATH = "C:/esp/v5.5.5/esp-idf"
 $env:IDF_TOOLS_PATH = "C:/Espressif/tools"
 $env:IDF_PYTHON_ENV_PATH = "C:/Espressif/tools/python/v5.5.5/venv"
+# Reuse the interpreter that configured this build tree, when still installed.
+# Switching interpreters forces an otherwise unnecessary destructive fullclean.
+$ardCachePath = Join-Path (Join-Path $PSScriptRoot $BuildDirectory) 'CMakeCache.txt'
+if (Test-Path -LiteralPath $ardCachePath) {
+    $ardPythonCache = Select-String -LiteralPath $ardCachePath -Pattern '^PYTHON:[^=]+=(.+)$' | Select-Object -First 1
+    if ($ardPythonCache) {
+        $ardCachedPython = $ardPythonCache.Matches[0].Groups[1].Value
+        if ($ardCachedPython -match '(idf5\.5|v5\.5\.5)' -and (Test-Path -LiteralPath $ardCachedPython)) {
+            $env:IDF_PYTHON_ENV_PATH = Split-Path (Split-Path $ardCachedPython -Parent) -Parent
+        }
+    }
+}
 $env:ESP_IDF_VERSION = "5.5" # Wi-Fi Remote uses this to select the matching C6 transport.
 $env:ESP_ROM_ELF_DIR = "C:/Espressif/tools/esp-rom-elfs/20241011"
 if (-not $env:IDF_PY_BUILD_JOBS) { $env:IDF_PY_BUILD_JOBS = "4" }

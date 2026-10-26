@@ -10,6 +10,8 @@
 #include "commands.h"
 #include "pc_link.h"
 #include "onboard_audio.h"
+#include "runtime_health.h"
+#include "visitor_voice.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_task_wdt.h"
@@ -125,6 +127,7 @@ void tcpTask(void *) {
         serveClient(client);
         shutdown(client, SHUT_RDWR);
         close(client);
+        vTaskDelay(1); // A continuous stream of short clients must not starve lower-priority work.
     }
 }
 
@@ -140,7 +143,10 @@ void consoleTask(void *) {
                 strlcpy(command, line.value(), sizeof(command));
                 line.reset();
                 // Serial only: TCP clients on the network must not redirect the PC link.
-                if (!strcmp(command, "wifi_debug")) {
+                if (!strcmp(command, "scheduler_status")) {
+                    runtime_health_print();
+                    visitor_voice_print_status();
+                } else if (!strcmp(command, "wifi_debug")) {
                     wifi_debug_dump("console");
                 } else if (!strncasecmp(command, "server=", 7)) {
                     const esp_err_t err = ard_network_set_server(command + 7);
@@ -159,7 +165,7 @@ void consoleTask(void *) {
 esp_err_t command_servers_start() {
     esp_err_t err = uart_driver_install(UART_NUM_0, 512, 0, 0, nullptr, 0);
     if (err != ESP_OK) return err;
-    if (xTaskCreatePinnedToCore(consoleTask, "console", 4096, nullptr, 9, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
-    if (xTaskCreatePinnedToCore(tcpTask, "tcp_cmd", 5120, nullptr, 10, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreatePinnedToCore(consoleTask, "console", 4096, nullptr, 2, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreatePinnedToCore(tcpTask, "tcp_cmd", 5120, nullptr, 5, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
     return ESP_OK;
 }

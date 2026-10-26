@@ -1,0 +1,175 @@
+{
+  "host": "http://192.168.0.30",
+  "files": [
+    {
+      "path": "ard/voice/en/camera.wav",
+      "bytes": 89356,
+      "sha256": "e6e10b58331c6c3b0232bb46d7acc6589623e7d8f31b83992d8a337aaa03c97f",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/drive.wav",
+      "bytes": 133036,
+      "sha256": "072ad319e7a1b2b1a0ff8fada28f5a6ececd559708351920d5fac7f8c172baee",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/offline.wav",
+      "bytes": 101836,
+      "sha256": "0ef9f95f4de96240fbc2a41496228547e7aeebcaefd1f1958ad80d9335d583f6",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/online.wav",
+      "bytes": 41516,
+      "sha256": "7a6abdaf5fb4b56a88e1d177518c4a59c85ca1cfcb0513ac9768c40cef09bc57",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/rail.wav",
+      "bytes": 95596,
+      "sha256": "1d7ca91b17bfd27deeda210c7abca88a87ce76337f7836b31602a62286b4bb49",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/rearm.wav",
+      "bytes": 124716,
+      "sha256": "2e160f435774f4230425ab74a99a65da2a2561c1d8c8d53cf2c4d46b1f58f5db",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/safety.wav",
+      "bytes": 124716,
+      "sha256": "8e0c9d5384709672e2fe0365241c514986775c44f1fca45cab66b7dfb2af2a5f",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/settings.wav",
+      "bytes": 120556,
+      "sha256": "b182ae364d0eb83b5f2d9437db3c1de4c8dbf3e28badc0bed269ace00f9e7b6e",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/sorting_done.wav",
+      "bytes": 118476,
+      "sha256": "b28c608014cad1715642353e9a8009320201b18f8f084bd04e4c053953c9ebae",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/sorting_start.wav",
+      "bytes": 105996,
+      "sha256": "2d12d31aa2a4d7171faf63d5fea8c85834353cc63b9ddebd93433e784c1c19b6",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/stop.wav",
+      "bytes": 137196,
+      "sha256": "f35c408f4481237c7f1f72e0208666b127ffde44dc968593e2ab0d6d57e8a4d2",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/touch.wav",
+      "bytes": 72716,
+      "sha256": "3ba96427c09454bc9057da5e88d4bcfb3cff645b24d52c430fccf90e7d56bbaa",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/voice.wav",
+      "bytes": 81036,
+      "sha256": "0973cc52d9530c5e143f8067f0d17a79506b5491419b3e6d94d132ae30186c44",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/en/welcome.wav",
+      "bytes": 101836,
+      "sha256": "1af75fcfe611bee44eb2b6af92d542c4564b2eb6c183ab1a8c9ea0bb2cd49d61",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/camera.wav",
+      "bytes": 93516,
+      "sha256": "d312d1cfe10cb94b1b41a5c90e1801357a30549c4ef80ae684bd59e5f4e2b07b",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/drive.wav",
+      "bytes": 135116,
+      "sha256": "00b7278aaf5c6986306d0ed41ebf6e4501c6e3dcbe8833f026b8ed7881f55245",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/offline.wav",
+      "bytes": 122636,
+      "sha256": "17a6c47cd1274b7237dd559a32506251663d93a6cc2ea4b424d35e87a5c4fc3b",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/online.wav",
+      "bytes": 56076,
+      "sha256": "81fbc99eec8b70f07b3a962f8a089a5761c2e6d88637affb082cce29fb0c1713",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/rail.wav",
+      "bytes": 112236,
+      "sha256": "32f57042889d40bd9fe8ac0fed806d7ccb55377fdf5967fa1f014a7ff67e06e8",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/rearm.wav",
+      "bytes": 143436,
+      "sha256": "77803fcd18f4456f25f6adc5847f3f456f0e2bea1e40fbbf1cce2636eaeecb77",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/safety.wav",
+      "bytes": 149676,
+      "sha256": "98f0e0a2586d52558316b79444652c7ee0fd3336310940e970c65601eecd89e6",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/settings.wav",
+      "bytes": 116396,
+      "sha256": "a88d9d047b443e7cead670c7d977f3339dfae0a31d6c42892ee86a5acf7309d1",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/sorting_done.wav",
+      "bytes": 124716,
+      "sha256": "8d0bb53c5538df4bd2fe77c99db20427ec8fa523aeb9ab8f4f26dff4c8cce208",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/sorting_start.wav",
+      "bytes": 114316,
+      "sha256": "78ffb47dfe1d7cdd0535f0c0c7f2b3a444b77affc65ccbc77c0ac91121dac923",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/stop.wav",
+      "bytes": 135116,
+      "sha256": "4a9902fa0b3574241f55a5ec947d6c55615ce09e648c2dd9d1e46ec2b8463896",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/touch.wav",
+      "bytes": 112236,
+      "sha256": "b731b005ab16ff7936870300698327573e8edd38a021c9ac19681b2c90f21960",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/voice.wav",
+      "bytes": 130956,
+      "sha256": "5a11205cab2f85d86ca0b87755e3972da9382bc7f1c21f2301700c8002bf709f",
+      "verified": true
+    },
+    {
+      "path": "ard/voice/ko/welcome.wav",
+      "bytes": 114316,
+      "sha256": "c7fd86511621e42c1fe93ad4a6cfbe678382ef9170f4698b2e9e1797c188d075",
+      "verified": true
+    }
+  ],
+  "verified_count": 28,
+  "bytes": 3109328
+}

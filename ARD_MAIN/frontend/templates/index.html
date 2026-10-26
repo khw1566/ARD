@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ARD Control Center</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=11">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=12">
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}?v=2"></script>
     <style>
         .board-hidden { display:none !important; }
@@ -109,38 +109,59 @@
                                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                                     <path d="M3 3v5h5"></path>
                                 </svg>
-                                <span id="sorting-reset-label" style="color: #f8fafc !important;">트레이 수평 복귀</span>
+                                <span id="sorting-reset-label" style="color: #f8fafc !important;">초기화 / 재시도 준비</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 5-Step Process Pipeline Indicator -->
-                    <div class="sorting-pipeline" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                        <div id="pstep-1" class="sorting-pipeline-step active">
+                    <!-- 6-Step Process Pipeline Indicator -->
+                    <div class="sorting-pipeline" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+                        <div id="pstep-1" class="sorting-pipeline-step step-c0">
                             <div class="step-num">STEP 1</div>
+                            <div class="step-title">원점 복귀</div>
+                            <div class="step-desc">디스크 수평 · 레일 ToF <span data-home-mm>120</span>mm</div>
+                            <div class="step-state" id="pstep-1-state">대기</div>
+                        </div>
+                        <div id="pstep-2" class="sorting-pipeline-step step-c1">
+                            <div class="step-num">STEP 2</div>
                             <div class="step-title">촬영 및 수신</div>
                             <div class="step-desc">새 이미지 수신 확인</div>
+                            <div class="step-state" id="pstep-2-state">대기</div>
                         </div>
-                        <div id="pstep-2" class="sorting-pipeline-step">
-                            <div class="step-num">STEP 2</div>
+                        <div id="pstep-3" class="sorting-pipeline-step step-c2">
+                            <div class="step-num">STEP 3</div>
                             <div class="step-title">AI 재질 분석</div>
                             <div class="step-desc">설정된 분석 모델 사용</div>
+                            <div class="step-state" id="pstep-3-state">대기</div>
                         </div>
-                        <div id="pstep-3" class="sorting-pipeline-step">
-                            <div class="step-num">STEP 3</div>
-                            <div class="step-title">레일 이송 및 선회</div>
-                            <div class="step-desc">스텝 실행 완료 확인</div>
-                        </div>
-                        <div id="pstep-4" class="sorting-pipeline-step">
+                        <div id="pstep-4" class="sorting-pipeline-step step-c3">
                             <div class="step-num">STEP 4</div>
-                            <div class="step-title">전도 덤핑 배출</div>
-                            <div class="step-desc">45° 경사 낙하</div>
+                            <div class="step-title">레일 이송</div>
+                            <div class="step-desc">배출 위치 표의 레일 위치</div>
+                            <div class="step-state" id="pstep-4-state">대기</div>
                         </div>
-                        <div id="pstep-5" class="sorting-pipeline-step">
+                        <div id="pstep-5" class="sorting-pipeline-step step-c4">
                             <div class="step-num">STEP 5</div>
-                            <div class="step-title">원위치 복귀</div>
-                            <div class="step-desc">시작 스텝 복귀 확인</div>
+                            <div class="step-title">전도 배출</div>
+                            <div class="step-desc">전진/후진 전도 낙하</div>
+                            <div class="step-state" id="pstep-5-state">대기</div>
                         </div>
+                        <div id="pstep-6" class="sorting-pipeline-step step-c5">
+                            <div class="step-num">STEP 6</div>
+                            <div class="step-title">원위치 복귀</div>
+                            <div class="step-desc">전도 복귀 → 레일 원점</div>
+                            <div class="step-state" id="pstep-6-state">대기</div>
+                        </div>
+                    </div>
+
+                    <!-- Current task banner: color follows the running step -->
+                    <div id="sorting-now" class="sorting-now state-idle" role="status" aria-live="polite">
+                        <span id="sorting-now-dot" class="sorting-now-dot"></span>
+                        <div class="sorting-now-text">
+                            <div class="sorting-now-label"><span id="sorting-now-step">대기 중</span><span id="sorting-now-time" class="sorting-now-time"></span></div>
+                            <div id="sorting-now-desc" class="sorting-now-desc">물체를 회전 테이블에 올리고 [선별 작업 시작]을 누르세요.</div>
+                        </div>
+                        <div class="sorting-now-progress"><div><div id="sorting-now-bar" class="sorting-now-bar"></div></div><span id="sorting-now-pct">0%</span></div>
                     </div>
 
                     <!-- Main Monitoring Split: Live Camera HUD & 3D Mechanism Sync -->
@@ -171,8 +192,8 @@
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
-                                    <div style="font-size: 0.7rem; color: #94a3b8;">배출 목표 각도</div>
-                                    <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary);"><span id="sorting-hud-angle">0</span>°</div>
+                                    <div style="font-size: 0.7rem; color: #94a3b8;">배출 위치</div>
+                                    <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary);"><span id="sorting-hud-angle">-</span></div>
                                 </div>
                             </div>
                         </div>
@@ -180,7 +201,7 @@
                         <!-- Right: 3D Kinematic Mechanism Sync -->
                         <div style="flex: 1.2; background: #0f172a; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column;">
                             <div style="position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(15,23,42,0.85); padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; color: var(--primary); border: 1px solid rgba(56,189,248,0.2); font-weight: bold;">
-                                3D RAIL & DIFFERENTIAL KINEMATICS (레일 2분할 4칸 선별 동기화)
+                                3D RAIL & DIFFERENTIAL KINEMATICS (레일 이송 + 전후진 전도 선별)
                             </div>
                             
                             <!-- Embedded Canvas Mount -->
@@ -190,8 +211,8 @@
                             <!-- 3D State Indicators -->
                             <div class="sorting-axis-readout" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: rgba(2,6,23,0.85); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
                                 <div style="text-align: center;">
-                                    <span style="color: #94a3b8; display: block; font-size: 0.65rem;">선회각 (Yaw)</span>
-                                    <strong style="color: var(--primary); font-size: 0.9rem;" id="sorting-3d-yaw">0.0°</strong>
+                                    <span style="color: #94a3b8; display: block; font-size: 0.65rem;">배출 위치</span>
+                                    <strong style="color: var(--primary); font-size: 0.9rem;" id="sorting-3d-dest">-</strong>
                                 </div>
                                 <div style="text-align: center;">
                                     <span style="color: #94a3b8; display: block; font-size: 0.65rem;">전도각 (Roll)</span>
@@ -238,7 +259,7 @@
                         <span style="font-size: 0.8rem; color: #64748b;">우측 패널의 [신규 이미지 분석] 또는 선별 대시보드에서 캡처를 실행하세요.</span>
                     </div>
 
-                    <img id="latest-image" src="" alt="Live Feed" style="display: none; width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1;">
+                    <img id="latest-image" src="" alt="Live Feed" style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1;">
                 </div>
                 
                 <!-- Unified Voice & Media Center Card -->
@@ -314,6 +335,7 @@
                                     <td class="hud-val" colspan="2" style="color: var(--success); font-weight: bold; text-align: center;">
                                         <span id="hud-tof" style="font-size: 1.1rem;">0</span> mm
                                         <span id="hud-tof-status" style="font-size: 0.75rem; color: var(--text-dim); margin-left: 5px; font-weight: 600;">(Ready)</span>
+                                        <span id="hud-rail-source" style="display: block; font-size: 0.7rem; color: var(--text-dim);">레일 위치: 대기</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -530,7 +552,8 @@
     <script src="{{ url_for('static', filename='js/stats-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/hardware-monitor.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/audio-voice-controller.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=7"></script>
+    <script src="{{ url_for('static', filename='js/simulation-drive.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/rail-tools.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/robot3axis-controller.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/media-controller.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}?v=9"></script>

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = ['ui.cpp', 'ui_main.cpp', 'ui_settings.cpp', 'c6_update.cpp']
+SOURCES = ['ui.cpp', 'ui_main.cpp', 'ui_settings.cpp', 'ui_screensaver.cpp', 'c6_update.cpp']
 MACROS = {'DEG': '\\xC2\\xB0', 'CONFIG_ARD_DEFAULT_SERVER': '<SERVER>'}
 
 

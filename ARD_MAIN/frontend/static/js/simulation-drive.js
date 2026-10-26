@@ -423,8 +423,9 @@
         carriageGroup.add(nutMesh);
 
         // --- 4-Compartment Sorting Bins (상단이 완전히 열려있는 투명 아크릴 수거 박스 4칸) ---
-        // 레일 좌측: Bin 1 (금속/캔) & Bin 2 (유리/기타)
-        // 레일 우측: Bin 3 (종이/팩) & Bin 4 (플라스틱/페트)
+        // Sorting uses only the rail and a forward/backward tilt: forward (+roll) drops at +X,
+        // backward at -X; rail +측 is +Z, -측 is -Z. Labels/colors follow the stored
+        // destination table (ard-rail-config event from rail-tools.js).
         const binWidth = 11;
         const binHeight = 6.0;
         const binDepth = 15;
@@ -433,10 +434,10 @@
         const binOffsetZ = 10.5;
 
         const binConfigs = [
-            { name: "Metal (금속/캔)", color: 0xf59e0b, pos: [-binOffsetX, binY, binOffsetZ], side: -1, z: binOffsetZ },
-            { name: "Others (유리/기타)", color: 0x94a3b8, pos: [-binOffsetX, binY, -binOffsetZ], side: -1, z: -binOffsetZ },
-            { name: "Paper (종이/팩)", color: 0x10b981, pos: [binOffsetX, binY, binOffsetZ], side: 1, z: binOffsetZ },
-            { name: "Plastic (플라스틱)", color: 0x3b82f6, pos: [binOffsetX, binY, -binOffsetZ], side: 1, z: -binOffsetZ }
+            { name: "Metal", rail: 'plus', tilt: 'forward', color: 0xf59e0b, pos: [binOffsetX, binY, binOffsetZ], side: 1, z: binOffsetZ },
+            { name: "Glass, Others", rail: 'minus', tilt: 'forward', color: 0x94a3b8, pos: [binOffsetX, binY, -binOffsetZ], side: 1, z: -binOffsetZ },
+            { name: "Paper", rail: 'plus', tilt: 'backward', color: 0x10b981, pos: [-binOffsetX, binY, binOffsetZ], side: -1, z: binOffsetZ },
+            { name: "Plastic", rail: 'minus', tilt: 'backward', color: 0x3b82f6, pos: [-binOffsetX, binY, -binOffsetZ], side: -1, z: -binOffsetZ }
         ];
 
         binMeshes = [];
@@ -515,6 +516,7 @@
             railBaseGroup.add(bGroup);
             binMeshes.push({ group: bGroup, config: cfg, mesh: leftWall, mat: bMat });
         });
+        applyBinDestinations(window.ardRailConfig);
 
         // Bearing mounts leave a real shaft bore and clearance for the tray's
         // swept volume. A solid box through the shaft concealed the old clash.
@@ -765,6 +767,46 @@
         targetRollAngle = (x - y) / 2;
     };
 
+    // Rail position from the live ToF (the exact measurement), mapped through the taught
+    // calibration: center_mm -> 0, plus_mm -> +15, minus_mm -> -15 design mm (extrapolated
+    // beyond, clamped). Untaught: rail_dir around center_mm. No ToF: board z / steps_per_mm.
+    const RAIL_LIMIT_MM = 25;
+    const LIVE_RAIL_MAX_AGE_MS = 2000;
+    const tofToRailMm = (live, cfg) => {
+        if (!live) return null;
+        const clamp = (v) => Math.max(-RAIL_LIMIT_MM, Math.min(RAIL_LIMIT_MM, v));
+        const tof = Number(live.tof_mm);
+        if (live.tof_ok && Number.isFinite(tof) && cfg) {
+            const taught = cfg.taught || {};
+            if (taught.center && taught.plus && taught.minus) {
+                const pts = [[cfg.minus_mm, -15], [cfg.center_mm, 0], [cfg.plus_mm, 15]].sort((a, b) => a[0] - b[0]);
+                const i = tof <= pts[1][0] ? 0 : 1;
+                const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+                if (x1 !== x0) return { mm: clamp(y0 + (tof - x0) * (y1 - y0) / (x1 - x0)), source: 'ToF', tof };
+            }
+            if (Number.isFinite(cfg.center_mm)) {
+                // rail_dir +1: +Z steps (design +) lengthen the distance; -1 (mirrored mount) shorten it.
+                const dir = cfg.rail_dir === 1 ? 1 : -1;
+                return { mm: clamp((tof - cfg.center_mm) * dir), source: 'ToF (위치 미티칭)', tof };
+            }
+        }
+        const z = Number(live.z), spm = Number(live.steps_per_mm);
+        if (Number.isFinite(z) && spm > 0) return { mm: clamp(z / spm), source: '스텝 추정', tof: null };
+        return null;
+    };
+    window.tofToRailMm = tofToRailMm;
+    let liveRail = null; // { mm, source, tof, at }
+    const now = () => (typeof Date !== 'undefined' ? Date.now() : 0);
+    const liveRailFresh = () => liveRail && now() - liveRail.at <= LIVE_RAIL_MAX_AGE_MS;
+    window.applyDriveLive = (live) => {
+        const rail = tofToRailMm(live, window.ardRailConfig);
+        if (!rail) return;
+        liveRail = { ...rail, at: now() };
+        targetRailMm = rail.mm;
+        const sourceEl = document.getElementById('hud-rail-source');
+        if (sourceEl) sourceEl.textContent = `레일 ${rail.mm.toFixed(1)} mm · ${rail.source}`;
+    };
+
     window.syncDriveSim = () => {
         if (!window.currentMotorState) return;
         const state = window.currentMotorState;
@@ -779,6 +821,7 @@
             const ratio = Number(document.getElementById('gear_ratio_z')?.value) || 1;
             targetRailMm = state.mz_deg * ratio / 1.8 / railStepsPerMm();
         }
+        if (liveRailFresh()) targetRailMm = liveRail.mm; // the ToF measurement wins over step counts
         if (typeof updateHUD === 'function') updateHUD();
     };
 
@@ -1028,30 +1071,10 @@
         addLog('System', `ToF Interval set to ${e.target.value} ms`);
     });
 
-    ['pid-p-input', 'pid-i-input', 'pid-d-input'].forEach(id => {
-        document.getElementById(id)?.addEventListener('change', (e) => {
-            const val = e.target.value;
-            const subCmd = id.includes('-p-') ? 'p' : id.includes('-i-') ? 'i' : 'd';
-            sendMotorCmd(`mz${subCmd}${val}`);
-            addLog('System', `PID ${subCmd.toUpperCase()} updated: ${val}`);
-        });
-    });
-
-    // Rail Calibration Event Listeners
-    document.getElementById('rail-auto-cal-btn')?.addEventListener('click', () => {
-        if (confirm(currentLang === 'ko' ? '자동 캘리브레이션을 시작하시겠습니까? 모터가 1000스텝 이동합니다.' : 'Start auto calibration? Motor will move 1000 steps.')) {
-            sendMotorCmd('mza');
-            addLog('System', 'Z-Axis Auto Calibration (MZA) Request Sent.');
-        }
-    });
-
-    document.getElementById('rail-steps-mm-apply-btn')?.addEventListener('click', async () => {
-        const val = Number(document.getElementById('rail-steps-mm-input').value);
-        if (!Number.isFinite(val) || val <= 0) return;
-        if (await sendMotorCmd(`mzs${val}`)) {
-            appliedRailStepsPerMm = val;
-            addLog('System', `Z-Axis Steps/mm Manual Set: ${val}`);
-        }
+    // Rail calibration lives in rail-tools.js (measured direction and steps/mm).
+    window.addEventListener?.('ard-rail-config', (e) => {
+        const val = Number(e.detail && e.detail.steps_per_mm);
+        if (Number.isFinite(val) && val > 0) appliedRailStepsPerMm = val;
     });
 
     document.getElementById('system-home-btn')?.addEventListener('click', () => {
@@ -1060,6 +1083,23 @@
             addLog('System', 'System Home Request Sent.');
         }
     });
+
+    // The board renames its current steps to 0 without moving, so the model snaps instead of animating back.
+    const setCurrentAsOrigin = async () => {
+        if (!confirm(currentLang === 'ko' ? '현재 위치를 원점(0)으로 설정할까요? 모터는 움직이지 않습니다.' : 'Set the current position as origin (0)? The motors do not move.')) return;
+        if (!await sendMotorCmd('zero')) {
+            addLog('System', currentLang === 'ko' ? '원점 설정 실패: 모든 축이 멈춘 뒤 다시 시도하세요.' : 'Set origin failed: retry after all axes stop.');
+            return;
+        }
+        setDiskTargets(0, 0);
+        yawAngle = rollAngle = 0;
+        targetAngleZ = gearAngleZ = 0;
+        targetRailMm = railMm = 0;
+        if (typeof updateHUD === 'function') updateHUD();
+        addLog('System', currentLang === 'ko' ? '현재 위치를 원점(X/Y/Z = 0)으로 설정했습니다.' : 'Current position set as origin (X/Y/Z = 0).');
+    };
+    document.getElementById('disk-set-origin-btn')?.addEventListener('click', setCurrentAsOrigin);
+    document.getElementById('side-set-origin-btn')?.addEventListener('click', setCurrentAsOrigin);
 
     document.getElementById('disk-home-btn')?.addEventListener('click', () => {
         const gearRatioX = parseFloat(document.getElementById('gear_ratio_x')?.value || 1.0);
@@ -1151,6 +1191,23 @@
     window.stopSim = stopSim;
     window.onWindowResize = onWindowResize;
 
+    // Recolor/rename the four bins from the destination table (material -> rail slot + tilt).
+    const BIN_COLORS = { Metal: 0xf59e0b, Glass: 0x94a3b8, Others: 0x94a3b8, Paper: 0x10b981, Plastic: 0x3b82f6 };
+    function applyBinDestinations(config) {
+        const table = config && config.destinations;
+        if (!table || !binMeshes) return;
+        binMeshes.forEach((b) => {
+            const cats = Object.keys(table).filter((cat) => table[cat].rail === b.config.rail && table[cat].tilt === b.config.tilt);
+            b.config.name = cats.join(', ') || '(empty)';
+            b.config.color = cats.length ? BIN_COLORS[cats[0]] : 0x475569;
+            if (b.mat) b.mat.color.setHex(b.config.color);
+        });
+    }
+    window.addEventListener?.('ard-rail-config', (e) => {
+        window.ardRailConfig = e.detail;
+        applyBinDestinations(e.detail);
+    });
+
     window.setSortingAngles = (yawDeg, rollDeg, railZMm = 0) => {
         // yaw: rotation around Y (speedX = +rad, speedY = +rad)
         // roll: tilt around world Z toward the bins (speedX = +rad, speedY = -rad)
@@ -1162,7 +1219,7 @@
         // Open-loop rail displacement is relative to the sorting start center.
         const normalizedZMm = railZMm;
 
-        targetRailMm = normalizedZMm;
+        targetRailMm = liveRailFresh() ? liveRail.mm : normalizedZMm; // measured ToF wins
         const ratio = Number(document.getElementById('gear_ratio_z')?.value) || 1;
         targetAngleZ = normalizedZMm * railStepsPerMm() * 1.8 / ratio * Math.PI / 180;
     };

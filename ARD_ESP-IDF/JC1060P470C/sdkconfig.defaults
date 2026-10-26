@@ -62,3 +62,14 @@ CONFIG_LV_FONT_MONTSERRAT_28=y
 
 # Reproduce the user's working V2 display configuration on a fresh checkout.
 CONFIG_ARD_PANEL_V2=y
+
+# HMI scheduler diagnostics and independent LP heartbeat monitor.
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
+CONFIG_ULP_COPROC_ENABLED=y
+CONFIG_ULP_COPROC_TYPE_LP_CORE=y
+CONFIG_ULP_COPROC_RESERVE_MEM=8192
+
+# SD voice filenames and transactional upload suffixes.
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_MAX_LFN=96

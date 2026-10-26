@@ -1,2 +1,4 @@
 # Preserve the vendored dependency bytes and the documented SHA-256 on all hosts.
 output/ard-cg/vendor/three.min.js -text
+# Retain the upstream font license byte-for-byte, including its intentional spaces.
+output/ard-cg/fonts/OFL.txt -text -whitespace

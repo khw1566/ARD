@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 TTF = ROOT / 'third_party/nanum-gothic/NanumGothic-Regular.ttf'
-SOURCES = ['ui_text.cpp', 'ui.cpp', 'ui_main.cpp', 'ui_settings.cpp']
+SOURCES = ['ui_text.cpp', 'ui.cpp', 'ui_main.cpp', 'ui_settings.cpp', 'ui_screensaver.cpp']
 MONTSERRAT_HAS = {0xB0, 0x2022}
 SIZES = (16, 20, 28)
 SCALE = 4

@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 from network.drive_transport import CommandResult
+from core.rail_control import disc_tilt_error
 
 
 class DriveCommandRouteTests(unittest.TestCase):
@@ -18,7 +19,8 @@ class DriveCommandRouteTests(unittest.TestCase):
         self.delivery = "accepted"
         self.env = {
             "request": request, "jsonify": jsonify,
-            "CONFIG": {"drivemcu_ip": "10.0.0.22"},
+            # 4:1 disc reducers as on the rig (.env): mxr200 tilts 45 deg, inside the ±60 deg limit.
+            "CONFIG": {"drivemcu_ip": "10.0.0.22", "gear_ratio_x": 4.0, "gear_ratio_y": 4.0},
             "device_stats": {"DriveMCU": {"ip": "Unknown"}},
             "drive_settings": {}, "motor_state": {"mx_steps": 0, "my_steps": 0},
             "sorting_pipeline": SimpleNamespace(active=False, cancelled=threading.Event()),
@@ -27,6 +29,8 @@ class DriveCommandRouteTests(unittest.TestCase):
             "threading": SimpleNamespace(Thread=lambda **kwargs: SimpleNamespace(start=lambda: None)),
             "tts_to_pcm_and_send": lambda *args: None, "play_emergency_stop_voice": lambda: None,
             "stats_manager": SimpleNamespace(record_api_call=lambda *a, **kw: None),
+            "rail_tools": SimpleNamespace(cancel=lambda: None),
+            "disc_tilt_error": disc_tilt_error,
         }
         def send(ip, port, command, name, on_result):
             self.sent.append((ip, command))
@@ -68,6 +72,13 @@ class DriveCommandRouteTests(unittest.TestCase):
         self.assertEqual(self.client.post("/command", json={"command": "mxr1"}).status_code, 503)
         self.assertEqual(self.sent, [])
         self.assertEqual(self.updates, [])
+
+    def test_disc_tilt_past_60_is_refused_before_sending(self):
+        response = self.client.post("/command", json={"command": "df134"})  # 60.3 deg
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("60", response.json["message"])
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.client.post("/command", json={"command": "dr2000"}).status_code, 200)  # rotation
 
     def test_heartbeat_ip_can_be_used(self):
         self.env["CONFIG"]["drivemcu_ip"] = ""

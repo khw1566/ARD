@@ -85,8 +85,17 @@ uint8_t ArdWire::endTransmission(bool) {
 
 esp_err_t ArdWire::transmit(uint8_t address, const uint8_t *data, size_t size) {
     i2c_master_dev_handle_t dev = device(address);
-    if (!dev) return ESP_ERR_INVALID_STATE;
-    return i2c_master_transmit(dev, data, size, timeoutFor(size));
+    const esp_err_t err = dev ? i2c_master_transmit(dev, data, size, timeoutFor(size)) : ESP_ERR_INVALID_STATE;
+    if (err != ESP_OK) ++errors_;
+    return err;
+}
+
+esp_err_t ArdWire::readRegister(uint8_t address, uint8_t reg, uint8_t *data, size_t size) {
+    i2c_master_dev_handle_t dev = device(address);
+    const esp_err_t err = dev ? i2c_master_transmit_receive(dev, &reg, 1, data, size, timeoutFor(size + 1))
+                             : ESP_ERR_INVALID_STATE;
+    if (err != ESP_OK) { ++errors_; memset(data, 0, size); }
+    return err;
 }
 
 uint8_t ArdWire::requestFrom(uint8_t address, uint8_t count) {

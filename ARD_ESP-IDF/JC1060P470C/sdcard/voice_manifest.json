@@ -1,0 +1,232 @@
+{
+  "format": "pcm_s16le",
+  "rate": 16000,
+  "channels": 1,
+  "synthesis": "Google Cloud Chirp 3 HD Aoede, speakingRate 1.08; server output 16000 Hz",
+  "files": [
+    {
+      "path": "ard/voice/en/camera.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 2.791,
+      "pcm_bytes": 89312,
+      "sha256": "e6e10b58331c6c3b0232bb46d7acc6589623e7d8f31b83992d8a337aaa03c97f"
+    },
+    {
+      "path": "ard/voice/en/drive.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 4.156,
+      "pcm_bytes": 132992,
+      "sha256": "072ad319e7a1b2b1a0ff8fada28f5a6ececd559708351920d5fac7f8c172baee"
+    },
+    {
+      "path": "ard/voice/en/offline.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.181,
+      "pcm_bytes": 101792,
+      "sha256": "0ef9f95f4de96240fbc2a41496228547e7aeebcaefd1f1958ad80d9335d583f6"
+    },
+    {
+      "path": "ard/voice/en/online.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 1.296,
+      "pcm_bytes": 41472,
+      "sha256": "7a6abdaf5fb4b56a88e1d177518c4a59c85ca1cfcb0513ac9768c40cef09bc57"
+    },
+    {
+      "path": "ard/voice/en/rail.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 2.986,
+      "pcm_bytes": 95552,
+      "sha256": "1d7ca91b17bfd27deeda210c7abca88a87ce76337f7836b31602a62286b4bb49"
+    },
+    {
+      "path": "ard/voice/en/rearm.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.896,
+      "pcm_bytes": 124672,
+      "sha256": "2e160f435774f4230425ab74a99a65da2a2561c1d8c8d53cf2c4d46b1f58f5db"
+    },
+    {
+      "path": "ard/voice/en/safety.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.896,
+      "pcm_bytes": 124672,
+      "sha256": "8e0c9d5384709672e2fe0365241c514986775c44f1fca45cab66b7dfb2af2a5f"
+    },
+    {
+      "path": "ard/voice/en/settings.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.766,
+      "pcm_bytes": 120512,
+      "sha256": "b182ae364d0eb83b5f2d9437db3c1de4c8dbf3e28badc0bed269ace00f9e7b6e"
+    },
+    {
+      "path": "ard/voice/en/sorting_done.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.701,
+      "pcm_bytes": 118432,
+      "sha256": "b28c608014cad1715642353e9a8009320201b18f8f084bd04e4c053953c9ebae"
+    },
+    {
+      "path": "ard/voice/en/sorting_start.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.311,
+      "pcm_bytes": 105952,
+      "sha256": "2d12d31aa2a4d7171faf63d5fea8c85834353cc63b9ddebd93433e784c1c19b6"
+    },
+    {
+      "path": "ard/voice/en/stop.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 4.286,
+      "pcm_bytes": 137152,
+      "sha256": "f35c408f4481237c7f1f72e0208666b127ffde44dc968593e2ab0d6d57e8a4d2"
+    },
+    {
+      "path": "ard/voice/en/touch.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 2.271,
+      "pcm_bytes": 72672,
+      "sha256": "3ba96427c09454bc9057da5e88d4bcfb3cff645b24d52c430fccf90e7d56bbaa"
+    },
+    {
+      "path": "ard/voice/en/voice.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 2.531,
+      "pcm_bytes": 80992,
+      "sha256": "0973cc52d9530c5e143f8067f0d17a79506b5491419b3e6d94d132ae30186c44"
+    },
+    {
+      "path": "ard/voice/en/welcome.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "en-US-Chirp3-HD-Aoede",
+      "seconds": 3.181,
+      "pcm_bytes": 101792,
+      "sha256": "1af75fcfe611bee44eb2b6af92d542c4564b2eb6c183ab1a8c9ea0bb2cd49d61"
+    },
+    {
+      "path": "ard/voice/ko/camera.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 2.921,
+      "pcm_bytes": 93472,
+      "sha256": "d312d1cfe10cb94b1b41a5c90e1801357a30549c4ef80ae684bd59e5f4e2b07b"
+    },
+    {
+      "path": "ard/voice/ko/drive.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 4.221,
+      "pcm_bytes": 135072,
+      "sha256": "00b7278aaf5c6986306d0ed41ebf6e4501c6e3dcbe8833f026b8ed7881f55245"
+    },
+    {
+      "path": "ard/voice/ko/offline.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.831,
+      "pcm_bytes": 122592,
+      "sha256": "17a6c47cd1274b7237dd559a32506251663d93a6cc2ea4b424d35e87a5c4fc3b"
+    },
+    {
+      "path": "ard/voice/ko/online.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 1.751,
+      "pcm_bytes": 56032,
+      "sha256": "81fbc99eec8b70f07b3a962f8a089a5761c2e6d88637affb082cce29fb0c1713"
+    },
+    {
+      "path": "ard/voice/ko/rail.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.506,
+      "pcm_bytes": 112192,
+      "sha256": "32f57042889d40bd9fe8ac0fed806d7ccb55377fdf5967fa1f014a7ff67e06e8"
+    },
+    {
+      "path": "ard/voice/ko/rearm.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 4.481,
+      "pcm_bytes": 143392,
+      "sha256": "77803fcd18f4456f25f6adc5847f3f456f0e2bea1e40fbbf1cce2636eaeecb77"
+    },
+    {
+      "path": "ard/voice/ko/safety.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 4.676,
+      "pcm_bytes": 149632,
+      "sha256": "98f0e0a2586d52558316b79444652c7ee0fd3336310940e970c65601eecd89e6"
+    },
+    {
+      "path": "ard/voice/ko/settings.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.636,
+      "pcm_bytes": 116352,
+      "sha256": "a88d9d047b443e7cead670c7d977f3339dfae0a31d6c42892ee86a5acf7309d1"
+    },
+    {
+      "path": "ard/voice/ko/sorting_done.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.896,
+      "pcm_bytes": 124672,
+      "sha256": "8d0bb53c5538df4bd2fe77c99db20427ec8fa523aeb9ab8f4f26dff4c8cce208"
+    },
+    {
+      "path": "ard/voice/ko/sorting_start.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.571,
+      "pcm_bytes": 114272,
+      "sha256": "78ffb47dfe1d7cdd0535f0c0c7f2b3a444b77affc65ccbc77c0ac91121dac923"
+    },
+    {
+      "path": "ard/voice/ko/stop.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 4.221,
+      "pcm_bytes": 135072,
+      "sha256": "4a9902fa0b3574241f55a5ec947d6c55615ce09e648c2dd9d1e46ec2b8463896"
+    },
+    {
+      "path": "ard/voice/ko/touch.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.506,
+      "pcm_bytes": 112192,
+      "sha256": "b731b005ab16ff7936870300698327573e8edd38a021c9ac19681b2c90f21960"
+    },
+    {
+      "path": "ard/voice/ko/voice.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 4.091,
+      "pcm_bytes": 130912,
+      "sha256": "5a11205cab2f85d86ca0b87755e3972da9382bc7f1c21f2301700c8002bf709f"
+    },
+    {
+      "path": "ard/voice/ko/welcome.wav",
+      "provider": "Google Cloud Text-to-Speech",
+      "voice": "ko-KR-Chirp3-HD-Aoede",
+      "seconds": 3.571,
+      "pcm_bytes": 114272,
+      "sha256": "c7fd86511621e42c1fe93ad4a6cfbe678382ef9170f4698b2e9e1797c188d075"
+    }
+  ]
+}

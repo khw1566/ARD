@@ -1,0 +1,22 @@
+[
+  {
+    "file": "IBMPlexSansKR-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsanskr/IBMPlexSansKR-Regular.ttf",
+    "sha256": "53750379270312368cf7641901f43a98dd892e3d9d5798cf25cdc245c85c71c0"
+  },
+  {
+    "file": "IBMPlexSansKR-Medium.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsanskr/IBMPlexSansKR-Medium.ttf",
+    "sha256": "4a7130f56ce50bf10f9d383f624e50bad2c80bebc63e51f4269ece2c7d919166"
+  },
+  {
+    "file": "OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsanskr/OFL.txt",
+    "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da"
+  },
+  {
+    "file": "IBMPlexMono-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/IBM/plex/master/packages/plex-mono/fonts/complete/ttf/IBMPlexMono-Regular.ttf",
+    "sha256": "7c6fbddca4b700be918f5f6183d9bd4464fa427fe435f0b480d77fe2bb8c5a43"
+  }
+]

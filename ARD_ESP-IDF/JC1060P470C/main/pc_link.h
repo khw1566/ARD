@@ -24,6 +24,7 @@ struct PcBoardState {
 struct PcSorting {
     bool valid;              // last sorting poll succeeded
     bool running;
+    bool needsReset;
     int stepNum, progress;   // 1..5, 0..100
     char step[12], phase[12];
     char object[40], material[12], updated[9];
@@ -37,6 +38,18 @@ struct PcStatus {
     int32_t driveX, driveY, driveZ; // PC accepted-command estimates, not encoder feedback
     bool drivePid;
     float driveTemp, driveHumidity, drivePressure, driveTof;
+    // DriveMCU `status` as last read by the PC (about every 300 ms, /api/hmi/updates "drive").
+    // While driveLive, driveTof and drivePid come from it and the rail fields are valid.
+    bool driveLive, driveRailSettled;
+    int driveRailTarget;
+    char driveTofStatus[16];
+    bool driveTofOk, driveBusy, railConfigValid, railPidMode, railGainsValid;
+    float railP, railI, railD;
+    int railCenter, railPlus, railMinus, railCapture, railMin, railMax;
+    // Sorting destination table (rail config "destinations"), order Metal, Glass, Others, Paper, Plastic.
+    // destRail: +1 plus, 0 center, -1 minus. destTilt: +1 forward, -1 backward.
+    bool destValid;
+    int8_t destRail[5], destTilt[5];
     double driveLat, driveLng;
     // Robot3Axis
     float robotX, robotY, robotZ;
@@ -63,10 +76,13 @@ bool pc_send_command(PcBoard board, const char *command); // queued, false when 
 void pc_drive_arm();
 void pc_drive_stop();
 void pc_drive_disarm(); // cancel manual input without cancelling automatic sorting
-// Touch joystick: fixed finite pulses, paced by the PC. No motor speed settings change.
-// Raw normalized stick coordinates: right/rotation, forward, rail. The PC
-// applies one radial deadzone and a nonlinear response before mixing axes.
-bool pc_drive_joystick(float rotation, float forward, float rail, int intervalMs, int deadzonePct);
+// Touch joystick, resent every 100 ms while held. Arms the drive control by itself when
+// needed (no RE-ARM press). The rail PID does not block it; a rail jog turns the PID off. The PC turns it into a DriveMCU velocity
+// jog (finite pulses on older DriveMCU firmware). Raw normalized stick coordinates:
+// right/rotation, forward, rail. The PC applies one radial deadzone and a nonlinear
+// response before mixing axes. speedPct (10..100) scales the full-stick speed; the
+// DriveMCU max speed setting stays the upper limit.
+bool pc_drive_joystick(float rotation, float forward, float rail, int speedPct, int deadzonePct);
 void pc_drive_neutral();
 bool pc_drive_is_armed();
 void pc_send_approval(const char *id, bool approve);
@@ -74,9 +90,14 @@ void pc_request_image();                      // fetch /api/hmi/last_image in th
                                               // (also automatic whenever the PC receives a new frame)
 // Start or cancel the PC sorting sequence (/api/sorting/start, /api/sorting/cancel).
 bool pc_sorting_request(bool start);
+bool pc_sorting_reset();
 // HTTP status of the latest sorting request; `sequence` changes when a new answer arrives.
-struct PcRequestResult { uint32_t sequence; int code; bool start; };
+struct PcRequestResult { uint32_t sequence; int code; bool start; bool reset; };
 PcRequestResult pc_sorting_result();
+// Dedicated rail controls; mode selection does not start motion. Numeric arguments
+// are integer millimetres (target) or signed steps (step). Modes are saved on the PC.
+bool pc_rail_request(const char *op, int value = 0);
+PcRequestResult pc_rail_result();
 bool pc_send_guidance(const char *cue);        // bounded PC TTS announcement for a local action
 
 // Last decoded camera frame (RGB565, PSRAM). Valid until the next pc_request_image() completes;

@@ -105,7 +105,12 @@ void sendHeartbeat() {
     cJSON_AddNumberToObject(doc, "rssi", ard_network_rssi());
     cJSON_AddStringToObject(doc, "ip", ip);
     // ESP32 (classic) has no on-chip temperature sensor driver in ESP-IDF 5; "temp" is omitted.
-    cJSON_AddNumberToObject(doc, "tof_dist", sensors_tof_last());
+    float tofMm;
+    uint32_t tofAge;
+    const bool tofOk = sensors_tof(&tofMm, &tofAge);
+    cJSON_AddNumberToObject(doc, "tof_dist", tofOk ? tofMm : 0);
+    cJSON_AddBoolToObject(doc, "tof_ok", tofOk);
+    cJSON_AddNumberToObject(doc, "tof_age_ms", tofAge);
     cJSON_AddStringToObject(doc, "tof_status", sensors_tof_status());
     if (haveMotion) {
         cJSON_AddNumberToObject(doc, "last_move_ms", motion.lastMoveMs);

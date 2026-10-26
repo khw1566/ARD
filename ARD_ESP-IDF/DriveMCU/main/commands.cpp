@@ -70,9 +70,9 @@ bool execute(const char *cmd) {
     if (starts(cmd, "db")) return disk(cmd, -1, 1);  // disk backward
     if (starts(cmd, "dr")) return disk(cmd, 1, 1);   // rotate CW
     if (starts(cmd, "dl")) return disk(cmd, -1, -1); // rotate CCW
-    if (starts(cmd, "mzp")) { const float v = strtof(cmd + 3, nullptr); motion_set_pid_p(v); log_async("PID P set: %.2f", v); return true; }
-    if (starts(cmd, "mzi")) { const float v = strtof(cmd + 3, nullptr); motion_set_pid_i(v); log_async("PID I set: %.2f", v); return true; }
-    if (starts(cmd, "mzd")) { const float v = strtof(cmd + 3, nullptr); motion_set_pid_d(v); log_async("PID D set: %.2f", v); return true; }
+    if (starts(cmd, "mzp")) { const float v = strtof(cmd + 3, nullptr); if (!motion_set_pid_p(v)) return false; log_async("PID P set: %.2f", v); return true; }
+    if (starts(cmd, "mzi")) { const float v = strtof(cmd + 3, nullptr); if (!motion_set_pid_i(v)) return false; log_async("PID I set: %.2f", v); return true; }
+    if (starts(cmd, "mzd")) { const float v = strtof(cmd + 3, nullptr); if (!motion_set_pid_d(v)) return false; log_async("PID D set: %.2f", v); return true; }
     if (starts(cmd, "gps")) {
         const bool on = integer(cmd + 3) == 1;
         gps_set_enabled(on);
@@ -80,7 +80,33 @@ bool execute(const char *cmd) {
         log_async("GPS Module: %s", on ? "ON" : "OFF");
         return true;
     }
-    if (starts(cmd, "mzt")) { const int mm = (int)integer(cmd + 3); motion_set_rail_target(mm); log_async("Target ToF: %d", mm); return true; }
+    if (starts(cmd, "mzt")) {
+        const int mm = (int)integer(cmd + 3);
+        if (!motion_set_rail_target(mm)) return false; // outside the Z safety limits (logged)
+        log_async("Target ToF: %d", mm);
+        return true;
+    }
+    if (starts(cmd, "mzl")) { // mzl<min>,<max>: Z safety limits on (ToF mm); mzl0: off
+        if (!strcmp(cmd + 3, "0")) {
+            motion_set_rail_limits(false, 0, 0);
+            log_async("Z safety limits OFF (bench test only)");
+            return true;
+        }
+        const char *comma = strchr(cmd + 3, ',');
+        const int minMm = (int)integer(cmd + 3), maxMm = comma ? (int)integer(comma + 1) : 0;
+        if (!comma || !motion_set_rail_limits(true, minMm, maxMm)) {
+            log_async("Z safety limits rejected: mzl<min>,<max> with 1..2000 mm and max-min >= 10");
+            return false;
+        }
+        log_async("Z safety limits: %d..%d mm (ToF)", minMm, maxMm);
+        return true;
+    }
+    if (starts(cmd, "mzv")) {
+        const int dir = (int)integer(cmd + 3);
+        if (!motion_set_rail_dir(dir)) { log_async("Rail direction rejected: turn the rail PID off first"); return false; }
+        log_async("Rail direction: %+d (+Z steps %s the ToF distance)", dir, dir > 0 ? "lengthen" : "shorten");
+        return true;
+    }
     if (starts(cmd, "mzc")) {
         const long hz = integer(cmd + 3);
         sensors_request_i2c_clock((uint32_t)hz); // applied by the I2C owner task
@@ -117,11 +143,20 @@ bool execute(const char *cmd) {
         return false;
     }
     if (!strcmp(cmd, "home")) {
-        motion_home(); // open-loop Z remains at its current position
+        motion_home(); // Z remains at its current position, rail PID off
         log_async("System Homing Initiated from PC.");
         return true;
     }
+    if (!strcmp(cmd, "zero")) {
+        if (!motion_set_origin()) { log_async("Set origin rejected: wait until all axes stop"); return false; }
+        log_async("Current position set as origin (X/Y/Z = 0)");
+        return true;
+    }
     if (starts(cmd, "mz")) { motion_clear_stop(); return axisCommand(AXIS_Z, cmd + 2); }
+    if (cmd[0] == 'j') { // j<x>,<y>,<z>: jog velocity in 1/1000 of each axis max speed
+        const char *y = strchr(cmd, ',') + 1, *z = strchr(y, ',') + 1;
+        return motion_jog(integer(cmd + 1) / 1000.0f, integer(y) / 1000.0f, integer(z) / 1000.0f);
+    }
     if (cmd[0] == 'b' && cmd[1] != 'v' && strchr(cmd, ',')) { // b<stepsX>,<stepsY>
         motion_clear_stop();
         const char *comma = strchr(cmd, ',');
@@ -170,9 +205,10 @@ bool command_execute(const char *line) {
 
     // STOP must not queue behind another command.
     const bool urgent = !strcmp(cmd, "x") || !strcmp(cmd, "stop");
+    const bool jog = cmd[0] == 'j'; // streamed about 10 times a second: no beep or echo
     if (!urgent && xSemaphoreTake(commandLock(), pdMS_TO_TICKS(500)) != pdTRUE) return false;
-    if (!urgent) buzzer_play(MELODY_COMMAND);
-    printf("\nExecuting: %s\n", cmd);
+    if (!urgent && !jog) buzzer_play(MELODY_COMMAND);
+    if (!jog) printf("\nExecuting: %s\n", cmd);
     const bool accepted = execute(cmd);
     if (!urgent) xSemaphoreGive(commandLock());
     return accepted;
@@ -181,14 +217,19 @@ bool command_execute(const char *line) {
 void command_print_help() {
     printf("\n--- DriveMCU Commands ---\n"
            "  mxr<steps> / myr<steps> / mzr<steps>  - relative move X / Y / Z\n"
-           "  mxs<v> mys<v>  - max speed (steps/s, up to 10000)\n"
+           "  mxs<v> mys<v>  - disc max speed (steps/s, capped at 300 by default)\n"
+           "  disc tilt (X-Y)/2 is held within +-60 deg; disc rotation is free\n"
            "  mxa<v> mya<v> mza<v>  - acceleration\n"
            "  mxx myx mzx  - decelerating stop of one axis\n"
            "  mxe mxd mye myd  - enable / disable one driver\n"
            "  b<x>,<y>  - move X and Y together\n"
+           "  j<x>,<y>,<z>  - jog velocity, -1000..1000 of max speed (resend < 400 ms)\n"
            "  df<n> db<n> dr<n> dl<n>  - disk forward / back / rotate\n"
            "  home  - X/Y to 0\n"
+           "  zero  - set the current X/Y/Z position as 0 (only at rest)\n"
            "  mzm<0|1> mzt<mm> mzp/mzi/mzd<v> mzs<steps/mm>  - rail PID\n"
+           "  mzv<1|-1>  - rail direction: +Z steps lengthen (1) / shorten (-1) the ToF distance\n"
+           "  mzl<min>,<max>  - Z safety limits in ToF mm (default 70,120); mzl0 - off (bench test)\n"
            "  md<ms>  - inter-command delay   mzh<ms> - heartbeat interval\n"
            "  mzc<hz> - I2C clock   gps<0|1>   bv<0..255> - buzzer volume\n"
            "  e / d  - enable / disable all   x or stop - EMERGENCY STOP\n"

@@ -1,0 +1,3 @@
+I (67333) scheduler: HP0 busy=27% HP1 busy=59% interval=31010942 us tasks=27
+I (67334) scheduler: UI age=188 max_gap=265 ms; audio enabled=1 age=6 max_gap=17 ms; internal=196907 DMA=167083 PSRAM=26789880
+I (67340) scheduler: LP ready=1 ticks=60 stalled_mask=0 (UI=1 audio=2)

@@ -1,4 +1,7 @@
 #include "onboard_audio.h"
+#include "task_policy.h"
+#include "runtime_health.h"
+#include "visitor_voice.h"
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -33,7 +36,7 @@ const char *TAG = "onboard_audio";
 
 struct Packet { uint32_t generation; uint16_t count; int16_t mono[512]; };
 struct Upload { size_t samples; uint32_t selection; };
-QueueHandle_t packets, uploads;
+QueueHandle_t packets, uploads, guidePackets;
 i2s_chan_handle_t tx, rx;
 esp_codec_dev_handle_t codec;
 const audio_codec_data_if_t *dataIf;
@@ -43,9 +46,11 @@ const audio_codec_if_t *chipIf;
 TaskHandle_t tasks[3];
 int16_t *clip;
 
+std::atomic<bool> guidance{true};
 std::atomic<bool> ready{false}, micEnabled{true}, selected{false}, vad{true}, ptt{false};
 std::atomic<bool> recording{false}, playing{false}, uploading{false}, remoteBusy{false}, muted{false};
 std::atomic<bool> dirty{false}, workersGo{false};
+std::atomic<bool> guideActive{false}, guideDone{true};
 std::atomic<int> volume{12}, peak{0}, threshold{2000}, cue{0};
 std::atomic<uint32_t> generation{0}, selection{0}, awaitedJob{0}, completedJob{0}, serverAddress{0}, serverSession{0};
 std::atomic<uint32_t> rxPackets{0}, dropped{0}, uploaded{0}, uploadErrors{0};
@@ -54,6 +59,7 @@ std::atomic<uint32_t> peerSeen{0}, echoUntil{0}, discardUntil{0};
 std::atomic<uint32_t> localVolumeUntil{0};
 constexpr uint32_t kLocalVolumeHoldMs = 4000;
 portMUX_TYPE errorLock = portMUX_INITIALIZER_UNLOCKED;
+portMUX_TYPE playbackLock = portMUX_INITIALIZER_UNLOCKED;
 char lastError[64];
 
 uint32_t nowMs() { return (uint32_t)(esp_timer_get_time() / 1000); }
@@ -75,14 +81,16 @@ bool active() {
 }
 void loadSettings() {
     nvs_handle_t nvs;
-    uint8_t v = 12, mic = 1;
+    uint8_t v = 12, mic = 1, guide = 1;
     if (nvs_open("jc_audio", NVS_READONLY, &nvs) == ESP_OK) {
         nvs_get_u8(nvs, "volume", &v);
         nvs_get_u8(nvs, "mic", &mic);
+        nvs_get_u8(nvs, "guide", &guide);
         nvs_close(nvs);
     }
     volume.store(v <= kVolumeMax ? v : 12);
     micEnabled.store(mic != 0);
+    guidance.store(guide != 0);
 }
 void saveSettings() {
     if (!dirty.exchange(false)) return;
@@ -91,6 +99,7 @@ void saveSettings() {
     if (err == ESP_OK) {
         err = nvs_set_u8(nvs, "volume", volume.load());
         if (err == ESP_OK) err = nvs_set_u8(nvs, "mic", micEnabled.load());
+        if (err == ESP_OK) err = nvs_set_u8(nvs, "guide", guidance.load());
         if (err == ESP_OK) err = nvs_commit(nvs);
         nvs_close(nvs);
     }
@@ -162,7 +171,8 @@ void ioTask(void *) {
     static int16_t input[kFrame * 2], output[kFrame * 2], mono[kFrame], pre[kPreSamples];
     static int16_t sine[128];
     for (int i = 0; i < 128; ++i) sine[i] = (int16_t)(std::sin(i * 6.28318530718 / 128) * 5000);
-    Packet packet{};
+    Packet packet{}, guidePacket{};
+    size_t guideAt = 0;
     voice_capture_t capture{};
     size_t preAt = 0, preCount = 0, count = 0, packetAt = 0;
     uint32_t phase = 0, toneRemaining = 0, lastGeneration = generation.load();
@@ -175,6 +185,7 @@ void ioTask(void *) {
     const int notes[] = {523, 659, 784, 988, 1175, 1568};
     const int lengths[] = {100, 100, 100, 100, 120, 300};
     for (;;) {
+        runtime_health_beat(HealthBeat::Audio);
         if (watched) esp_task_wdt_reset();
         size_t bytes = 0;
         esp_err_t err = i2s_channel_read(rx, input, sizeof(input), &bytes, 100);
@@ -194,6 +205,7 @@ void ioTask(void *) {
 
         if (lastGeneration != generation.load()) {
             lastGeneration = generation.load(); melody = 0; toneRemaining = 0; packet.count = 0; packetAt = 0;
+            if (guidePacket.generation != lastGeneration) { guidePacket.count = 0; guideAt = 0; }
         }
         const int requestedCue = cue.exchange(0);
         if (requestedCue) { melody = requestedCue; note = 0; toneRemaining = 0; }
@@ -208,7 +220,7 @@ void ioTask(void *) {
         const bool mode = vad.load();
         const bool permitted = active() && micEnabled.load() && !uploading.load() &&
             !remoteBusy.load() && !awaitedJob.load() && !before(echoUntil.load()) && !before(micHoldUntil) &&
-            !melody && mode == lastVad;
+            !melody && !guideActive.load() && mode == lastVad;
         lastVad = mode;
         const int floorLevel = noiseFloor * 3;
         const int speechLevel = threshold.load() > floorLevel ? threshold.load() : floorLevel;
@@ -242,9 +254,18 @@ void ioTask(void *) {
 
         bool audible = false;
         const bool quiet = muted.load() || volume.load() == 0;
+        const uint32_t renderedGeneration = generation.load();
         for (int i = 0; i < kFrame; ++i) {
             int sample = 0;
-            if (toneRemaining) {
+            if (guideActive.load()) {
+                if (guidePacket.generation != generation.load()) guideAt = guidePacket.count;
+                if (guideAt >= guidePacket.count) {
+                    if (xQueueReceive(guidePackets, &guidePacket, 0) == pdTRUE) guideAt = 0;
+                    else guidePacket.count = 0;
+                }
+                if (guideAt < guidePacket.count && guidePacket.generation == generation.load())
+                    sample = guidePacket.mono[guideAt++];
+            } else if (toneRemaining) {
                 phase += (uint32_t)((uint64_t)toneHz * 4294967296ULL / kRate);
                 sample = sine[phase >> 25];
                 --toneRemaining;
@@ -259,6 +280,11 @@ void ioTask(void *) {
             sample = quiet ? 0 : sample * volume.load() / kVolumeMax;
             output[i * 2] = output[i * 2 + 1] = (int16_t)sample;
             audible |= sample != 0;
+        }
+        if (guideActive.load() && guideDone.load() && guideAt >= guidePacket.count && !uxQueueMessagesWaiting(guidePackets)) {
+            taskENTER_CRITICAL(&playbackLock);
+            if (renderedGeneration == generation.load() && guideDone.load()) guideActive.store(false);
+            taskEXIT_CRITICAL(&playbackLock);
         }
         if (audible) echoUntil.store(nowMs() + kEchoTailMs);
         playing.store(audible || before(echoUntil.load()));
@@ -276,13 +302,17 @@ void ioTask(void *) {
         }
     }
     if (watched) esp_task_wdt_delete(nullptr);
+    runtime_health_audio_enabled(false);
     vTaskDelete(nullptr);
 }
 
 void receiverTask(void *) {
     while (!workersGo.load()) vTaskDelay(1);
     int sock = -1;
+    unsigned burst = 0;
     for (;;) {
+        // Malformed/high-rate UDP must still leave CPU time for idle/network work.
+        if (++burst >= 16) { burst = 0; vTaskDelay(1); }
         if (sock < 0) {
             sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
             sockaddr_in local{}; local.sin_family = AF_INET; local.sin_port = htons(kPort);
@@ -306,7 +336,7 @@ void receiverTask(void *) {
             char command[16]{}; memcpy(command, wire, n);
             onboard_audio_command(command); continue;
         }
-        if (n > 1024 || n % 2 || muted.load() || before(discardUntil.load())) { ++dropped; continue; }
+        if (n > 1024 || n % 2 || muted.load() || guideActive.load() || before(discardUntil.load())) { ++dropped; continue; }
         packet.generation = generation.load(); packet.count = (uint16_t)(n / 2);
         memcpy(packet.mono, wire, n);
         ++rxPackets;
@@ -367,15 +397,17 @@ esp_err_t onboard_audio_start(i2c_master_bus_handle_t bus) {
     if (!bus || workersGo.load()) return ESP_ERR_INVALID_STATE;
     loadSettings();
     packets = xQueueCreate(16, sizeof(Packet)); uploads = xQueueCreate(1, sizeof(Upload));
+    guidePackets = xQueueCreate(8, sizeof(Packet));
     clip = (int16_t *)heap_caps_malloc(kMaxSamples * sizeof(int16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    esp_err_t err = packets && uploads && clip ? initCodec(bus) : ESP_ERR_NO_MEM;
+    esp_err_t err = packets && uploads && guidePackets && clip ? initCodec(bus) : ESP_ERR_NO_MEM;
     if (err == ESP_OK) {
         const TaskFunction_t functions[] = {ioTask, receiverTask, uploadTask};
         const char *names[] = {"voice_io", "voice_rx", "voice_upload"};
         const uint32_t stacks[] = {6144, 4096, 6144};
         const UBaseType_t priorities[] = {6, 5, 3};
+        const BaseType_t cores[] = {ARD_CORE_REALTIME, ARD_CORE_SERVICE, ARD_CORE_SERVICE};
         for (int i = 0; i < 3; ++i) {
-            if (xTaskCreatePinnedToCore(functions[i], names[i], stacks[i], nullptr, priorities[i], &tasks[i], 0) != pdPASS) {
+            if (xTaskCreatePinnedToCore(functions[i], names[i], stacks[i], nullptr, priorities[i], &tasks[i], cores[i]) != pdPASS) {
                 err = ESP_ERR_NO_MEM; break;
             }
         }
@@ -385,17 +417,19 @@ esp_err_t onboard_audio_start(i2c_master_bus_handle_t bus) {
         destroyCodec();
         if (packets) { vQueueDelete(packets); packets = nullptr; }
         if (uploads) { vQueueDelete(uploads); uploads = nullptr; }
+        if (guidePackets) { vQueueDelete(guidePackets); guidePackets = nullptr; }
         heap_caps_free(clip); clip = nullptr;
         error("ES8311 unavailable; onboard microphone/speaker disabled");
         return err;
     }
-    ready.store(true); workersGo.store(true);
+    ready.store(true); runtime_health_audio_enabled(true); workersGo.store(true);
     ESP_LOGI(TAG, "ES8311 16 kHz full duplex, PCM buffer %u bytes PSRAM; mic slot %d",
              (unsigned)(kMaxSamples * 2), CONFIG_ARD_VOICE_MIC_SLOT);
     return ESP_OK;
 }
 OnboardAudioStatus onboard_audio_status() {
     OnboardAudioStatus s{};
+    s.guidance = guidance.load();
     s.ready = ready.load(); s.micEnabled = micEnabled.load(); s.selected = active(); s.vad = vad.load();
     s.recording = recording.load(); s.playing = playing.load(); s.uploading = uploading.load();
     s.waiting = awaitedJob.load() != 0 || remoteBusy.load(); s.muted = muted.load(); s.volume = volume.load();
@@ -422,13 +456,50 @@ void onboard_audio_set_mic(bool enabled) {
     if (!enabled) ptt.store(false);
     dirty.store(true);
 }
+void onboard_audio_set_guidance(bool enabled) {
+    if (guidance.exchange(enabled) != enabled) dirty.store(true);
+}
 void onboard_audio_set_volume(int value) {
     localVolumeUntil.store(nowMs() + kLocalVolumeHoldMs);
     storeVolume(value);
 }
 void onboard_audio_stop() {
-    ++generation; cue.store(0); discardUntil.store(nowMs() + 500);
-    if (packets) xQueueReset(packets);
+    const uint32_t discard = nowMs() + 500;
+    taskENTER_CRITICAL(&playbackLock);
+    ++generation; cue.store(0); discardUntil.store(discard);
+    guideActive.store(false); guideDone.store(true);
+    taskEXIT_CRITICAL(&playbackLock);
+    // Consumers discard bounded stale packets by generation. Resetting a queue
+    // here could erase a new producer's packets immediately after a concurrent start.
+}
+bool onboard_audio_guide_active() { return guideActive.load(); }
+bool onboard_audio_guide_begin(bool urgent, bool preview, uint32_t *token) {
+    if (!token || !ready.load() || !guidePackets || muted.load() || !volume.load()) return false;
+    const uint32_t discard = nowMs() + 500;
+    taskENTER_CRITICAL(&playbackLock);
+    if (muted.load() || !volume.load()) { taskEXIT_CRITICAL(&playbackLock); return false; }
+    if (!urgent && ((!preview && !guidance.load()) || guideActive.load() || recording.load() || ptt.load() ||
+                    uploading.load() || remoteBusy.load() || awaitedJob.load() || playing.load())) {
+        taskEXIT_CRITICAL(&playbackLock);
+        return false;
+    }
+    *token = ++generation;
+    cue.store(0); discardUntil.store(discard);
+    guideDone.store(false); guideActive.store(true);
+    taskEXIT_CRITICAL(&playbackLock);
+    return true;
+}
+bool onboard_audio_guide_push(uint32_t token, const int16_t *samples, size_t count) {
+    if (!samples || !count || count > 512 || token != generation.load() || !guideActive.load() || !ready.load()) return false;
+    Packet packet{}; packet.generation = token; packet.count = static_cast<uint16_t>(count);
+    memcpy(packet.mono, samples, count * sizeof(int16_t));
+    // Bounded queue wait; only the SD worker calls this, never LVGL or I2S.
+    return xQueueSend(guidePackets, &packet, pdMS_TO_TICKS(100)) == pdTRUE && token == generation.load();
+}
+void onboard_audio_guide_end(uint32_t token) {
+    taskENTER_CRITICAL(&playbackLock);
+    if (token == generation.load()) guideDone.store(true);
+    taskEXIT_CRITICAL(&playbackLock);
 }
 void onboard_audio_boot() { if (ready.load()) cue.store(1); }
 void onboard_audio_test() { if (ready.load()) cue.store(2); }
@@ -457,7 +528,7 @@ bool onboard_audio_command(const char *s) {
     else if (!strcmp(s, "mute")) { muted.store(true); onboard_audio_stop(); }
     else if (!strcmp(s, "play") || !strcmp(s, "unmute")) muted.store(false);
     else if (!strcmp(s, "vad") || !strcmp(s, "ptt")) { vad.store(!strcmp(s, "vad")); ptt.store(false); }
-    else if (!strcmp(s, "audio_stop")) onboard_audio_stop();
+    else if (!strcmp(s, "audio_stop")) { visitor_voice_cancel(); onboard_audio_stop(); }
     else if (!strcmp(s, "audio_test")) onboard_audio_test();
     else if (!strcmp(s, "audio_mic_on")) onboard_audio_set_mic(true);
     else if (!strcmp(s, "audio_mic_off")) onboard_audio_set_mic(false);

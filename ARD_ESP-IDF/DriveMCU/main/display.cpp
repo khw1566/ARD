@@ -44,8 +44,12 @@ void motionPage(Ssd1306 &oled) {
     oled.setCursor(0, 12);
     if (ok) oled.printf("X:%.1f Y:%.1f deg", s.x * 1.8f, s.y * 1.8f);
     else oled.print("X/Y: busy");
-    oled.setCursor(0, 22); oled.printf("Z TGT: %d mm", s.targetRailDist);
-    oled.setCursor(0, 32); oled.printf("ToF : %.1f mm", sensors_tof_last());
+    oled.setCursor(0, 22); oled.printf("Z TGT: %d mm %s", s.targetRailDist, s.pid ? (s.railSettled ? "OK" : "PID") : "OFF");
+    float distance;
+    uint32_t age;
+    oled.setCursor(0, 32);
+    if (sensors_tof(&distance, &age)) oled.printf("ToF : %.1f mm", distance);
+    else oled.print("ToF : N/A");
     oled.setCursor(0, 42); oled.printf("Sts : %s", sensors_tof_status());
 }
 

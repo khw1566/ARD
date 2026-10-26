@@ -14,10 +14,11 @@ GpioSim GPIO;
 
 namespace {
 
-constexpr gpio_num_t kStep = 18, kDir = 19;
+constexpr gpio_num_t kStep = 18, kDir = 19, kStepY = 25, kDirY = 26;
 int failures = 0;
 long ticks = 0, lastStepTick = -100, minStepGap = 1 << 30;
 long stepsUp = 0, stepsDown = 0, wrongDir = 0;
+long yUp = 0, yDown = 0;
 
 void check(bool ok, const char *what) {
     std::printf("%s %s\n", ok ? "PASS" : "FAIL", what);
@@ -25,6 +26,9 @@ void check(bool ok, const char *what) {
 }
 
 void onWrite(uint32_t mask, bool set) {
+    if (set && (mask & (1u << kStepY))) {
+        if (GPIO.level & (1u << kDirY)) ++yUp; else ++yDown;
+    }
     if (!(mask & (1u << kStep)) || !set) return;
     const bool dirHigh = GPIO.level & (1u << kDir);
     if (dirHigh) ++stepsUp; else ++stepsDown;
@@ -36,7 +40,7 @@ struct Sim {
     StepperEngine e;
     float peak = 0;
     Sim(float vmax, float accel) {
-        const StepperEngine::Pins pins[3] = {{kStep, kDir, false}, {25, 26, false}, {27, 14, false}};
+        const StepperEngine::Pins pins[3] = {{kStep, kDir, false}, {kStepY, kDirY, false}, {27, 14, false}};
         e.begin(pins);
         e.setMaxSpeed(0, vmax);
         e.setAcceleration(0, accel);
@@ -116,6 +120,44 @@ int main() {
         check(s.e.position(0) == 20000, "10 kHz move lands exactly");
         check(minStepGap >= 2, "every step has a low tick between pulses");
         check(s.peak <= 10000.5f, "10000 steps/s cap respected");
+    }
+    {
+        // Y-axis reversal hunt: random X+Y and Y-only moves with planner jitter (0.2..5 ms
+        // between updates) and random decelerating stops, as the motion task sees them.
+        // Every pulse of a move must carry that move's direction.
+        Sim s(1000, 500);
+        s.e.setMaxSpeed(1, 500);
+        s.e.setAcceleration(1, 500);
+        std::srand(12345);
+        long reversed = 0, missed = 0;
+        for (int n = 0; n < 400; ++n) {
+            const int32_t start = s.e.position(1);
+            int32_t rel = (std::rand() % 1600) - 800;
+            if (!rel) rel = 1;
+            s.e.move(0, -rel);
+            s.e.move(1, rel);
+            const bool stopEarly = std::rand() % 5 == 0;
+            yUp = yDown = 0;
+            for (int guard = 0; (s.e.moving(0) || s.e.moving(1)) && guard < 40000; ++guard) {
+                const int jitterTicks = 4 + std::rand() % 97; // 0.2..5 ms of ISR ticks
+                s.e.update(jitterTicks / (float)StepperEngine::kTickHz);
+                for (int t = 0; t < jitterTicks; ++t, ++ticks) StepperEngine::onAlarm(nullptr, nullptr, &s.e);
+                if (stopEarly && guard == 50) s.e.stop(1);
+            }
+            if ((rel > 0 && yDown) || (rel < 0 && yUp)) ++reversed;
+            if (!stopEarly && s.e.position(1) != start + rel) ++missed;
+        }
+        check(reversed == 0, "Y never steps against the commanded direction (400 jittered moves)");
+        check(missed == 0, "Y lands exactly on every jittered move");
+    }
+    {
+        Sim s(1000, 500);
+        s.e.setCurrentPosition(1, 1000);
+        s.e.move(1, 2147483000);   // position + relative would wrap to a negative target
+        check(s.e.distanceToGo(1) > 0, "huge positive move saturates instead of wrapping backwards");
+        s.e.setCurrentPosition(1, -1000);
+        s.e.move(1, -2147483000);
+        check(s.e.distanceToGo(1) < 0, "huge negative move saturates instead of wrapping forwards");
     }
     {
         Sim s(1000, 500);

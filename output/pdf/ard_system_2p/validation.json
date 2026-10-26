@@ -1,0 +1,16 @@
+{
+  "pages": 2,
+  "format": "A4 landscape",
+  "text_bounds_ok": true,
+  "source_sha256": {
+    "C:\\Users\\work\\Desktop\\ETC\\ARD_software\\results\\kicad_legacy_261017\\pinmap.csv": "878725084df081dcfcda1e7d736a8f8642ca1be67e435cf550c3661c7ad987a1",
+    "C:\\Users\\work\\Desktop\\ETC\\ARD_software\\results\\kicad_legacy_261017\\ARD_Legacy.kicad_sch": "417ebf6a385a4c1ebec3290495ddbf57d9bbb08526ca876e15874c0e0d17de2d",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\DriveMCU\\main\\board.h": "b4fba012f7f51c144ad620c35caeb220a7a94881c83352dbe18d65acad6765a5",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\DriveMCU\\sdkconfig": "49b8ed1abc41d31507fc8c024f06c5d328d3fbfd7f41aec29e8fec839505fd6e",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\ImageSenderMCU\\main\\board_pins.h": "401d885e7e25a000a6336bee3a71c30f0654acb09e4a9590ac0d89c44c763ee8",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\JC1060P470C\\main\\board.h": "7e8209505640f34f3a9cf705822b5cbe94022953e714438976b63f7ab14c4be6",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\JC1060P470C\\README.md": "87041e068e84b83c5fbf033cad921d5fa6532909b921c7ab7a47777d27e35ddf"
+  },
+  "hardware_evidence": "User supplied power topology; no electrical or device test performed",
+  "builds_run": false
+}

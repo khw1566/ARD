@@ -1,0 +1,5 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>ARD CG 영상 출력</title>
+<style>body{margin:0;background:#111b23;color:#d9e7ed;font:15px 'Malgun Gothic',sans-serif;padding:24px}h1{font-size:23px}button{padding:12px 20px;color:#e1f2fa;background:#214050;border:1px solid #488ca8;cursor:pointer}button:disabled{opacity:.4}#preview{width:100%;max-width:1100px;display:block;background:#17242d;margin-top:20px}#log{white-space:pre-wrap;line-height:1.6}iframe{position:fixed;left:0;top:0;width:1920px;height:1080px;border:0;opacity:0;pointer-events:none;z-index:-1}</style>
+<h1>ARD CG · 1080p / 30 fps</h1><p>프레임 시간에 맞춰 3D 장면과 설명을 합성합니다.</p>
+<button id="test" disabled>시험 프레임 확인</button> <button id="render" disabled>영상 렌더링 시작</button><p id="status">CAD 로딩 중…</p><pre id="log"></pre><canvas id="preview" width="1920" height="1080"></canvas>
+<iframe id="source" src="/cinematic.html?t=0&still=1&export=1"></iframe><script src="/export_video.js"></script></html>

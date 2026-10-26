@@ -38,7 +38,7 @@
     const CAM_RES = ['VGA', 'SVGA', 'XGA', 'SXGA', 'UXGA'];
     const CAM_RES_PX = ['640x480', '800x600', '1024x768', '1280x1024', '1600x1200'];
     const CAM_QUALITY = [5, 10, 20, 40];
-    const PID_MIN = 145, PID_MAX = 175, PID_STEP = 5, Z_STEP_DELTA = 10;
+    const PID_MIN = 70, PID_MAX = 120, PID_STEP = 5, Z_STEP_DELTA = 10;
     const Z_STEP_BUTTONS = false; // firmware default (CONFIG_HMI_Z_STEP_BUTTONS=n)
     const RAIL_PID = false;       // firmware default (CONFIG_HMI_RAIL_PID=n)
 
@@ -147,7 +147,7 @@
         return {
             wifi_ok: false, server_ok: false, wifi_rssi: -127, server: location.hostname,
             dev: DEV_KEYS.map(() => ({ online: false, rssi: 0, temp: 0, ip: '', last_seen: '--:--:--' })),
-            has_tof: false, tof_mm: 0, pid_mode: false, pid_target: 145, z_step: 50, hb_ms: 1000, i2c_hz: 100000,
+            has_tof: false, tof_mm: 0, pid_mode: false, pid_target: 120, pid_min: PID_MIN, pid_max: PID_MAX, z_step: 50, hb_ms: 1000, i2c_hz: 100000,
             robot_x_deg: 0, robot_y_mm: 0, robot_z_mm: 0, grab: '---', robot_speed: [100, 700, 1000],
             cam_sensor: '---', cam_res: '---', cam_quality: 0, ai_object: 'None', ai_category: 'None', ai_model: '---',
             sound_mode: '---', sound_status: '---', ctrl_mode: '---',
@@ -178,6 +178,12 @@
             if (dev.online) dev.last_seen = stamp;
         });
         const drive = obj(root.drivemcu);
+        // Z safety limits read from the DriveMCU (hmi_net.c does the same).
+        const live = obj(drive?.live);
+        if (live) {
+            const lo = Math.trunc(num(live, 'rail_min', m.pid_min)), hi = Math.trunc(num(live, 'rail_max', m.pid_max));
+            if (lo >= 1 && hi <= 2000 && hi - lo >= 10) { m.pid_min = lo; m.pid_max = hi; }
+        }
         m.has_tof = !!drive && typeof drive.tof_dist === 'number';
         m.tof_mm = m.has_tof ? Math.trunc(drive.tof_dist) : 0;
         const robot = obj(obj(root.robot3axismcu)?.state_data);
@@ -333,9 +339,10 @@
             const rx = 140, ry = y + 30, rh = 110;
             fillRect(rx, ry, 6, rh, C.SEP);
             const clampY = v => Math.min(Math.max(v, ry), ry + rh);
-            const tof = m.has_tof ? m.tof_mm : PID_MIN;
-            if (m.has_tof) fillRect(rx - 10, clampY(ry + rh - Math.trunc((tof - PID_MIN) * rh / (PID_MAX - PID_MIN))) - 1, 10, 3, C.ON);
-            if (m.pid_mode) fillRect(rx + 6, clampY(ry + rh - Math.trunc((m.pid_target - PID_MIN) * rh / (PID_MAX - PID_MIN))) - 1, 10, 3, C.ACC2);
+            const lo = m.pid_min, hi = m.pid_max;
+            const tof = m.has_tof ? m.tof_mm : lo;
+            if (m.has_tof) fillRect(rx - 10, clampY(ry + rh - Math.trunc((tof - lo) * rh / (hi - lo))) - 1, 10, 3, C.ON);
+            if (m.pid_mode) fillRect(rx + 6, clampY(ry + rh - Math.trunc((m.pid_target - lo) * rh / (hi - lo))) - 1, 10, 3, C.ACC2);
             kv(y + 50, 'ToF:', m.has_tof ? `${m.tof_mm}mm` : '---', C.ON);
             if (m.pid_mode) kv(y + 72, 'TGT:', `${m.pid_target}mm`, C.ACC2);
             else kv(y + 72, 'STP:', `${m.z_step}`, C.TEXT);
@@ -494,7 +501,7 @@
             case 'i2c': i = (findInt(I2C_HZ, m.i2c_hz) + 1) % I2C_HZ.length; m.i2c_hz = I2C_HZ[i]; hold(); sendCommand(t, `mzc${I2C_HZ[i]}`); break;
             case 'pid': m.pid_mode = !m.pid_mode; hold(); sendCommand(t, m.pid_mode ? 'mzm1' : 'mzm0'); break;
             case 'target': {
-                const v = Math.min(Math.max(m.pid_target + b.arg, PID_MIN), PID_MAX);
+                const v = Math.min(Math.max(m.pid_target + b.arg, m.pid_min), m.pid_max);
                 m.pid_target = v; hold(); sendCommand(t, `mzt${v}`); break;
             }
             case 'zstep': m.z_step = Math.max(10, m.z_step + b.arg); hold(); sendCommand(t, `mzs${b.arg > 0 ? '+' : ''}${b.arg}`); break;

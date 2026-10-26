@@ -1,6 +1,7 @@
 #include "sensors.h"
 #include <math.h>
 #include <atomic>
+#include <string.h>
 #include "aht20.h"
 #include "ard_wire.h"
 #include "bmp280.h"
@@ -20,9 +21,13 @@ static const char *TAG = "sensors";
 namespace {
 
 constexpr uint32_t kTickMs = 10;
-constexpr uint32_t kTofPeriodMs = 50;
+constexpr uint32_t kTofBudgetUs = 50000;
+constexpr uint32_t kTofDataTimeoutMs = 200;
+constexpr uint32_t kTofMaxAgeMs = 200;
 constexpr uint32_t kBmpPeriodMs = 5000;
 constexpr uint32_t kDisplayPeriodMs = 250;
+constexpr uint32_t kTofRetryMs = 2000;  // a ToF that missed boot (XSHUT low, late power) is retried
+constexpr uint8_t kTofAddress = 0x29;
 
 BoundedAht20 aht;
 Bmp280 bmp;
@@ -38,6 +43,27 @@ EnvironmentSample environment;
 float tofDistance = 0;
 uint32_t tofStamp = 0;
 bool tofValid = false;
+uint32_t tofDataStamp = 0;
+uint16_t tofSamples[3] = {};
+uint8_t tofIndex = 0, tofCount = 0;
+uint32_t tofErrors = 0;
+
+void invalidateTof(const char *status) {
+    portENTER_CRITICAL(&lock);
+    tofValid = false;
+    tofStatus = status;
+    portEXIT_CRITICAL(&lock);
+    tofIndex = tofCount = 0;
+}
+
+void failTof(const char *status, bool recover, uint16_t rawMm = 0, uint8_t rawStatus = 0) {
+    invalidateTof(status);
+    if (recover) tofReady = false;
+    // Avoid flooding the logger when a target is absent or the bus is disconnected.
+    if (++tofErrors == 1 || tofErrors % 20 == 0)
+        log_async("ToF %s: raw=%umm device_status=%u errors=%lu recovery=%d",
+                  status, (unsigned)rawMm, (unsigned)rawStatus, (unsigned long)tofErrors, recover);
+}
 
 void scanBus() {
     int found = 0;
@@ -50,6 +76,61 @@ void scanBus() {
     if (!found) ESP_LOGW(TAG, "No I2C devices found");
 }
 
+// Status names tell the wiring fault apart: NO_DEVICE = no ACK at 0x29 (SDA/SCL, power,
+// XSHUT held low), BAD_ID = something answers at 0x29 but is not a VL53L0X,
+// INIT_FAIL = the sensor answered and then stopped during setup.
+bool initTof(bool announce) {
+#if ARD_TOF_ENABLED
+    const char *before = tofStatus;
+    tofReady = false;
+    invalidateTof("INIT");
+    const uint32_t errors = Wire.errorCount();
+    tof.clearIoError();
+    if (!Wire.probe(kTofAddress)) {
+        tofStatus = "NO_DEVICE";
+    } else {
+        // A previous interrupted init can leave a private register page selected.
+        // Return to page zero and soft-reset before running SPAD/ref calibration again.
+        tof.writeReg(0xFF, 0x00);
+        tof.writeReg(0x80, 0x00);
+        tof.writeReg(VL53L0X::SOFT_RESET_GO2_SOFT_RESET_N, 0x00);
+        delay(2);
+        tof.writeReg(VL53L0X::SOFT_RESET_GO2_SOFT_RESET_N, 0x01);
+        delay(10);
+        const uint8_t id = tof.readReg(VL53L0X::IDENTIFICATION_MODEL_ID);
+        tof.setTimeout(100); // bounded init calibration waits; runtime polling never waits
+        (void)tof.timeoutOccurred();
+        if (Wire.errorCount() != errors) {
+            tofStatus = "I2C_ERROR";
+        } else if (id != 0xEE) {
+            tofStatus = "BAD_ID";
+        } else if (!tof.init()) {
+            tofStatus = "INIT_FAIL";
+        } else if (!tof.setMeasurementTimingBudget(kTofBudgetUs)) {
+            tofStatus = "CONFIG_FAIL";
+        } else {
+            tof.startContinuous(); // back-to-back, explicit 50 ms integration budget
+            if (Wire.errorCount() == errors) {
+                tofReady = true;
+                tofStatus = "WARMUP"; // ready != a valid distance
+                tofDataStamp = millis();
+                log_async("ToF initialized: budget=%luus median=3 SDA=%d SCL=%d",
+                          (unsigned long)kTofBudgetUs, PIN_I2C_SDA, PIN_I2C_SCL);
+                return true;
+            }
+            tofStatus = "I2C_ERROR";
+        }
+        if (Wire.errorCount() != errors) tofStatus = "I2C_ERROR";
+    }
+    if (announce || strcmp(before, tofStatus) != 0)
+        log_async("ToF not ready: %s (VL53L0X 0x29 on SDA GPIO%d / SCL GPIO%d, XSHUT must be high). Retrying every %lus",
+                  (const char *)tofStatus, PIN_I2C_SDA, PIN_I2C_SCL, (unsigned long)(kTofRetryMs / 1000));
+#else
+    (void)announce;
+#endif
+    return false;
+}
+
 void initDevices() {
     scanBus();
     ahtReady = aht.begin();
@@ -58,16 +139,7 @@ void initDevices() {
     if (bmpReady) ESP_LOGI(TAG, "BMP280 found at 0x%02X", bmp.address());
     else ESP_LOGW(TAG, "BMP280 not found; check wiring/address");
 #if ARD_TOF_ENABLED
-    tof.setTimeout(60);
-    if (tof.init()) {
-        tof.startContinuous();
-        tofReady = true;
-        tofStatus = "OK";
-        log_async("ToF Sensor Initialized");
-    } else {
-        tofStatus = "INIT_FAIL";
-        log_async("ToF Sensor Init FAILED");
-    }
+    initTof(true);
 #else
     ESP_LOGI(TAG, "ToF disabled: open-loop rail control");
 #endif
@@ -95,24 +167,41 @@ void pollEnvironment(uint32_t now) {
 }
 
 void pollTof(uint32_t now) {
-    static uint32_t last = 0;
-    static float samples[5];
-    static uint8_t index = 0, count = 0;
-    if (!tofReady || now - last < kTofPeriodMs) return;
-    last = now;
-    const uint16_t mm = tof.readRangeContinuousMillimeters();
-    if (tof.timeoutOccurred()) { tofStatus = "TIMEOUT"; return; }
-    if (mm == 0 || mm > 2000) { tofStatus = "OUT OF RANGE"; return; }
-    tofStatus = "OK";
-    samples[index] = mm;
-    index = (index + 1) % 5;
-    if (count < 5) ++count;
-    float sum = 0;
-    for (uint8_t i = 0; i < count; ++i) sum += samples[i];
+    if (!tofReady) return;
+    const uint32_t errors = Wire.errorCount();
+    const uint8_t ready = tof.readReg(VL53L0X::RESULT_INTERRUPT_STATUS);
+    if (Wire.errorCount() != errors) { failTof("I2C_ERROR", true); return; }
+    if (!(ready & 0x07)) {
+        // No busy-wait: yield the shared bus to other sensors and OLED each tick.
+        if (now - tofDataStamp >= kTofDataTimeoutMs) failTof("TIMEOUT", true);
+        return;
+    }
+    uint8_t frame[12] = {};
+    tof.readMulti(VL53L0X::RESULT_RANGE_STATUS, frame, sizeof(frame));
+    if (Wire.errorCount() != errors) { failTof("I2C_ERROR", true); return; }
+    tof.writeReg(VL53L0X::SYSTEM_INTERRUPT_CLEAR, 0x01);
+    if (Wire.errorCount() != errors) { failTof("I2C_ERROR", true); return; }
+    tofDataStamp = millis();
+    const uint16_t mm = ((uint16_t)frame[10] << 8) | frame[11];
+    // ST raw device status 11 = ranging complete. This is NOT PAL RangeStatus 0.
+    // The lightweight Pololu port does not implement ST's software sigma estimator.
+    const uint8_t status = (frame[0] & 0x78) >> 3;
+    if (status != 11) { failTof("RANGE_ERROR", false, mm, status); return; }
+    if (mm == 0 || mm >= 2000) { failTof("OUT OF RANGE", false, mm, status); return; }
+    tofSamples[tofIndex] = mm;
+    tofIndex = (tofIndex + 1) % 3;
+    if (tofCount < 3) ++tofCount;
+    if (tofCount < 3) { tofStatus = "WARMUP"; return; }
+    uint16_t a = tofSamples[0], b = tofSamples[1], c = tofSamples[2];
+    if (a > b) { const uint16_t t = a; a = b; b = t; }
+    if (b > c) { b = c; }
+    if (a > b) { b = a; }
+    // Three consecutive valid frames are required after any measurement error.
     portENTER_CRITICAL(&lock);
-    tofDistance = sum / count;
-    tofStamp = now;
+    tofDistance = b;
+    tofStamp = tofDataStamp;
     tofValid = true;
+    tofStatus = "OK";
     portEXIT_CRITICAL(&lock);
 }
 
@@ -126,8 +215,13 @@ void sensorTask(void *) {
         esp_task_wdt_reset();
         const uint32_t now = millis();
         if (const uint32_t clock = requestedClock.exchange(0)) Wire.setClock(clock);
-        pollEnvironment(now);
-        pollTof(now);
+        static uint32_t lastTofTry = 0;
+        if (ARD_TOF_ENABLED && !tofReady && now - lastTofTry >= kTofRetryMs) {
+            lastTofTry = now;
+            initTof(false);
+        }
+        pollTof(millis()); // init/retry may have taken time
+        pollEnvironment(millis());
         if (oledReady) {
             if (now - lastRender >= kDisplayPeriodMs) {
                 lastRender = now;
@@ -157,25 +251,33 @@ EnvironmentSample sensors_environment() {
 
 bool sensors_tof_ready() { return tofReady; }
 
-bool sensors_tof(float *mm, uint32_t *ageMs) {
+bool sensors_tof(float *mm, uint32_t *ageMs, uint32_t *sampleStamp) {
     portENTER_CRITICAL(&lock);
     const bool valid = tofValid;
     const float distance = tofDistance;
     const uint32_t stamp = tofStamp;
     portEXIT_CRITICAL(&lock);
-    if (!valid) return false;
-    *mm = distance;
-    *ageMs = millis() - stamp;
-    return true;
+    const uint32_t age = millis() - stamp;
+    if (ageMs) *ageMs = age;
+    if (sampleStamp) *sampleStamp = stamp;
+    if (mm) *mm = distance;
+    return valid && age <= kTofMaxAgeMs;
 }
 
 float sensors_tof_last() {
-    portENTER_CRITICAL(&lock);
-    const float distance = tofDistance;
-    portEXIT_CRITICAL(&lock);
-    return distance;
+    float distance;
+    uint32_t age;
+    return sensors_tof(&distance, &age) ? distance : 0;
 }
 
-const char *sensors_tof_status() { return tofStatus; }
+const char *sensors_tof_status() {
+    const char *status = tofStatus;
+    if (!strcmp(status, "OK")) {
+        float mm;
+        uint32_t age;
+        if (!sensors_tof(&mm, &age)) return "STALE";
+    }
+    return status;
+}
 void sensors_request_i2c_clock(uint32_t hz) { requestedClock = hz; }
 bool sensors_oled_ready() { return oledReady; }

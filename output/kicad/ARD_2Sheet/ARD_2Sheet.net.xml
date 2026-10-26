@@ -1,0 +1,1974 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>C:\Users\work\Desktop\ARD_v1\output\kicad\ARD_2Sheet\ARD_2Sheet.kicad_sch</source>
+    <date>2026-10-26T18:19:16</date>
+    <tool>Eeschema 10.0.3</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>01  DriveMCU / ImageSenderMCU / 신호 및 전원</title>
+        <company>ARD / module interconnection</company>
+        <rev>2.0</rev>
+        <date>2026-10-26</date>
+        <source>ARD_2Sheet.kicad_sch</source>
+        <comment number="1" value="Logical module ports; TBD = unresolved physical wiring. All pins passive."/>
+        <comment number="2" value="Power topology from user. Not a PCB fabrication design."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="2" name="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/">
+      <title_block>
+        <title>02  JC1060・Robot3Axis・기존 선택 단말 / 신호·독립 전원</title>
+        <company>ARD / module interconnection</company>
+        <rev>2.0</rev>
+        <date>2026-10-26</date>
+        <source>02_Terminals_Robot.kicad_sch</source>
+        <comment number="1" value="Logical module ports; TBD = unresolved physical wiring. All pins passive."/>
+        <comment number="2" value="Power topology from user. Not a PCB fabrication design."/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="BZ1">
+      <value>BUZZER</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_BZ1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>02b5f339-f32c-551f-bfa4-c4c4c641338a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="BUZZER_DRIVE"/>
+            <pin num="RETURN"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J1">
+      <value>12V DC INPUT</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_J1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7acda2d4-c5bf-5b9a-9966-be1d18d216ba</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="+"/>
+            <pin num="-"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U1">
+      <value>STEP-DOWN 12V / 5V</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>43096d95-6129-536d-9250-05ec61c2f03a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="IN+"/>
+            <pin num="IN-"/>
+            <pin num="OUT+"/>
+            <pin num="OUT-"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U10">
+      <value>DriveMCU / ESP32</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U10" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c6358dc0-26b0-5cc1-8a4e-4b960145c15e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="19"/>
+            <pin num="21"/>
+            <pin num="22"/>
+            <pin num="23"/>
+            <pin num="25"/>
+            <pin num="26"/>
+            <pin num="27"/>
+            <pin num="32"/>
+            <pin num="33"/>
+            <pin num="5V"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U11">
+      <value>A4988 X</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U11" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f00f9b08-fa2a-53c3-a75a-dc2593a802e2</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT"/>
+            <pin num="VDD"/>
+            <pin num="GND"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U12">
+      <value>A4988 Y</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U12" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>84b5b826-5719-50d5-8891-98adfa7fb7bc</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT"/>
+            <pin num="VDD"/>
+            <pin num="GND"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U13">
+      <value>A4988 Z</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U13" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>76a008ab-6763-5d9b-b12d-3fc672456e13</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="VMOT"/>
+            <pin num="VDD"/>
+            <pin num="GND"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U21">
+      <value>SSD1306 0x3C</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U21" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>73f9c8f8-0c27-593b-b394-08916b741a3e</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U22">
+      <value>AHT20 0x38</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U22" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>69be0f27-779f-567e-9191-539d7c0b0904</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U23">
+      <value>BMP280 0x76/77</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U23" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bc4124ee-aa36-5463-a1be-9b1a6df348b9</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U24">
+      <value>ToF / OFF</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U24" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a2ed763e-820b-51b8-8b02-eefbf1f4a306</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="VCC"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U25">
+      <value>NEO-6M / OFF</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U25" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c51368b8-12f0-5363-b9ed-bef3da0be729</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="TX"/>
+            <pin num="RX"/>
+            <pin num="VCC"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U30">
+      <value>ImageSender / ESP32-S3</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U30" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>db01520a-ac30-5414-9c92-3c1bbc4a1f41</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
+            <pin num="8"/>
+            <pin num="9"/>
+            <pin num="10"/>
+            <pin num="11"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="15"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="5V"/>
+            <pin num="GND"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U31">
+      <value>DVP CAMERA</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="ARD_2Sheet_U31" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="ARD_2Sheet.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1612cfaa-2099-586b-9769-84d3cda26a99</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="D0"/>
+            <pin num="D1"/>
+            <pin num="D2"/>
+            <pin num="D3"/>
+            <pin num="D4"/>
+            <pin num="D5"/>
+            <pin num="D6"/>
+            <pin num="D7"/>
+            <pin num="XCLK"/>
+            <pin num="PCLK"/>
+            <pin num="VSYNC"/>
+            <pin num="HREF"/>
+            <pin num="SCCB_SDA"/>
+            <pin num="SCCB_SCL"/>
+            <pin num="PWR"/>
+            <pin num="GND"/>
+            <pin num="PWDN"/>
+            <pin num="RESET"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="BT1">
+      <value>MAKER BATTERY MODULE</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_BT1" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>f8ceba2f-2a6d-57d5-96fa-110bff67e2fc</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="+"/>
+            <pin num="-"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="DS1">
+      <value>JD9165 / MIPI-DSI</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_DS1" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>354dfc41-7ea0-5436-844f-988d50cf2bc3</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="RST"/>
+            <pin num="BL"/>
+            <pin num="DSI"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J2">
+      <value>JC EXTERNAL POWER</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_J2" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>c3d52e2a-e505-5610-9095-0ba56dc288ec</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="+"/>
+            <pin num="-"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J60">
+      <value>CONTROL ASSEMBLY</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_J60" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>6c18b9c4-199a-5942-9f5b-e187312a140a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SW201_UP"/>
+            <pin num="SW201_DOWN"/>
+            <pin num="SW201_LEFT"/>
+            <pin num="SW201_RIGHT"/>
+            <pin num="SW202_A"/>
+            <pin num="SW202_B"/>
+            <pin num="SW203_CONTACT"/>
+            <pin num="D201_DRIVE"/>
+            <pin num="U201_DIN"/>
+            <pin num="U201_LRC"/>
+            <pin num="U201_BCLK"/>
+            <pin num="U201_SD"/>
+            <pin num="D202_DIN"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="J70">
+      <value>LCD + TOUCH ASSEMBLY</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_J70" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>75b20d85-0124-56be-bcae-e522dc1781e4</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="U701_MOSI"/>
+            <pin num="U701_MISO"/>
+            <pin num="U701_SCLK"/>
+            <pin num="U701_CS"/>
+            <pin num="U701_DC"/>
+            <pin num="U701_BL_CTRL"/>
+            <pin num="U702_MOSI"/>
+            <pin num="U702_MISO"/>
+            <pin num="U702_CLK"/>
+            <pin num="U702_CS"/>
+            <pin num="U702_IRQ"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="K1">
+      <value>4CH RELAY / LOW</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_K1" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>a196d44f-34d6-52c4-8f8b-ee7f47cab625</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="IN1"/>
+            <pin num="IN2"/>
+            <pin num="IN3"/>
+            <pin num="IN4"/>
+            <pin num="PWR"/>
+            <pin num="CONTACTS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U40">
+      <value>JC1060 / ESP32-P4</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U40" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>26d599ae-3e7e-5034-aaa7-a29ff5a12a0a</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="EXT+"/>
+            <pin num="EXT-"/>
+            <pin num="BAT+"/>
+            <pin num="BAT-"/>
+            <pin num="0"/>
+            <pin num="7"/>
+            <pin num="8"/>
+            <pin num="9"/>
+            <pin num="10"/>
+            <pin num="11"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="15"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="19"/>
+            <pin num="23"/>
+            <pin num="48"/>
+            <pin num="54"/>
+            <pin num="DSI"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U41">
+      <value>GT911 / TOUCH</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U41" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>db40a28f-652c-56cc-8c4e-0c96f71b2ce0</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U42">
+      <value>ESP32-C6 / SDIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U42" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>b99c3dab-9c09-5600-9107-ef046cdf309c</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="CLK"/>
+            <pin num="CMD"/>
+            <pin num="D0"/>
+            <pin num="D1"/>
+            <pin num="D2"/>
+            <pin num="D3"/>
+            <pin num="RST"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U43">
+      <value>ES8311 + AMP / AUDIO</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U43" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>ea8296c5-c4f5-5e4c-a76f-037c68f26104</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="SDA"/>
+            <pin num="SCL"/>
+            <pin num="MCLK"/>
+            <pin num="BCLK"/>
+            <pin num="WS"/>
+            <pin num="DIN"/>
+            <pin num="DOUT"/>
+            <pin num="AMP_EN"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U50">
+      <value>Robot3Axis / ESP32-S3</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U50" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>c84f15f6-8ec6-5664-b6f6-810201c695bc</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="3"/>
+            <pin num="4"/>
+            <pin num="5"/>
+            <pin num="6"/>
+            <pin num="7"/>
+            <pin num="8"/>
+            <pin num="9"/>
+            <pin num="10"/>
+            <pin num="11"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="15"/>
+            <pin num="16"/>
+            <pin num="17"/>
+            <pin num="18"/>
+            <pin num="46"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U51">
+      <value>X STEP DRIVER</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U51" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>6bc84281-ffed-5505-8632-65c51f674c31</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="PWR"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U52">
+      <value>Y STEP DRIVER</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U52" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>ecc30e74-fc62-5e11-84fb-6af86f861140</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="PWR"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U53">
+      <value>Z STEP DRIVER</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U53" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>98ed1737-d6d3-576d-b53e-a2bbcee85a7d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="STEP"/>
+            <pin num="DIR"/>
+            <pin num="ENABLE_N"/>
+            <pin num="PWR"/>
+            <pin num="COILS"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U55">
+      <value>L298N / DC MOTOR</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U55" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>15334dad-5d04-5fa9-a50a-86de0aee517d</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="IN1"/>
+            <pin num="IN2"/>
+            <pin num="IN3"/>
+            <pin num="IN4"/>
+            <pin num="PWR"/>
+            <pin num="EN"/>
+            <pin num="OUT"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U60">
+      <value>Control / ESP32-S3</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U60" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>b3e799c0-0734-5c9b-a202-651d7bd77df0</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="4"/>
+            <pin num="11"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="21"/>
+            <pin num="35"/>
+            <pin num="36"/>
+            <pin num="39"/>
+            <pin num="40"/>
+            <pin num="41"/>
+            <pin num="42"/>
+            <pin num="47"/>
+            <pin num="48"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+    <comp ref="U70">
+      <value>HMI / CYD ESP32</value>
+      <fields>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="ARD2" part="02_Terminals_Robot_U70" description=""/>
+      <property name="Sheetname" value="02 JC1060 / Robot / Legacy"/>
+      <property name="Sheetfile" value="02_Terminals_Robot.kicad_sch"/>
+      <property name="exclude_from_board"/>
+      <sheetpath names="/02 JC1060 / Robot / Legacy/" tstamps="/5e500c0e-ba07-59d3-ab6b-269c343417b3/"/>
+      <tstamps>bee454fd-076f-5860-8c06-5bcf065f4f15</tstamps>
+      <units>
+        <unit name="A">
+          <pins>
+            <pin num="2"/>
+            <pin num="12"/>
+            <pin num="13"/>
+            <pin num="14"/>
+            <pin num="15"/>
+            <pin num="21"/>
+            <pin num="25"/>
+            <pin num="32"/>
+            <pin num="33"/>
+            <pin num="36"/>
+            <pin num="39"/>
+          </pins>
+        </unit>
+      </units>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="ARD2" part="02_Terminals_Robot_BT1">
+      <fields>
+        <field name="Reference">BT1</field>
+        <field name="Value">MAKER BATTERY MODULE</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="+" name="+" type="passive"/>
+        <pin num="-" name="-" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_DS1">
+      <fields>
+        <field name="Reference">DS1</field>
+        <field name="Value">JD9165 / MIPI-DSI</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="BL" name="BL" type="passive"/>
+        <pin num="DSI" name="DSI" type="passive"/>
+        <pin num="RST" name="RST" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_J2">
+      <fields>
+        <field name="Reference">J2</field>
+        <field name="Value">JC EXTERNAL POWER</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="+" name="+" type="passive"/>
+        <pin num="-" name="-" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_J60">
+      <fields>
+        <field name="Reference">J60</field>
+        <field name="Value">CONTROL ASSEMBLY</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="D201_DRIVE" name="DRIVE" type="passive"/>
+        <pin num="D202_DIN" name="DIN" type="passive"/>
+        <pin num="SW201_DOWN" name="DOWN" type="passive"/>
+        <pin num="SW201_LEFT" name="LEFT" type="passive"/>
+        <pin num="SW201_RIGHT" name="RIGHT" type="passive"/>
+        <pin num="SW201_UP" name="UP" type="passive"/>
+        <pin num="SW202_A" name="A" type="passive"/>
+        <pin num="SW202_B" name="B" type="passive"/>
+        <pin num="SW203_CONTACT" name="CONTACT" type="passive"/>
+        <pin num="U201_BCLK" name="BCLK" type="passive"/>
+        <pin num="U201_DIN" name="DIN" type="passive"/>
+        <pin num="U201_LRC" name="LRC" type="passive"/>
+        <pin num="U201_SD" name="SD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_J70">
+      <fields>
+        <field name="Reference">J70</field>
+        <field name="Value">LCD + TOUCH ASSEMBLY</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="U701_BL_CTRL" name="BL_CTRL" type="passive"/>
+        <pin num="U701_CS" name="CS" type="passive"/>
+        <pin num="U701_DC" name="DC" type="passive"/>
+        <pin num="U701_MISO" name="MISO" type="passive"/>
+        <pin num="U701_MOSI" name="MOSI" type="passive"/>
+        <pin num="U701_SCLK" name="SCLK" type="passive"/>
+        <pin num="U702_CLK" name="CLK" type="passive"/>
+        <pin num="U702_CS" name="CS" type="passive"/>
+        <pin num="U702_IRQ" name="IRQ" type="passive"/>
+        <pin num="U702_MISO" name="MISO" type="passive"/>
+        <pin num="U702_MOSI" name="MOSI" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_K1">
+      <fields>
+        <field name="Reference">K1</field>
+        <field name="Value">4CH RELAY / LOW</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="CONTACTS" name="CONTACTS" type="passive"/>
+        <pin num="IN1" name="IN1" type="passive"/>
+        <pin num="IN2" name="IN2" type="passive"/>
+        <pin num="IN3" name="IN3" type="passive"/>
+        <pin num="IN4" name="IN4" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U40">
+      <fields>
+        <field name="Reference">U40</field>
+        <field name="Value">JC1060 / ESP32-P4</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="0" name="GPIO0" type="passive"/>
+        <pin num="7" name="GPIO7" type="passive"/>
+        <pin num="8" name="GPIO8" type="passive"/>
+        <pin num="9" name="GPIO9" type="passive"/>
+        <pin num="10" name="GPIO10" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="19" name="GPIO19" type="passive"/>
+        <pin num="23" name="GPIO23" type="passive"/>
+        <pin num="48" name="GPIO48" type="passive"/>
+        <pin num="54" name="GPIO54" type="passive"/>
+        <pin num="BAT+" name="BAT+" type="passive"/>
+        <pin num="BAT-" name="BAT-" type="passive"/>
+        <pin num="DSI" name="MIPI-DSI" type="passive"/>
+        <pin num="EXT+" name="EXT+" type="passive"/>
+        <pin num="EXT-" name="EXT-" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U41">
+      <fields>
+        <field name="Reference">U41</field>
+        <field name="Value">GT911 / TOUCH</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U42">
+      <fields>
+        <field name="Reference">U42</field>
+        <field name="Value">ESP32-C6 / SDIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="CLK" name="CLK" type="passive"/>
+        <pin num="CMD" name="CMD" type="passive"/>
+        <pin num="D0" name="D0" type="passive"/>
+        <pin num="D1" name="D1" type="passive"/>
+        <pin num="D2" name="D2" type="passive"/>
+        <pin num="D3" name="D3" type="passive"/>
+        <pin num="RST" name="RST" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U43">
+      <fields>
+        <field name="Reference">U43</field>
+        <field name="Value">ES8311 + AMP / AUDIO</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="AMP_EN" name="AMP_EN" type="passive"/>
+        <pin num="BCLK" name="BCLK" type="passive"/>
+        <pin num="DIN" name="DIN" type="passive"/>
+        <pin num="DOUT" name="DOUT" type="passive"/>
+        <pin num="MCLK" name="MCLK" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="WS" name="WS" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U50">
+      <fields>
+        <field name="Reference">U50</field>
+        <field name="Value">Robot3Axis / ESP32-S3</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="3" name="GPIO3" type="passive"/>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="6" name="GPIO6" type="passive"/>
+        <pin num="7" name="GPIO7" type="passive"/>
+        <pin num="8" name="GPIO8" type="passive"/>
+        <pin num="9" name="GPIO9" type="passive"/>
+        <pin num="10" name="GPIO10" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="46" name="GPIO46" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U51">
+      <fields>
+        <field name="Reference">U51</field>
+        <field name="Value">X STEP DRIVER</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U52">
+      <fields>
+        <field name="Reference">U52</field>
+        <field name="Value">Y STEP DRIVER</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U53">
+      <fields>
+        <field name="Reference">U53</field>
+        <field name="Value">Z STEP DRIVER</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U55">
+      <fields>
+        <field name="Reference">U55</field>
+        <field name="Value">L298N / DC MOTOR</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="EN" name="EN" type="passive"/>
+        <pin num="IN1" name="IN1" type="passive"/>
+        <pin num="IN2" name="IN2" type="passive"/>
+        <pin num="IN3" name="IN3" type="passive"/>
+        <pin num="IN4" name="IN4" type="passive"/>
+        <pin num="OUT" name="OUT" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U60">
+      <fields>
+        <field name="Reference">U60</field>
+        <field name="Value">Control / ESP32-S3</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="35" name="GPIO35" type="passive"/>
+        <pin num="36" name="GPIO36" type="passive"/>
+        <pin num="39" name="GPIO39" type="passive"/>
+        <pin num="40" name="GPIO40" type="passive"/>
+        <pin num="41" name="GPIO41" type="passive"/>
+        <pin num="42" name="GPIO42" type="passive"/>
+        <pin num="47" name="GPIO47" type="passive"/>
+        <pin num="48" name="GPIO48" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="02_Terminals_Robot_U70">
+      <fields>
+        <field name="Reference">U70</field>
+        <field name="Value">HMI / CYD ESP32</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="2" name="GPIO2" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="14" name="GPIO14" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="25" name="GPIO25" type="passive"/>
+        <pin num="32" name="GPIO32" type="passive"/>
+        <pin num="33" name="GPIO33" type="passive"/>
+        <pin num="36" name="GPIO36" type="passive"/>
+        <pin num="39" name="GPIO39" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_BZ1">
+      <fields>
+        <field name="Reference">BZ1</field>
+        <field name="Value">BUZZER</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="BUZZER_DRIVE" name="BUZZER_DRIVE" type="passive"/>
+        <pin num="RETURN" name="RETURN" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_J1">
+      <fields>
+        <field name="Reference">J1</field>
+        <field name="Value">12V DC INPUT</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="+" name="+12V" type="passive"/>
+        <pin num="-" name="0V" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U1">
+      <fields>
+        <field name="Reference">U1</field>
+        <field name="Value">STEP-DOWN 12V / 5V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="IN+" name="IN+" type="passive"/>
+        <pin num="IN-" name="IN-" type="passive"/>
+        <pin num="OUT+" name="+5V" type="passive"/>
+        <pin num="OUT-" name="0V" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U10">
+      <fields>
+        <field name="Reference">U10</field>
+        <field name="Value">DriveMCU / ESP32</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="5V" name="5V" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="19" name="GPIO19" type="passive"/>
+        <pin num="21" name="GPIO21" type="passive"/>
+        <pin num="22" name="GPIO22" type="passive"/>
+        <pin num="23" name="GPIO23" type="passive"/>
+        <pin num="25" name="GPIO25" type="passive"/>
+        <pin num="26" name="GPIO26" type="passive"/>
+        <pin num="27" name="GPIO27" type="passive"/>
+        <pin num="32" name="GPIO32" type="passive"/>
+        <pin num="33" name="GPIO33" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U11">
+      <fields>
+        <field name="Reference">U11</field>
+        <field name="Value">A4988 X</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD" name="VDD" type="passive"/>
+        <pin num="VMOT" name="VMOT" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U12">
+      <fields>
+        <field name="Reference">U12</field>
+        <field name="Value">A4988 Y</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD" name="VDD" type="passive"/>
+        <pin num="VMOT" name="VMOT" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U13">
+      <fields>
+        <field name="Reference">U13</field>
+        <field name="Value">A4988 Z</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="COILS" name="COILS" type="passive"/>
+        <pin num="DIR" name="DIR" type="passive"/>
+        <pin num="ENABLE_N" name="ENABLE_N" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="STEP" name="STEP" type="passive"/>
+        <pin num="VDD" name="VDD" type="passive"/>
+        <pin num="VMOT" name="VMOT" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U21">
+      <fields>
+        <field name="Reference">U21</field>
+        <field name="Value">SSD1306 0x3C</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC" name="VCC" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U22">
+      <fields>
+        <field name="Reference">U22</field>
+        <field name="Value">AHT20 0x38</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC" name="VCC" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U23">
+      <fields>
+        <field name="Reference">U23</field>
+        <field name="Value">BMP280 0x76/77</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC" name="VCC" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U24">
+      <fields>
+        <field name="Reference">U24</field>
+        <field name="Value">ToF / OFF</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="SCL" name="SCL" type="passive"/>
+        <pin num="SDA" name="SDA" type="passive"/>
+        <pin num="VCC" name="VCC" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U25">
+      <fields>
+        <field name="Reference">U25</field>
+        <field name="Value">NEO-6M / OFF</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="RX" name="RX" type="passive"/>
+        <pin num="TX" name="TX" type="passive"/>
+        <pin num="VCC" name="VCC" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U30">
+      <fields>
+        <field name="Reference">U30</field>
+        <field name="Value">ImageSender / ESP32-S3</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="4" name="GPIO4" type="passive"/>
+        <pin num="5" name="GPIO5" type="passive"/>
+        <pin num="5V" name="5V" type="passive"/>
+        <pin num="6" name="GPIO6" type="passive"/>
+        <pin num="7" name="GPIO7" type="passive"/>
+        <pin num="8" name="GPIO8" type="passive"/>
+        <pin num="9" name="GPIO9" type="passive"/>
+        <pin num="10" name="GPIO10" type="passive"/>
+        <pin num="11" name="GPIO11" type="passive"/>
+        <pin num="12" name="GPIO12" type="passive"/>
+        <pin num="13" name="GPIO13" type="passive"/>
+        <pin num="15" name="GPIO15" type="passive"/>
+        <pin num="16" name="GPIO16" type="passive"/>
+        <pin num="17" name="GPIO17" type="passive"/>
+        <pin num="18" name="GPIO18" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="ARD2" part="ARD_2Sheet_U31">
+      <fields>
+        <field name="Reference">U31</field>
+        <field name="Value">DVP CAMERA</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="D0" name="D0" type="passive"/>
+        <pin num="D1" name="D1" type="passive"/>
+        <pin num="D2" name="D2" type="passive"/>
+        <pin num="D3" name="D3" type="passive"/>
+        <pin num="D4" name="D4" type="passive"/>
+        <pin num="D5" name="D5" type="passive"/>
+        <pin num="D6" name="D6" type="passive"/>
+        <pin num="D7" name="D7" type="passive"/>
+        <pin num="GND" name="GND" type="passive"/>
+        <pin num="HREF" name="HREF" type="passive"/>
+        <pin num="PCLK" name="PCLK" type="passive"/>
+        <pin num="PWDN" name="PWDN" type="passive"/>
+        <pin num="PWR" name="PWR" type="passive"/>
+        <pin num="RESET" name="RESET" type="passive"/>
+        <pin num="SCCB_SCL" name="SCCB_SCL" type="passive"/>
+        <pin num="SCCB_SDA" name="SCCB_SDA" type="passive"/>
+        <pin num="VSYNC" name="VSYNC" type="passive"/>
+        <pin num="XCLK" name="XCLK" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="ARD2">
+      <uri>${KIPRJMOD}/ARD2.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="/02 JC1060 / Robot / Legacy/C_G4" class="Default">
+      <node ref="J60" pin="D201_DRIVE" pinfunction="DRIVE_D201_DRIVE" pintype="passive"/>
+      <node ref="U60" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="2" name="/02 JC1060 / Robot / Legacy/C_G11" class="Default">
+      <node ref="J60" pin="SW203_CONTACT" pinfunction="CONTACT_SW203_CONTACT" pintype="passive"/>
+      <node ref="U60" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+    </net>
+    <net code="3" name="/02 JC1060 / Robot / Legacy/C_G13" class="Default">
+      <node ref="J60" pin="SW201_LEFT" pinfunction="LEFT_SW201_LEFT" pintype="passive"/>
+      <node ref="U60" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+    </net>
+    <net code="4" name="/02 JC1060 / Robot / Legacy/C_G14" class="Default">
+      <node ref="J60" pin="SW201_RIGHT" pinfunction="RIGHT_SW201_RIGHT" pintype="passive"/>
+      <node ref="U60" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+    </net>
+    <net code="5" name="/02 JC1060 / Robot / Legacy/C_G21" class="Default">
+      <node ref="J60" pin="SW201_DOWN" pinfunction="DOWN_SW201_DOWN" pintype="passive"/>
+      <node ref="U60" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+    </net>
+    <net code="6" name="/02 JC1060 / Robot / Legacy/C_G35" class="Default">
+      <node ref="J60" pin="SW202_A" pinfunction="A_SW202_A" pintype="passive"/>
+      <node ref="U60" pin="35" pinfunction="GPIO35_35" pintype="passive"/>
+    </net>
+    <net code="7" name="/02 JC1060 / Robot / Legacy/C_G36" class="Default">
+      <node ref="J60" pin="SW202_B" pinfunction="B_SW202_B" pintype="passive"/>
+      <node ref="U60" pin="36" pinfunction="GPIO36_36" pintype="passive"/>
+    </net>
+    <net code="8" name="/02 JC1060 / Robot / Legacy/C_G39" class="Default">
+      <node ref="J60" pin="U201_SD" pinfunction="SD_U201_SD" pintype="passive"/>
+      <node ref="U60" pin="39" pinfunction="GPIO39_39" pintype="passive"/>
+    </net>
+    <net code="9" name="/02 JC1060 / Robot / Legacy/C_G40" class="Default">
+      <node ref="J60" pin="U201_DIN" pinfunction="DIN_U201_DIN" pintype="passive"/>
+      <node ref="U60" pin="40" pinfunction="GPIO40_40" pintype="passive"/>
+    </net>
+    <net code="10" name="/02 JC1060 / Robot / Legacy/C_G41" class="Default">
+      <node ref="J60" pin="U201_LRC" pinfunction="LRC_U201_LRC" pintype="passive"/>
+      <node ref="U60" pin="41" pinfunction="GPIO41_41" pintype="passive"/>
+    </net>
+    <net code="11" name="/02 JC1060 / Robot / Legacy/C_G42" class="Default">
+      <node ref="J60" pin="U201_BCLK" pinfunction="BCLK_U201_BCLK" pintype="passive"/>
+      <node ref="U60" pin="42" pinfunction="GPIO42_42" pintype="passive"/>
+    </net>
+    <net code="12" name="/02 JC1060 / Robot / Legacy/C_G47" class="Default">
+      <node ref="J60" pin="SW201_UP" pinfunction="UP_SW201_UP" pintype="passive"/>
+      <node ref="U60" pin="47" pinfunction="GPIO47_47" pintype="passive"/>
+    </net>
+    <net code="13" name="/02 JC1060 / Robot / Legacy/C_G48" class="Default">
+      <node ref="J60" pin="D202_DIN" pinfunction="DIN_D202_DIN" pintype="passive"/>
+      <node ref="U60" pin="48" pinfunction="GPIO48_48" pintype="passive"/>
+    </net>
+    <net code="14" name="/02 JC1060 / Robot / Legacy/H_G2" class="Default">
+      <node ref="J70" pin="U701_DC" pinfunction="DC_U701_DC" pintype="passive"/>
+      <node ref="U70" pin="2" pinfunction="GPIO2_2" pintype="passive"/>
+    </net>
+    <net code="15" name="/02 JC1060 / Robot / Legacy/H_G12" class="Default">
+      <node ref="J70" pin="U701_MISO" pinfunction="MISO_U701_MISO" pintype="passive"/>
+      <node ref="U70" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+    </net>
+    <net code="16" name="/02 JC1060 / Robot / Legacy/H_G13" class="Default">
+      <node ref="J70" pin="U701_MOSI" pinfunction="MOSI_U701_MOSI" pintype="passive"/>
+      <node ref="U70" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+    </net>
+    <net code="17" name="/02 JC1060 / Robot / Legacy/H_G14" class="Default">
+      <node ref="J70" pin="U701_SCLK" pinfunction="SCLK_U701_SCLK" pintype="passive"/>
+      <node ref="U70" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+    </net>
+    <net code="18" name="/02 JC1060 / Robot / Legacy/H_G15" class="Default">
+      <node ref="J70" pin="U701_CS" pinfunction="CS_U701_CS" pintype="passive"/>
+      <node ref="U70" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+    </net>
+    <net code="19" name="/02 JC1060 / Robot / Legacy/H_G21" class="Default">
+      <node ref="J70" pin="U701_BL_CTRL" pinfunction="BL_CTRL_U701_BL_CTRL" pintype="passive"/>
+      <node ref="U70" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+    </net>
+    <net code="20" name="/02 JC1060 / Robot / Legacy/H_G25" class="Default">
+      <node ref="J70" pin="U702_CLK" pinfunction="CLK_U702_CLK" pintype="passive"/>
+      <node ref="U70" pin="25" pinfunction="GPIO25_25" pintype="passive"/>
+    </net>
+    <net code="21" name="/02 JC1060 / Robot / Legacy/H_G32" class="Default">
+      <node ref="J70" pin="U702_MOSI" pinfunction="MOSI_U702_MOSI" pintype="passive"/>
+      <node ref="U70" pin="32" pinfunction="GPIO32_32" pintype="passive"/>
+    </net>
+    <net code="22" name="/02 JC1060 / Robot / Legacy/H_G33" class="Default">
+      <node ref="J70" pin="U702_CS" pinfunction="CS_U702_CS" pintype="passive"/>
+      <node ref="U70" pin="33" pinfunction="GPIO33_33" pintype="passive"/>
+    </net>
+    <net code="23" name="/02 JC1060 / Robot / Legacy/H_G36" class="Default">
+      <node ref="J70" pin="U702_IRQ" pinfunction="IRQ_U702_IRQ" pintype="passive"/>
+      <node ref="U70" pin="36" pinfunction="GPIO36_36" pintype="passive"/>
+    </net>
+    <net code="24" name="/02 JC1060 / Robot / Legacy/H_G39" class="Default">
+      <node ref="J70" pin="U702_MISO" pinfunction="MISO_U702_MISO" pintype="passive"/>
+      <node ref="U70" pin="39" pinfunction="GPIO39_39" pintype="passive"/>
+    </net>
+    <net code="25" name="/02 JC1060 / Robot / Legacy/JC_AMP_EN" class="Default">
+      <node ref="U40" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+      <node ref="U43" pin="AMP_EN" pinfunction="AMP_EN_AMP_EN" pintype="passive"/>
+    </net>
+    <net code="26" name="/02 JC1060 / Robot / Legacy/JC_BAT_N_TBD" class="Default">
+      <node ref="BT1" pin="-" pinfunction="-_-" pintype="passive"/>
+      <node ref="U40" pin="BAT-" pinfunction="BAT-_BAT-" pintype="passive"/>
+    </net>
+    <net code="27" name="/02 JC1060 / Robot / Legacy/JC_BAT_P_TBD" class="Default">
+      <node ref="BT1" pin="+" pinfunction="+_+" pintype="passive"/>
+      <node ref="U40" pin="BAT+" pinfunction="BAT+_BAT+" pintype="passive"/>
+    </net>
+    <net code="28" name="/02 JC1060 / Robot / Legacy/JC_BCLK" class="Default">
+      <node ref="U40" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U43" pin="BCLK" pinfunction="BCLK_BCLK" pintype="passive"/>
+    </net>
+    <net code="29" name="/02 JC1060 / Robot / Legacy/JC_BL" class="Default">
+      <node ref="DS1" pin="BL" pinfunction="BL_BL" pintype="passive"/>
+      <node ref="U40" pin="23" pinfunction="GPIO23_23" pintype="passive"/>
+    </net>
+    <net code="30" name="/02 JC1060 / Robot / Legacy/JC_C6_RST" class="Default">
+      <node ref="U40" pin="54" pinfunction="GPIO54_54" pintype="passive"/>
+      <node ref="U42" pin="RST" pinfunction="RST_RST" pintype="passive"/>
+    </net>
+    <net code="31" name="/02 JC1060 / Robot / Legacy/JC_CLK" class="Default">
+      <node ref="U40" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U42" pin="CLK" pinfunction="CLK_CLK" pintype="passive"/>
+    </net>
+    <net code="32" name="/02 JC1060 / Robot / Legacy/JC_CMD" class="Default">
+      <node ref="U40" pin="19" pinfunction="GPIO19_19" pintype="passive"/>
+      <node ref="U42" pin="CMD" pinfunction="CMD_CMD" pintype="passive"/>
+    </net>
+    <net code="33" name="/02 JC1060 / Robot / Legacy/JC_D0" class="Default">
+      <node ref="U40" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+      <node ref="U42" pin="D0" pinfunction="D0_D0" pintype="passive"/>
+    </net>
+    <net code="34" name="/02 JC1060 / Robot / Legacy/JC_D1" class="Default">
+      <node ref="U40" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U42" pin="D1" pinfunction="D1_D1" pintype="passive"/>
+    </net>
+    <net code="35" name="/02 JC1060 / Robot / Legacy/JC_D2" class="Default">
+      <node ref="U40" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U42" pin="D2" pinfunction="D2_D2" pintype="passive"/>
+    </net>
+    <net code="36" name="/02 JC1060 / Robot / Legacy/JC_D3" class="Default">
+      <node ref="U40" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U42" pin="D3" pinfunction="D3_D3" pintype="passive"/>
+    </net>
+    <net code="37" name="/02 JC1060 / Robot / Legacy/JC_DIN" class="Default">
+      <node ref="U40" pin="48" pinfunction="GPIO48_48" pintype="passive"/>
+      <node ref="U43" pin="DOUT" pinfunction="DOUT_DOUT" pintype="passive"/>
+    </net>
+    <net code="38" name="/02 JC1060 / Robot / Legacy/JC_DOUT" class="Default">
+      <node ref="U40" pin="9" pinfunction="GPIO9_9" pintype="passive"/>
+      <node ref="U43" pin="DIN" pinfunction="DIN_DIN" pintype="passive"/>
+    </net>
+    <net code="39" name="/02 JC1060 / Robot / Legacy/JC_DSI" class="Default">
+      <node ref="DS1" pin="DSI" pinfunction="DSI_DSI" pintype="passive"/>
+      <node ref="U40" pin="DSI" pinfunction="MIPI-DSI_DSI" pintype="passive"/>
+    </net>
+    <net code="40" name="/02 JC1060 / Robot / Legacy/JC_EXT_N_TBD" class="Default">
+      <node ref="J2" pin="-" pinfunction="-_-" pintype="passive"/>
+      <node ref="U40" pin="EXT-" pinfunction="EXT-_EXT-" pintype="passive"/>
+    </net>
+    <net code="41" name="/02 JC1060 / Robot / Legacy/JC_EXT_P_TBD" class="Default">
+      <node ref="J2" pin="+" pinfunction="+_+" pintype="passive"/>
+      <node ref="U40" pin="EXT+" pinfunction="EXT+_EXT+" pintype="passive"/>
+    </net>
+    <net code="42" name="/02 JC1060 / Robot / Legacy/JC_LCD_RST" class="Default">
+      <node ref="DS1" pin="RST" pinfunction="RST_RST" pintype="passive"/>
+      <node ref="U40" pin="0" pinfunction="GPIO0_0" pintype="passive"/>
+    </net>
+    <net code="43" name="/02 JC1060 / Robot / Legacy/JC_MCLK" class="Default">
+      <node ref="U40" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U43" pin="MCLK" pinfunction="MCLK_MCLK" pintype="passive"/>
+    </net>
+    <net code="44" name="/02 JC1060 / Robot / Legacy/JC_SCL" class="Default">
+      <node ref="U40" pin="8" pinfunction="GPIO8_8" pintype="passive"/>
+      <node ref="U41" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U43" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+    </net>
+    <net code="45" name="/02 JC1060 / Robot / Legacy/JC_SDA" class="Default">
+      <node ref="U40" pin="7" pinfunction="GPIO7_7" pintype="passive"/>
+      <node ref="U41" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U43" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+    </net>
+    <net code="46" name="/02 JC1060 / Robot / Legacy/JC_WS" class="Default">
+      <node ref="U40" pin="10" pinfunction="GPIO10_10" pintype="passive"/>
+      <node ref="U43" pin="WS" pinfunction="WS_WS" pintype="passive"/>
+    </net>
+    <net code="47" name="/02 JC1060 / Robot / Legacy/R_CONTACT_TBD" class="Default">
+      <node ref="K1" pin="CONTACTS" pinfunction="CONTACTS_CONTACTS" pintype="passive"/>
+    </net>
+    <net code="48" name="/02 JC1060 / Robot / Legacy/R_DC_EN_TBD" class="Default">
+      <node ref="U55" pin="EN" pinfunction="EN_EN" pintype="passive"/>
+    </net>
+    <net code="49" name="/02 JC1060 / Robot / Legacy/R_DC_OUT_TBD" class="Default">
+      <node ref="U55" pin="OUT" pinfunction="OUT_OUT" pintype="passive"/>
+    </net>
+    <net code="50" name="/02 JC1060 / Robot / Legacy/R_DC_PWR_TBD" class="Default">
+      <node ref="U55" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="51" name="/02 JC1060 / Robot / Legacy/R_G3" class="Default">
+      <node ref="U50" pin="3" pinfunction="GPIO3_3" pintype="passive"/>
+      <node ref="U53" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="52" name="/02 JC1060 / Robot / Legacy/R_G4" class="Default">
+      <node ref="K1" pin="IN1" pinfunction="IN1_IN1" pintype="passive"/>
+      <node ref="U50" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="53" name="/02 JC1060 / Robot / Legacy/R_G5" class="Default">
+      <node ref="K1" pin="IN2" pinfunction="IN2_IN2" pintype="passive"/>
+      <node ref="U50" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+    </net>
+    <net code="54" name="/02 JC1060 / Robot / Legacy/R_G6" class="Default">
+      <node ref="K1" pin="IN3" pinfunction="IN3_IN3" pintype="passive"/>
+      <node ref="U50" pin="6" pinfunction="GPIO6_6" pintype="passive"/>
+    </net>
+    <net code="55" name="/02 JC1060 / Robot / Legacy/R_G7" class="Default">
+      <node ref="K1" pin="IN4" pinfunction="IN4_IN4" pintype="passive"/>
+      <node ref="U50" pin="7" pinfunction="GPIO7_7" pintype="passive"/>
+    </net>
+    <net code="56" name="/02 JC1060 / Robot / Legacy/R_G8" class="Default">
+      <node ref="U50" pin="8" pinfunction="GPIO8_8" pintype="passive"/>
+      <node ref="U53" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="57" name="/02 JC1060 / Robot / Legacy/R_G9" class="Default">
+      <node ref="U50" pin="9" pinfunction="GPIO9_9" pintype="passive"/>
+      <node ref="U51" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="58" name="/02 JC1060 / Robot / Legacy/R_G10" class="Default">
+      <node ref="U50" pin="10" pinfunction="GPIO10_10" pintype="passive"/>
+      <node ref="U51" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="59" name="/02 JC1060 / Robot / Legacy/R_G11" class="Default">
+      <node ref="U50" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+      <node ref="U51" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="60" name="/02 JC1060 / Robot / Legacy/R_G12" class="Default">
+      <node ref="U50" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U52" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="61" name="/02 JC1060 / Robot / Legacy/R_G13" class="Default">
+      <node ref="U50" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U52" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="62" name="/02 JC1060 / Robot / Legacy/R_G14" class="Default">
+      <node ref="U50" pin="14" pinfunction="GPIO14_14" pintype="passive"/>
+      <node ref="U52" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="63" name="/02 JC1060 / Robot / Legacy/R_G15" class="Default">
+      <node ref="U50" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U55" pin="IN1" pinfunction="IN1_IN1" pintype="passive"/>
+    </net>
+    <net code="64" name="/02 JC1060 / Robot / Legacy/R_G16" class="Default">
+      <node ref="U50" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U55" pin="IN2" pinfunction="IN2_IN2" pintype="passive"/>
+    </net>
+    <net code="65" name="/02 JC1060 / Robot / Legacy/R_G17" class="Default">
+      <node ref="U50" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U55" pin="IN3" pinfunction="IN3_IN3" pintype="passive"/>
+    </net>
+    <net code="66" name="/02 JC1060 / Robot / Legacy/R_G18" class="Default">
+      <node ref="U50" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U55" pin="IN4" pinfunction="IN4_IN4" pintype="passive"/>
+    </net>
+    <net code="67" name="/02 JC1060 / Robot / Legacy/R_G46" class="Default">
+      <node ref="U50" pin="46" pinfunction="GPIO46_46" pintype="passive"/>
+      <node ref="U53" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="68" name="/02 JC1060 / Robot / Legacy/R_RELAY_PWR_TBD" class="Default">
+      <node ref="K1" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="69" name="/02 JC1060 / Robot / Legacy/R_X_COIL_TBD" class="Default">
+      <node ref="U51" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="70" name="/02 JC1060 / Robot / Legacy/R_X_PWR_TBD" class="Default">
+      <node ref="U51" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="71" name="/02 JC1060 / Robot / Legacy/R_Y_COIL_TBD" class="Default">
+      <node ref="U52" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="72" name="/02 JC1060 / Robot / Legacy/R_Y_PWR_TBD" class="Default">
+      <node ref="U52" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="73" name="/02 JC1060 / Robot / Legacy/R_Z_COIL_TBD" class="Default">
+      <node ref="U53" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="74" name="/02 JC1060 / Robot / Legacy/R_Z_PWR_TBD" class="Default">
+      <node ref="U53" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="75" name="/BUZZ_RET_TBD" class="Default">
+      <node ref="BZ1" pin="RETURN" pinfunction="RETURN_RETURN" pintype="passive"/>
+    </net>
+    <net code="76" name="/CAM_G4" class="Default">
+      <node ref="U30" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+      <node ref="U31" pin="SCCB_SDA" pinfunction="SCCB_SDA_SCCB_SDA" pintype="passive"/>
+    </net>
+    <net code="77" name="/CAM_G5" class="Default">
+      <node ref="U30" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+      <node ref="U31" pin="SCCB_SCL" pinfunction="SCCB_SCL_SCCB_SCL" pintype="passive"/>
+    </net>
+    <net code="78" name="/CAM_G6" class="Default">
+      <node ref="U30" pin="6" pinfunction="GPIO6_6" pintype="passive"/>
+      <node ref="U31" pin="VSYNC" pinfunction="VSYNC_VSYNC" pintype="passive"/>
+    </net>
+    <net code="79" name="/CAM_G7" class="Default">
+      <node ref="U30" pin="7" pinfunction="GPIO7_7" pintype="passive"/>
+      <node ref="U31" pin="HREF" pinfunction="HREF_HREF" pintype="passive"/>
+    </net>
+    <net code="80" name="/CAM_G8" class="Default">
+      <node ref="U30" pin="8" pinfunction="GPIO8_8" pintype="passive"/>
+      <node ref="U31" pin="D2" pinfunction="D2_D2" pintype="passive"/>
+    </net>
+    <net code="81" name="/CAM_G9" class="Default">
+      <node ref="U30" pin="9" pinfunction="GPIO9_9" pintype="passive"/>
+      <node ref="U31" pin="D1" pinfunction="D1_D1" pintype="passive"/>
+    </net>
+    <net code="82" name="/CAM_G10" class="Default">
+      <node ref="U30" pin="10" pinfunction="GPIO10_10" pintype="passive"/>
+      <node ref="U31" pin="D3" pinfunction="D3_D3" pintype="passive"/>
+    </net>
+    <net code="83" name="/CAM_G11" class="Default">
+      <node ref="U30" pin="11" pinfunction="GPIO11_11" pintype="passive"/>
+      <node ref="U31" pin="D0" pinfunction="D0_D0" pintype="passive"/>
+    </net>
+    <net code="84" name="/CAM_G12" class="Default">
+      <node ref="U30" pin="12" pinfunction="GPIO12_12" pintype="passive"/>
+      <node ref="U31" pin="D4" pinfunction="D4_D4" pintype="passive"/>
+    </net>
+    <net code="85" name="/CAM_G13" class="Default">
+      <node ref="U30" pin="13" pinfunction="GPIO13_13" pintype="passive"/>
+      <node ref="U31" pin="PCLK" pinfunction="PCLK_PCLK" pintype="passive"/>
+    </net>
+    <net code="86" name="/CAM_G15" class="Default">
+      <node ref="U30" pin="15" pinfunction="GPIO15_15" pintype="passive"/>
+      <node ref="U31" pin="XCLK" pinfunction="XCLK_XCLK" pintype="passive"/>
+    </net>
+    <net code="87" name="/CAM_G16" class="Default">
+      <node ref="U30" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U31" pin="D7" pinfunction="D7_D7" pintype="passive"/>
+    </net>
+    <net code="88" name="/CAM_G17" class="Default">
+      <node ref="U30" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U31" pin="D6" pinfunction="D6_D6" pintype="passive"/>
+    </net>
+    <net code="89" name="/CAM_G18" class="Default">
+      <node ref="U30" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U31" pin="D5" pinfunction="D5_D5" pintype="passive"/>
+    </net>
+    <net code="90" name="/CAM_GND_TBD" class="Default">
+      <node ref="U31" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+    </net>
+    <net code="91" name="/CAM_PWR_TBD" class="Default">
+      <node ref="U31" pin="PWR" pinfunction="PWR_PWR" pintype="passive"/>
+    </net>
+    <net code="92" name="/D0V" class="Default">
+      <node ref="J1" pin="-" pinfunction="0V_-" pintype="passive"/>
+      <node ref="U1" pin="IN-" pinfunction="IN-_IN-" pintype="passive"/>
+      <node ref="U1" pin="OUT-" pinfunction="0V_OUT-" pintype="passive"/>
+      <node ref="U10" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U21" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U22" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U23" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U24" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U25" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+      <node ref="U30" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+    </net>
+    <net code="93" name="/D5V" class="Default">
+      <node ref="U1" pin="OUT+" pinfunction="+5V_OUT+" pintype="passive"/>
+      <node ref="U10" pin="5V" pinfunction="5V_5V" pintype="passive"/>
+      <node ref="U21" pin="VCC" pinfunction="VCC_VCC" pintype="passive"/>
+      <node ref="U22" pin="VCC" pinfunction="VCC_VCC" pintype="passive"/>
+      <node ref="U23" pin="VCC" pinfunction="VCC_VCC" pintype="passive"/>
+      <node ref="U24" pin="VCC" pinfunction="VCC_VCC" pintype="passive"/>
+      <node ref="U25" pin="VCC" pinfunction="VCC_VCC" pintype="passive"/>
+      <node ref="U30" pin="5V" pinfunction="5V_5V" pintype="passive"/>
+    </net>
+    <net code="94" name="/D_G4" class="Default">
+      <node ref="BZ1" pin="BUZZER_DRIVE" pinfunction="BUZZER_DRIVE_BUZZER_DRIVE" pintype="passive"/>
+      <node ref="U10" pin="4" pinfunction="GPIO4_4" pintype="passive"/>
+    </net>
+    <net code="95" name="/D_G5" class="Default">
+      <node ref="U10" pin="5" pinfunction="GPIO5_5" pintype="passive"/>
+      <node ref="U12" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="96" name="/D_G16" class="Default">
+      <node ref="U10" pin="16" pinfunction="GPIO16_16" pintype="passive"/>
+      <node ref="U12" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="97" name="/D_G17" class="Default">
+      <node ref="U10" pin="17" pinfunction="GPIO17_17" pintype="passive"/>
+      <node ref="U12" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="98" name="/D_G18" class="Default">
+      <node ref="U10" pin="18" pinfunction="GPIO18_18" pintype="passive"/>
+      <node ref="U11" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="99" name="/D_G19" class="Default">
+      <node ref="U10" pin="19" pinfunction="GPIO19_19" pintype="passive"/>
+      <node ref="U11" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="100" name="/D_G21" class="Default">
+      <node ref="U10" pin="21" pinfunction="GPIO21_21" pintype="passive"/>
+      <node ref="U11" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="101" name="/D_G22" class="Default">
+      <node ref="U10" pin="22" pinfunction="GPIO22_22" pintype="passive"/>
+      <node ref="U21" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U22" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U23" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+      <node ref="U24" pin="SDA" pinfunction="SDA_SDA" pintype="passive"/>
+    </net>
+    <net code="102" name="/D_G23" class="Default">
+      <node ref="U10" pin="23" pinfunction="GPIO23_23" pintype="passive"/>
+      <node ref="U21" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U22" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U23" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+      <node ref="U24" pin="SCL" pinfunction="SCL_SCL" pintype="passive"/>
+    </net>
+    <net code="103" name="/D_G25" class="Default">
+      <node ref="U10" pin="25" pinfunction="GPIO25_25" pintype="passive"/>
+      <node ref="U13" pin="STEP" pinfunction="STEP_STEP" pintype="passive"/>
+    </net>
+    <net code="104" name="/D_G26" class="Default">
+      <node ref="U10" pin="26" pinfunction="GPIO26_26" pintype="passive"/>
+      <node ref="U13" pin="DIR" pinfunction="DIR_DIR" pintype="passive"/>
+    </net>
+    <net code="105" name="/D_G27" class="Default">
+      <node ref="U10" pin="27" pinfunction="GPIO27_27" pintype="passive"/>
+      <node ref="U13" pin="ENABLE_N" pinfunction="ENABLE_N_ENABLE_N" pintype="passive"/>
+    </net>
+    <net code="106" name="/D_G32" class="Default">
+      <node ref="U10" pin="32" pinfunction="GPIO32_32" pintype="passive"/>
+      <node ref="U25" pin="TX" pinfunction="TX_TX" pintype="passive"/>
+    </net>
+    <net code="107" name="/D_G33" class="Default">
+      <node ref="U10" pin="33" pinfunction="GPIO33_33" pintype="passive"/>
+      <node ref="U25" pin="RX" pinfunction="RX_RX" pintype="passive"/>
+    </net>
+    <net code="108" name="/P12" class="Default">
+      <node ref="J1" pin="+" pinfunction="+12V_+" pintype="passive"/>
+      <node ref="U1" pin="IN+" pinfunction="IN+_IN+" pintype="passive"/>
+    </net>
+    <net code="109" name="/X_COILS_TBD" class="Default">
+      <node ref="U11" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="110" name="/X_GND_TBD" class="Default">
+      <node ref="U11" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+    </net>
+    <net code="111" name="/X_VDD_TBD" class="Default">
+      <node ref="U11" pin="VDD" pinfunction="VDD_VDD" pintype="passive"/>
+    </net>
+    <net code="112" name="/X_VMOT_TBD" class="Default">
+      <node ref="U11" pin="VMOT" pinfunction="VMOT_VMOT" pintype="passive"/>
+    </net>
+    <net code="113" name="/Y_COILS_TBD" class="Default">
+      <node ref="U12" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="114" name="/Y_GND_TBD" class="Default">
+      <node ref="U12" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+    </net>
+    <net code="115" name="/Y_VDD_TBD" class="Default">
+      <node ref="U12" pin="VDD" pinfunction="VDD_VDD" pintype="passive"/>
+    </net>
+    <net code="116" name="/Y_VMOT_TBD" class="Default">
+      <node ref="U12" pin="VMOT" pinfunction="VMOT_VMOT" pintype="passive"/>
+    </net>
+    <net code="117" name="/Z_COILS_TBD" class="Default">
+      <node ref="U13" pin="COILS" pinfunction="COILS_COILS" pintype="passive"/>
+    </net>
+    <net code="118" name="/Z_GND_TBD" class="Default">
+      <node ref="U13" pin="GND" pinfunction="GND_GND" pintype="passive"/>
+    </net>
+    <net code="119" name="/Z_VDD_TBD" class="Default">
+      <node ref="U13" pin="VDD" pinfunction="VDD_VDD" pintype="passive"/>
+    </net>
+    <net code="120" name="/Z_VMOT_TBD" class="Default">
+      <node ref="U13" pin="VMOT" pinfunction="VMOT_VMOT" pintype="passive"/>
+    </net>
+    <net code="121" name="unconnected-(U31-PadPWDN)" class="Default">
+      <node ref="U31" pin="PWDN" pinfunction="PWDN_PWDN" pintype="passive+no_connect"/>
+    </net>
+    <net code="122" name="unconnected-(U31-PadRESET)" class="Default">
+      <node ref="U31" pin="RESET" pinfunction="RESET_RESET" pintype="passive+no_connect"/>
+    </net>
+  </nets>
+</export>

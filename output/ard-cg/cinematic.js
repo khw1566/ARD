@@ -1,10 +1,13 @@
 /* Frame-driven, local CAD cinematography. This never connects to hardware. */
 const stage=document.getElementById('stage'),DURATION=135,DEG=Math.PI/180;
+const exportMode=new URLSearchParams(location.search).has('export');
+if(exportMode)document.body.classList.add('export-mode');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,stencil:true,preserveDrawingBuffer:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setPixelRatio(exportMode?1:Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.localClippingEnabled=true;
 stage.prepend(renderer.domElement);
+const overlayCanvas=document.createElement('canvas');overlayCanvas.id='artwork';overlayCanvas.width=1920;overlayCanvas.height=1080;stage.append(overlayCanvas);const artwork=overlayCanvas.getContext('2d');let captions={cg:[],intro:[]},overlayState=null,introTime=null;
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(30,1,1,8000);
 scene.fog=new THREE.Fog(0x28333c,1800,4500);
 const C=new THREE.Vector3(-217.8659,83.9029,88.32),FULL=new THREE.Vector3(-252,185,86);
@@ -33,6 +36,11 @@ const polymer=new THREE.MeshStandardMaterial({color:0x4e5a64,metalness:0,roughne
 const black=new THREE.MeshStandardMaterial({color:0x252c33,metalness:0,roughness:.46,bumpMap:resin,bumpScale:.03});
 const colorA=new THREE.MeshStandardMaterial({color:0xd69b48,metalness:1,roughness:.32,roughnessMap:grain});
 const colorB=new THREE.MeshStandardMaterial({color:0x387ba2,metalness:1,roughness:.32,roughnessMap:grain});
+const crossMaterial=new THREE.MeshStandardMaterial({color:0xa0a990,metalness:.8,roughness:.4,roughnessMap:grain});
+const planetMaterial=new THREE.MeshStandardMaterial({color:0x73b78e,metalness:.82,roughness:.4,roughnessMap:grain});
+const carrierMaterial=new THREE.MeshStandardMaterial({color:0x65b9dc,metalness:.7,roughness:.35,transparent:true,opacity:.22,depthWrite:false});
+const housingMaterial=new THREE.MeshStandardMaterial({color:0x8197a2,metalness:.6,roughness:.5,transparent:true,opacity:.25,depthWrite:false});
+const fixedPlanetMaterial=new THREE.MeshStandardMaterial({color:0x91a1a9,metalness:.6,roughness:.48,transparent:true,opacity:.12,depthWrite:false});
 const binsMat=new THREE.MeshStandardMaterial({color:0x87a0ad,metalness:0,roughness:.28,transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide});
 const cut=new THREE.Plane(new THREE.Vector3(0,0,-1),200);polymer.clippingPlanes=[cut];
 scene.add(new THREE.HemisphereLight(0xcedee8,0x27323a,1.25));
@@ -67,94 +75,74 @@ async function load(url,mat){
 }
 const src=f=>'/cad/'+encodeURIComponent(f);
 function rig(meshes,parent){
- const g=new THREE.Group();g.position.copy(C);parent.add(g);
- const nodes={};for(const [id,source] of Object.entries(meshes)){
-  const joint=new THREE.Group(),m=source.clone();m.position.copy(C).multiplyScalar(-1);joint.add(m);
-  if(id==='plate'){nodes.output.add(joint);}else g.add(joint);nodes[id]=joint;
- }
+ const nodes=ARDDifferential.create(meshes,parent,C),g=nodes.root;
  const arrow=(x,col)=>{const a=new THREE.Group();a.position.x=x;
   const arc=new THREE.Mesh(new THREE.TorusGeometry(38,.45,7,80,Math.PI*1.55),new THREE.MeshBasicMaterial({color:col}));arc.rotation.y=Math.PI/2;a.add(arc);
   const cone=new THREE.Mesh(new THREE.ConeGeometry(2.1,5.5,12),new THREE.MeshBasicMaterial({color:col}));cone.position.set(0,-37.5,-3);cone.rotation.x=-Math.PI/2;a.add(cone);g.add(a);return a;
  };
  nodes.arcA=arrow(-51,0xe7b05e);nodes.arcB=arrow(51,0x71c1e7);nodes.arcB.scale.z=-1;nodes.root=g;pivots.push(nodes);return nodes;
 }
-const scenes=[
- {t:0,title:'AI기반 자동화 분류장치',kick:'VISION TO MOTION',desc:'촬영한 물체를 분석하고, 기구의 동작으로 분류합니다.',sub:'비전의 판단은 어떻게 플레이트의 움직임이 될까요?'},
- {t:10,title:'판단을 움직임으로',kick:'01 / SYSTEM',desc:'비전 카메라 → PC 분석 → DriveMCU → 모터',sub:'분류 결과에 따라 이동할 위치와 플레이트의 자세를 정합니다.'},
- {t:21,title:'외피 아래의 구동 구조',kick:'02 / SECTION',desc:'외피 단면으로 드러나는 감속기와 차동 기구',sub:'두 모터의 회전은 감속기를 거쳐 서로 마주 보는 베벨기어로 전달됩니다.'},
- {t:34,title:'감속기의 내부',kick:'03 / REDUCTION',desc:'회전을 전달하는 유성기어와 출력축',sub:'감속기는 모터 입력과 베벨기어 입력축 사이에 배치됩니다.'},
- {t:44,title:'두 입력, 두 개의 움직임',kick:'04 / DIFFERENTIAL',desc:'A · B 입력축 / 출력축 / 플레이트',sub:'플레이트는 자신의 축을 중심으로 선회하고, 입력축을 중심으로 기울어집니다.'},
- {t:55,title:'모터 A만 구동하면',kick:'05 / INPUT A',desc:'B는 고정하고 A의 입력만 변화',sub:'한쪽 입력만 바꾸면 선회와 기울임이 함께 발생합니다.'},
- {t:68,title:'모터 B만 구동하면',kick:'06 / INPUT B',desc:'A는 고정하고 B의 입력만 변화',sub:'다른 쪽 입력은 선회에 더해지고, 기울임에는 반대 방향으로 작용합니다.'},
- {t:81,title:'입력을 같게 하면',kick:'07 / PURE YAW',desc:'a = b → φ = 0',sub:'같은 크기의 정규화된 입력은 기울임을 상쇄하고 선회만 남깁니다.'},
- {t:95,title:'입력을 반대로 하면',kick:'08 / PURE TILT',desc:'a = −b → ψ = 0',sub:'반대 크기의 입력은 선회를 상쇄하고 플레이트를 기울입니다.'},
- {t:109,title:'두 움직임을 조합하면',kick:'09 / KINEMATICS',desc:'a = ψ + φ / b = ψ − φ',sub:'목표 선회각과 기울임각을 더하고 빼면 두 입력축의 목표각을 구할 수 있습니다.'},
- {t:121,title:'레일 이동과 분류 동작',kick:'10 / SEQUENCE',desc:'이송 → 선회 → 전도 → 복귀',sub:'실제 선별에서는 레일과 선회, 전도를 순서대로 실행합니다.'},
- {t:130,title:'인식에서, 실제 동작까지',kick:'ARD',desc:'AI기반 자동화 분류장치',sub:'이제 실제 장치의 분류 과정을 확인합니다.'}
-];
+const scenes=ARDShots.scenes;
 let ready=false,time=0,playing=true,last=performance.now(),active=-1;
 const select=document.getElementById('shots');scenes.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.title;select.append(o);});
 function pose(a,b){
  const yaw=(a+b)/2,roll=(a-b)/2;
- for(const r of pivots){r.A.rotation.x=a*DEG;r.B.rotation.x=-b*DEG;r.output.rotation.set(roll*DEG,yaw*DEG,0,'XYZ');r.bottom.rotation.set(roll*DEG,-yaw*DEG,0,'XYZ');r.arcA.rotation.x=a*DEG;r.arcB.rotation.x=-b*DEG;}
- document.getElementById('av').textContent=a.toFixed(0)+'°';document.getElementById('bv').textContent=b.toFixed(0)+'°';document.getElementById('yv').textContent=yaw.toFixed(0)+'°';document.getElementById('rv').textContent=roll.toFixed(0)+'°';
+ for(const r of pivots){ARDDifferential.pose(r,a,b);r.arcA.rotation.x=a*DEG;r.arcB.rotation.x=-b*DEG;}
+
  return {yaw,roll};
 }
-function cameraAt(target,theta,radius,elevation,offset=0){
- camera.position.set(target.x+Math.cos(theta)*radius,target.y+elevation,target.z+Math.sin(theta)*radius);camera.lookAt(target);
- const w=stage.clientWidth,h=stage.clientHeight;camera.setViewOffset(w,h,w*offset,0,w,h);camera.updateProjectionMatrix();
+function applyCamera(plan){
+ camera.position.fromArray(plan.position);camera.up.fromArray(plan.up);camera.fov=plan.fov;camera.lookAt(new THREE.Vector3(...plan.target));
+ const w=stage.clientWidth,h=stage.clientHeight;camera.setViewOffset(w,h,w*plan.offset,0,w,h);camera.updateProjectionMatrix();
 }
-function labels(show){
- for(const [id,x,color] of [['A',-47,'#efb45c'],['B',47,'#79c9ec']]){
-  const l=document.getElementById('label'+id),path=document.getElementById('line'+id);l.style.opacity=show?1:0;path.style.display=show?'':'none';if(!show)continue;
-  const p=new THREE.Vector3(C.x+x,C.y,C.z).project(camera),w=stage.clientWidth,h=stage.clientHeight;
-  const lx=id==='A'?.10*w:.59*w,ly=.18*h+18;
-  path.setAttribute('d',`M ${lx+30} ${ly} L ${lx+30} ${ly+24} L ${(p.x*.5+.5)*w} ${(-p.y*.5+.5)*h}`);
- }
+
+function makePlanetGuide(rig){
+ const lineMaterial=new THREE.LineDashedMaterial({color:0x8cd4ad,dashSize:1.4,gapSize:1,transparent:true,opacity:.6});
+ const points=[];for(let i=0;i<=160;i++){const a=i*Math.PI*2/160;points.push(new THREE.Vector3(24*Math.cos(a),7,24*Math.sin(a)));}
+ const orbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),lineMaterial);orbit.computeLineDistances();rig.root.add(orbit);
+ const dot=(parent,color,x,y,z)=>{const mesh=new THREE.Mesh(new THREE.SphereGeometry(.9,10,8),new THREE.MeshBasicMaterial({color}));mesh.position.set(x,y,z);parent.add(mesh);};
+ dot(rig.sun,0xffd68b,9,5.8,0);
+ for(const part of rig.planets)dot(part.spin,0xe1ffe7,9,5.8,0);
+ const carrierGuide=new THREE.Group();rig.carrier.add(carrierGuide);
+ const blue=new THREE.LineBasicMaterial({color:0x79c9ec,transparent:true,opacity:.8});
+ for(const part of rig.planets){const x=part.center.x-rig.pivot.x,z=part.center.z-rig.pivot.z;const p=[new THREE.Vector3(0,16,0),new THREE.Vector3(x,16,z)];carrierGuide.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),blue));}
+ dot(carrierGuide,0x79c9ec,16,16,0);
+ const orbitTip=new THREE.Mesh(new THREE.ConeGeometry(.95,3.4,10),new THREE.MeshBasicMaterial({color:0x79c9ec}));orbitTip.position.set(24,7,-3);orbitTip.rotation.x=-Math.PI/2;carrierGuide.add(orbitTip);
+ return {orbit,carrierGuide};
 }
+
 function setTime(t){
- time=Math.max(0,Math.min(DURATION,t));let i=scenes.length-1;while(i>0&&time<scenes[i].t)i--;
- const s=scenes[i],end=scenes[i+1]?.t??DURATION,u=(time-s.t)/(end-s.t),k=ease(u);
- if(active!==i){document.getElementById('kicker').textContent=s.kick;document.getElementById('headline').textContent=s.title;document.getElementById('description').textContent=s.desc;document.getElementById('subtitle').textContent=s.sub;document.getElementById('chapter').textContent=String(i+1).padStart(2,'0')+' / '+scenes.length;select.value=i;active=i;}
- document.getElementById('seek').value=time;document.getElementById('clock').textContent=`${Math.floor(time/60)}:${String(Math.floor(time%60)).padStart(2,'0')} / 2:15`;document.getElementById('progress').style.width=time/DURATION*100+'%';
+ const frame=ARDShots.frameAt(t,parts.planetCenter?.toArray()),s=frame.shot,k=ease(frame.u);time=frame.time;
+ active=frame.index;select.value=active;document.getElementById('seek').value=time;document.getElementById('clock').textContent=`${Math.floor(time/60)}:${String(Math.floor(time%60)).padStart(2,'0')} / 2:15`;
  if(!ready)return;
- whole.visible=i<3||i>=10;macro.visible=i>=4&&i<=9;planetary.visible=i===3;ground.visible=whole.visible;
- parts.bins.visible=i===0||i===11;parts.cam.visible=i<2||i===11;parts.base.visible=true;
- cut.constant=i===2?200-115*k:300;
- parts.upper.position.x=i===10?15*Math.sin(k*Math.PI):0;parts.mainRig.root.position.x=C.x+parts.upper.position.x;
- let a=0,b=0;
- if(i===5){a=60*ease(Math.min(1,u*1.4));}
- if(i===6){b=60*ease(Math.min(1,u*1.4));}
- if(i===7){a=b=90*ease(Math.min(1,u*1.4));}
- if(i===8){a=34*ease(u*2.5)*(1-ease((u-.82)/.18));b=-a;}
- if(i===9){const q=ease(Math.min(1,u*1.4));a=65*q;b=25*q;}
- pose(a,b);
- const mathOn=i>=5&&i<=9;document.getElementById('math').style.opacity=mathOn?1:0;
- document.querySelector('.editorial').style.maxWidth=i>=4&&i<=9?'62%':'50%';
- if(i<2||i===11){cameraAt(FULL,-2.55+k*.17,1350,600,0);}
- else if(i===2){cameraAt(new THREE.Vector3(-218,100,87),2.1-k*.25,480,150,0);}
- else if(i===3){cameraAt(parts.planetCenter,.6+k*.25,260,145,0);}
- else if(i>=4&&i<=9){
-  const pullback=i>=5?ease((u-.5)/.35):1;
-  cameraAt(new THREE.Vector3(C.x,C.y+40*pullback,C.z),i===5?2.22:(i===6?.8:1.25)+k*.07,205+190*pullback+(i===8?15:0),45+65*pullback,.08);
-  const plateOpacity=i===4?1:ease((pullback-.4)/.4);
-  parts.detailRig.plate.visible=plateOpacity>.01;
-  parts.detailPlateMaterial.opacity=plateOpacity;parts.detailPlateMaterial.transparent=plateOpacity<1;parts.detailPlateMaterial.depthWrite=plateOpacity===1;
+ whole.visible=!frame.isPlanet&&!frame.isMacro;macro.visible=frame.isMacro;planetary.visible=frame.isPlanet;ground.visible=whole.visible;
+ parts.bins.visible=['hero','closing'].includes(s.kind);parts.cam.visible=['hero','system','closing'].includes(s.kind);parts.base.visible=true;
+ cut.constant=s.kind==='section'?200-115*k:300;
+ parts.upper.position.x=frame.rail||0;parts.mainRig.root.position.x=C.x+parts.upper.position.x;
+ pose(frame.a,frame.b);parts.detailRig.plate.visible=frame.plateOpacity>.01;parts.detailPlateMaterial.opacity=frame.plateOpacity;parts.detailPlateMaterial.transparent=frame.plateOpacity<1;parts.detailPlateMaterial.depthWrite=frame.plateOpacity===1;
+ applyCamera(frame.camera);
+ if(frame.isPlanet)ARDPlanetary.pose(parts.planetRig,frame.sunTurns,frame.explode);
+ if(parts.section){parts.section.visible=s.kind==='section';parts.cap.position.z=cut.constant;}
+ for(const r of pivots){r.arcA.visible=r.arcB.visible=frame.isMacro&&s.kind!=='differential';}
+ scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+ const labels=[];
+ if(frame.isMacro&&['input-a','input-b','compound'].includes(s.kind))for(const [id,x] of [['A',-72],['B',72]]){
+  const p=new THREE.Vector3(C.x+x,C.y+28,C.z).project(camera);labels.push({id,x:Math.max(84,Math.min(1215,(p.x*.5+.5)*1920-94)),y:Math.max(104,Math.min(730,(-p.y*.5+.5)*1080-60))});
  }
- else{cameraAt(new THREE.Vector3(-240,100,85),-2.25+k*.12,700,260,0);}
- if(parts.section){parts.section.visible=i===2;parts.cap.position.z=cut.constant;}
- for(const r of pivots){r.arcA.visible=r.arcB.visible=macro.visible&&i>=5;}
- labels(macro.visible&&i>=4&&u<.65);renderer.render(scene,camera);
+ const cue=(introTime===null?captions.cg:captions.intro).find(c=>(introTime??time)>=c.start&&(introTime??time)<c.end);
+ overlayState={frame,labels,intro:introTime!==null,caption:cue?.text||''};
+ renderer.render(scene,camera);ARDEditorial.paint(artwork,overlayState);
 }
 function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight);camera.aspect=stage.clientWidth/stage.clientHeight;setTime(time);}
 addEventListener('resize',resize);document.getElementById('play').onclick=()=>{playing=!playing;document.getElementById('play').textContent=playing?'일시 정지':'재생';};
 document.getElementById('seek').oninput=e=>{playing=false;document.getElementById('play').textContent='재생';setTime(+e.target.value);};
 select.onchange=()=>{playing=false;document.getElementById('play').textContent='재생';const i=+select.value;setTime(scenes[i].t+((scenes[i+1]?.t??DURATION)-scenes[i].t)*.75);};
-document.getElementById('sound').onclick=()=>{};
-window.cgReady=false;window.cgState=()=>({time,scene:active,ready,materials:'procedural brushed metal / resin',pose:poseValues(time)});
-function poseValues(t){return {note:'Input signs normalized to existing PC command convention; reduced shaft angles.'};}
+
+window.cgReady=false;window.cgState=()=>({time,scene:active,ready,frame:ARDShots.frameAt(time,parts.planetCenter?.toArray()),reduction:ARDPlanetary.motion(ARDShots.frameAt(time).sunTurns)});
+window.cgExport={frame(t){playing=false;introTime=null;setTime(t);return renderer.domElement;},intro(t){playing=false;introTime=t;setTime(Math.min(7.999,t*8/13));return renderer.domElement;},overlay:overlayCanvas,stage,data:()=>overlayState,ready:()=>ready};
 async function init(){
- const specs=[['base',src('하부이송구조.stl'),silver,whole],['upper','/assets/upper_without_core.stl',polymer,whole],['cam',src('비전 캠 장치.stl'),black,whole],['bins','/assets/bins.stl',binsMat,whole],['planet',src('커버와 베어링이 제거된 감속기.stl'),silver,planetary]];
+ await document.fonts.ready;await Promise.all([document.fonts.load("400 32px 'IBM Plex Sans KR'"),document.fonts.load("500 43px 'IBM Plex Sans KR'"),document.fonts.load("400 27px 'IBM Plex Mono'")]);captions=await (await fetch('/narration/cg_captions.json')).json();
+ const specs=[['base',src('하부이송구조.stl'),silver,whole],['upper','/assets/upper_without_core.stl',polymer,whole],['cam',src('비전 캠 장치.stl'),black,whole],['bins','/assets/bins.stl',binsMat,whole]];
  await Promise.all(specs.map(async([id,url,mat,parent])=>{const m=await load(url,mat);parts[id]=m;parent.add(m);}));
  // Stencil capping fills the sliced solid surfaces and hatches the section.
  const section=new THREE.Group();whole.add(section);parts.section=section;
@@ -167,7 +155,7 @@ async function init(){
  const hatch=new THREE.CanvasTexture(hatchCanvas);hatch.wrapS=hatch.wrapT=THREE.RepeatWrapping;hatch.repeat.set(16,8);hatch.colorSpace=THREE.SRGBColorSpace;
  const capMat=new THREE.MeshBasicMaterial({map:hatch,side:THREE.DoubleSide,stencilWrite:true,stencilRef:0,stencilFunc:THREE.NotEqualStencilFunc,stencilFail:THREE.ReplaceStencilOp,stencilZFail:THREE.ReplaceStencilOp,stencilZPass:THREE.ReplaceStencilOp});
  const cap=new THREE.Mesh(new THREE.PlaneGeometry(400,220),capMat);cap.position.set(-218,80,cut.constant);cap.renderOrder=3;cap.onAfterRender=()=>renderer.clearStencil();section.add(cap);parts.cap=cap;
- const rigMeshes={};await Promise.all([['A',colorA,'rig_A.stl'],['B',colorB,'rig_B.stl'],['output',silver,'rig_outputCore.stl'],['bottom',silver,'rig_bottom.stl'],['plate',silver,'tray.stl']].map(async([id,mat,file])=>rigMeshes[id]=await load('/assets/'+file,mat)));
+ const rigMeshes={};await Promise.all([['A',colorA,'rig_A.stl'],['B',colorB,'rig_B.stl'],['cross',crossMaterial,'rig_cross.stl'],['output',silver,'rig_outputCore.stl'],['bottom',silver,'rig_bottom.stl'],['plate',silver,'tray.stl']].map(async([id,mat,file])=>rigMeshes[id]=await load('/assets/'+file,mat)));
  parts.mainRig=rig(rigMeshes,whole);parts.detailRig=rig(rigMeshes,macro);
  parts.detailPlateMaterial=silver.clone();parts.detailRig.plate.children[0].material=parts.detailPlateMaterial;
  // An explanatory heading marker makes yaw visible on a rotationally symmetric tray.
@@ -175,7 +163,9 @@ async function init(){
  const headingLine=new THREE.Mesh(new THREE.BoxGeometry(46,.55,1.6),headingMat);headingLine.position.set(34,78,0);heading.add(headingLine);
  const headingTip=new THREE.Mesh(new THREE.ConeGeometry(2.7,7,12),headingMat);headingTip.position.set(60,78,0);headingTip.rotation.z=-Math.PI/2;heading.add(headingTip);
  parts.detailRig.plate.add(heading);
- const bb=parts.planet.geometry.boundingBox;parts.planetCenter=bb.getCenter(new THREE.Vector3());
+ const response=await fetch('/planetary_inventory.json');if(!response.ok)throw new Error('감속기 부품 정보 읽기 실패');const inventory=await response.json(),planetMeshes={};
+ await Promise.all(inventory.parts.map(async item=>{const id=item.role,material=id==='sun'?colorA:id==='carrier'?carrierMaterial:id==='housing'?housingMaterial:id.startsWith('planet')?planetMaterial:id.startsWith('mount')?silver:fixedPlanetMaterial;planetMeshes[id]=await load('/assets/'+item.file,material);}));
+ parts.planetRig=ARDPlanetary.create(planetMeshes,planetary,inventory);parts.planetCenter=parts.planetRig.pivot;parts.planetGuide=makePlanetGuide(parts.planetRig);
  document.getElementById('loading').classList.add('hidden');ready=true;window.cgReady=true;
  const initial=Number(new URLSearchParams(location.search).get('t'))||0;playing=!new URLSearchParams(location.search).has('still');document.getElementById('play').textContent=playing?'일시 정지':'재생';setTime(initial);resize();
 }

@@ -53,7 +53,10 @@ from core.board_settings import BoardSettings, DEVICE_NAMES, device_key
 from api.board_routes import register_board_routes
 from api.jc1060_voice_routes import VoiceIngress, GuidanceQueue, register_jc1060_voice_routes, register_jc1060_guidance_route
 
-from core.sorting_pipeline import FrameInbox, SortingPipeline, validate_analysis
+from core.sorting_pipeline import FrameInbox, SortingPipeline, request_line, validate_analysis
+from core.rail_control import RailTools, disc_tilt_error
+from core.drive_live import DriveLive
+from api.rail_routes import register_rail_routes
 from core.camera_stream import CameraStream
 from network.image_protocol import ImageReceiver, serve as serve_image_socket
 from network.drive_transport import drive_commands
@@ -118,11 +121,48 @@ def jc1060_voice_error(exc):
     update_voice_status("Idle")
 
 
+# Automatic announcements (not AI answers). The JC1060 keeps its on/off switch in
+# NVS and reports it in every heartbeat; older firmware omits it and stays on.
+jc1060_guidance_enabled = True
+GUIDANCE_REPEAT_S = 8.0   # the same sentence is not repeated while requests keep coming
+ESTOP_REPEAT_S = 2.0
+_guidance_lock = threading.Lock()
+_guidance_last = {}
+
+
+def guidance_muted():
+    return board_settings.snapshot()["voice_device"] == "jc1060" and not jc1060_guidance_enabled
+
+
+def guidance_due(key, repeat_s, sliding=True):
+    """False when `key` was requested less than repeat_s ago. A sliding window keeps a
+    held or rapidly repeated control silent until it has been idle for repeat_s."""
+    now = time.monotonic()
+    with _guidance_lock:
+        last = _guidance_last.get(key)
+        if last is not None and now - last < repeat_s:
+            if sliding:
+                _guidance_last[key] = now
+            return False
+        _guidance_last[key] = now
+        if len(_guidance_last) > 64:
+            for old in [k for k, t in _guidance_last.items() if now - t > 60]:
+                del _guidance_last[old]
+        return True
+
+
+def speak_guidance(text, repeat_s=GUIDANCE_REPEAT_S):
+    if guidance_muted() or not guidance_due(text, repeat_s):
+        return False
+    threading.Thread(target=tts_to_pcm_and_send, args=(text,), daemon=True).start()
+    return True
+
+
 def speak_jc1060_guidance(cue, text, generation):
     voice_job_context.generation = generation
     try:
         if cue == "emergency": play_emergency_stop_voice()
-        else: tts_to_pcm_and_send(text)
+        elif not guidance_muted() and guidance_due(text, GUIDANCE_REPEAT_S): tts_to_pcm_and_send(text)
     finally:
         del voice_job_context.generation
 
@@ -389,7 +429,7 @@ last_seen = {
 device_stats = {
     "ImageSenderMCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0, "capture_ms": 0, "tx_ms": 0},
     "HMI_MCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0},
-    "DriveMCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0, "gps_lat": 0.0, "gps_lng": 0.0, "tof_dist": 0, "env_temp": 0.0, "env_humid": 0.0, "env_press": 0.0, "last_move_ms": 0, "last_homing_ms": 0},
+    "DriveMCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0, "gps_lat": 0.0, "gps_lng": 0.0, "tof_dist": 0, "tof_status": "", "env_temp": 0.0, "env_humid": 0.0, "env_press": 0.0, "last_move_ms": 0, "last_homing_ms": 0},
     "Robot3AxisMCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0},
     "ControlMCU": {"rssi": 0, "ip": "Unknown", "temp": 0.0, "mode": "A", "sub_mode": 1, "status": "Idle"}
 }
@@ -423,7 +463,7 @@ drive_settings = {
     "hb_interval_ms": 1000,
     "i2c_clock_hz": 100000,
     "pid_mode": False,
-    "pid_target_tof": 145,
+    "pid_target_tof": 120,
     "z_step": 50
 }
 
@@ -440,10 +480,31 @@ robot3axis_state = {
     "z_speed": 1000
 }
 
+def apply_board_position(x, y, z):
+    """The DriveMCU's real step counts (TCP status) replace the PC's command estimate."""
+    for axis, steps in (("x", x), ("y", y), ("z", z)):
+        motor_state[f"m{axis}_steps"] = int(steps)
+        motor_state[f"m{axis}_deg"] = steps * 1.8 / (CONFIG.get(f"gear_ratio_{axis}", 1.0) or 1.0)
+    motor_state["roll_deg"] = (motor_state["mx_deg"] - motor_state["my_deg"]) / 2.0
+    motor_state["yaw_deg"] = (motor_state["mx_deg"] + motor_state["my_deg"]) / 2.0
+    broadcast_event({"type": "drive_update", "state": deepcopy(motor_state), "settings": deepcopy(drive_settings),
+                     "source": "board"})
+
+
 def update_motor_state(cmd):
     global motor_state
     if not cmd: return
-    if cmd == "CMD_HOME" or cmd == "home":
+    live = globals().get("drive_live")
+    if live is not None and live.board_live() and not cmd.startswith(("mzt", "mzm")):
+        # Positions come from the board itself (drive_live, ~300 ms); adding the
+        # command here as well would count every move twice.
+        return
+    if cmd == 'reset_xy':  # confirmed homing only: DriveMCU home preserves rail Z
+        for key in ('mx_steps', 'my_steps', 'mx_deg', 'my_deg', 'roll_deg', 'yaw_deg'):
+            motor_state[key] = 0
+        broadcast_event({'type': 'drive_update', 'state': deepcopy(motor_state), 'settings': deepcopy(drive_settings)})
+        return
+    if cmd in ("CMD_HOME", "home", "zero"):  # zero: the board now calls this spot 0
         for k in ["mx_steps", "my_steps", "mz_steps", "mx_deg", "my_deg", "mz_deg", "roll_deg", "yaw_deg"]:
             if k in motor_state:
                 motor_state[k] = 0
@@ -623,7 +684,7 @@ def receive_log():
 
 @app.route('/api/heartbeat', methods=['POST'])
 def receive_heartbeat():
-    global jc1060_seen_ip, jc1060_last_seen, jc1060_voice_seen, jc1060_audio_ready, jc1060_mic_ready
+    global jc1060_seen_ip, jc1060_last_seen, jc1060_voice_seen, jc1060_audio_ready, jc1060_mic_ready, jc1060_guidance_enabled
     try:
         data = request.get_json(silent=True)
         if not data:
@@ -663,6 +724,7 @@ def receive_heartbeat():
                 jc1060_last_seen = time.time()
                 jc1060_audio_ready = data.get("audio_ready") is True
                 jc1060_mic_ready = data.get("mic_ready") is True
+                jc1060_guidance_enabled = data.get("guidance") is not False
                 if jc1060_audio_ready and board_settings.snapshot()["voice_device"] == "jc1060":
                     jc1060_voice_seen = time.time()
         if target_key:
@@ -683,12 +745,12 @@ def receive_heartbeat():
                 if target_key == "controlmcu":
                     ssid = data.get("ssid", "Unknown")
                     msg = f"접속완료! 에스 에스 아이 디는 {ssid}입니다"
-                    threading.Thread(target=tts_to_pcm_and_send, args=(msg,), daemon=True).start()
+                    speak_guidance(msg)
                 else:
                     dev_ko = device_korean_names.get(target_key)
                     if dev_ko:
                         msg = f"{dev_ko}이 연결되었습니다."
-                        threading.Thread(target=tts_to_pcm_and_send, args=(msg,), daemon=True).start()
+                        speak_guidance(msg)
             
             display_name = (
                 "ImageSenderMCU" if target_key == "imagesendermcu" else 
@@ -722,6 +784,8 @@ def receive_heartbeat():
                 device_stats["DriveMCU"]["gps_lat"] = data.get("gps_lat", 0.0)
                 device_stats["DriveMCU"]["gps_lng"] = data.get("gps_lng", 0.0)
                 device_stats["DriveMCU"]["tof_dist"] = data.get("tof_dist", 0)
+                if "tof_status" in data:
+                    device_stats["DriveMCU"]["tof_status"] = data.get("tof_status")
                 if "last_move_ms" in data:
                     device_stats["DriveMCU"]["last_move_ms"] = data.get("last_move_ms", 0)
                 if "last_homing_ms" in data:
@@ -1258,6 +1322,9 @@ def send_udp_pcm(data_to_send, target_ip):
         broadcast_system_log(f"MCU 전송 실패: {e}", "Error")
 
 def play_emergency_stop_voice():
+    # Safety alarm: plays even with guidance off, but not again for each repeated stop.
+    if not guidance_due("__estop__", ESTOP_REPEAT_S, sliding=False):
+        return
     try:
         target_ip = get_voice_target_ip()
         if not target_ip:
@@ -1335,7 +1402,7 @@ def monitor_device_status_loop():
                     if current_state == "Offline" and last_seen_time > 0.0:
                         msg = f"{dev_ko}이 연결해제되었습니다."
                         broadcast_system_log(msg, "Voice")
-                        threading.Thread(target=tts_to_pcm_and_send, args=(msg,), daemon=True).start()
+                        speak_guidance(msg)
             time.sleep(2)
         except Exception as e:
             print(f"Device status monitor error: {e}")
@@ -1572,8 +1639,12 @@ def get_hmi_last_image():
 def get_hmi_updates():
     """JC1060이 짧은 간격으로 조회: 선별 상태, 새 이미지 순번, 스트림 여부"""
     import time as hmi_time
+    live = globals().get("drive_live")
+    rail = globals().get("rail_tools")
     return jsonify({"sorting": dict(sorting_status), "image_seq": hmi_image_seq,
-                    "stream": camera_stream.active, "unix_time": hmi_time.time()})
+                    "stream": camera_stream.active, "unix_time": hmi_time.time(),
+                    "drive": live.snapshot() if live else {},
+                    "rail": rail.snapshot() if rail else {}})
 
 @app.route('/api/imagesendermcu/command', methods=['POST'])
 @app.route('/api/transmitter/command', methods=['POST']) # Alias for main.js compatibility
@@ -1623,7 +1694,7 @@ def send_imagesendermcu_command():
         else:
             if cmd in ("capture", "analyze"):  # 수신한 모든 단일 촬영 프레임은 AI 분석까지 진행
                 camera_stream.stop()
-                threading.Thread(target=tts_to_pcm_and_send, args=("캡쳐하였습니다!",), daemon=True).start()
+                speak_guidance("캡쳐하였습니다!")
                 threading.Thread(target=trigger_image_capture, daemon=True).start()
             elif cmd in ("stream", "stream_on", "stream_off"):
                 # ImageSender는 단일 촬영만 지원하므로 PC가 연속 촬영을 이끈다.
@@ -1699,6 +1770,9 @@ def get_status():
             "gps_lat": device_stats["DriveMCU"]["gps_lat"],
             "gps_lng": device_stats["DriveMCU"]["gps_lng"],
             "tof_dist": device_stats["DriveMCU"]["tof_dist"],
+            "tof_status": device_stats["DriveMCU"].get("tof_status", ""),
+            # Board's own rail/ToF state from its TCP status (core/drive_live.py).
+            "live": globals()["drive_live"].snapshot() if globals().get("drive_live") else {},
             "env_temp": device_stats["DriveMCU"].get("env_temp"),
             "env_humid": device_stats["DriveMCU"].get("env_humid"),
             "env_press": device_stats["DriveMCU"].get("env_press"),
@@ -1732,6 +1806,7 @@ def get_status():
     status_data["hardware"] = settings
     status_data["jc1060"] = {"state": "Online" if jc1060_last_seen > 0 and time.time() - jc1060_last_seen < STATUS_THRESHOLD else "Offline", "ip": get_jc1060_ip(), "board": "JC1060P470C"}
     status_data["jc1060"].update({"audio_ready": jc1060_audio_ready, "mic_ready": jc1060_mic_ready,
+        "guidance": jc1060_guidance_enabled,
         "voice": {**jc1060_voice_ingress.snapshot(), "selected": settings["voice_device"] == "jc1060",
                   "mode": CONFIG["controlmcu"]["mode"], "volume": CONFIG["controlmcu"].get("volume", 12),
                   "sensitivity": CONFIG["controlmcu"].get("sensitivity", 2000)}})
@@ -2218,7 +2293,7 @@ def send_robot3axis_command():
     # Check for simultaneous 3-axis move request (including PTP absolute)
     if all(k in data for k in ("x", "y", "z")):
         if is_absolute:
-            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 피 티 피 제어 작동합니다.",), daemon=True).start()
+            speak_guidance("3축로봇 피 티 피 제어 작동합니다.")
             # Target coordinates provided in deg/mm
             tx_deg = float(data["x"])
             ty_mm = float(data["y"])
@@ -2233,7 +2308,7 @@ def send_robot3axis_command():
             sy = target_y_steps - robot3axis_state["y_steps"]
             sz = target_z_steps - robot3axis_state["z_steps"]
         else:
-            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 단일스탭 제어 작동합니다.",), daemon=True).start()
+            speak_guidance("3축로봇 단일스탭 제어 작동합니다.")
             # Relative steps provided
             sx = int(data["x"])
             sy = int(data["y"])
@@ -2272,10 +2347,10 @@ def send_robot3axis_command():
                 robot3axis_state["z_mm"] = 0.0
             elif cmd_lower == "grab open":
                 robot3axis_state["grab_state"] = "open"
-                threading.Thread(target=tts_to_pcm_and_send, args=("그리퍼 오픈!",), daemon=True).start()
+                speak_guidance("그리퍼 오픈!")
             elif cmd_lower == "grab close":
                 robot3axis_state["grab_state"] = "closed"
-                threading.Thread(target=tts_to_pcm_and_send, args=("그리퍼 클로즈!",), daemon=True).start()
+                speak_guidance("그리퍼 클로즈!")
             # --- HMI Relative Speed Control ---
             elif cmd_lower.startswith("rxs"):
                 delta = int(cmd[3:])
@@ -2297,17 +2372,17 @@ def send_robot3axis_command():
             elif cmd_lower.startswith("sz"):
                 robot3axis_state["z_speed"] = int(cmd[2:])
             elif cmd_lower.startswith("rx"):
-                threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 단일스탭 제어 작동합니다.",), daemon=True).start()
+                speak_guidance("3축로봇 단일스탭 제어 작동합니다.")
                 steps = int(cmd[2:])
                 robot3axis_state["x_steps"] += steps
                 robot3axis_state["x_deg"] += (steps * 90.0) / 180.0
             elif cmd_lower.startswith("ry"):
-                threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 단일스탭 제어 작동합니다.",), daemon=True).start()
+                speak_guidance("3축로봇 단일스탭 제어 작동합니다.")
                 steps = int(cmd[2:])
                 robot3axis_state["y_steps"] += steps
                 robot3axis_state["y_mm"] += (steps * -43.0) / 1000.0 # Inverted
             elif cmd_lower.startswith("rz"):
-                threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 단일스탭 제어 작동합니다.",), daemon=True).start()
+                speak_guidance("3축로봇 단일스탭 제어 작동합니다.")
                 steps = int(cmd[2:])
                 robot3axis_state["z_steps"] += steps
                 robot3axis_state["z_mm"] += (steps * -320.0) / 1400.0
@@ -2377,7 +2452,7 @@ def execute_drive_sequence(direction, target_ip):
             drive_sequence_state = "IDLE"
         else:
             broadcast_system_log(f"[Drive Seq] 무시됨: 현재 상태({drive_sequence_state})에서는 반대 조작만 가능합니다.", "System")
-            threading.Thread(target=tts_to_pcm_and_send, args=("해당 방향으로는 조작할 수 없습니다. 반대 방향으로 원상복구 해주세요.",), daemon=True).start()
+            speak_guidance("해당 방향으로는 조작할 수 없습니다. 반대 방향으로 원상복구 해주세요.")
     except Exception as e:
         broadcast_system_log(f"[Drive Seq] Error: {str(e)}", "System")
 
@@ -2471,11 +2546,11 @@ def update_control_state():
             if joystick.get("up"): 
                 drive_pid_target += 5
                 cmd = f"mzt{drive_pid_target}"
-                threading.Thread(target=tts_to_pcm_and_send, args=(f"Z축 목표 거리를 {drive_pid_target}으로 올립니다.",), daemon=True).start()
+                speak_guidance(f"Z축 목표 거리를 {drive_pid_target}으로 올립니다.")
             elif joystick.get("down"):
                 drive_pid_target = max(0, drive_pid_target - 5)
                 cmd = f"mzt{drive_pid_target}"
-                threading.Thread(target=tts_to_pcm_and_send, args=(f"Z축 목표 거리를 {drive_pid_target}으로 내립니다.",), daemon=True).start()
+                speak_guidance(f"Z축 목표 거리를 {drive_pid_target}으로 내립니다.")
             elif joystick.get("left") or joystick.get("right"):
                 direction = "LEFT" if joystick.get("left") else "RIGHT"
                 threading.Thread(target=execute_drive_sequence, args=(direction, device_stats["DriveMCU"]["ip"]), daemon=True).start()
@@ -2551,6 +2626,8 @@ def send_drive_command():
         return jsonify({"status": "busy", "message": "선별 작업 중 수동 모터 명령은 사용할 수 없습니다."}), 409
     if sorting_pipeline.active and cmd in ("x", "stop"):
         sorting_pipeline.cancelled.set()
+    if cmd in ("x", "stop"):
+        rail_tools.cancel()
     target_ip = CONFIG.get("drivemcu_ip") or device_stats["DriveMCU"].get("ip")
     if not target_ip or target_ip == "Unknown":
         return jsonify({"status": "error", "message": "DriveMCU IP가 없습니다. 보드 연결을 확인하세요."}), 503
@@ -2560,6 +2637,12 @@ def send_drive_command():
         stats_manager.record_api_call("mcp", success=True)
     if cmd == "CMD_HOME":
         cmd = f"b{-motor_state['mx_steps']},{-motor_state['my_steps']}"
+    # Disc tilt safety limit (±60°, rotation exempt). The DriveMCU enforces it too; checking
+    # here gives the operator the reason instead of a bare rejection.
+    tilt_error = disc_tilt_error(cmd, motor_state["mx_steps"], motor_state["my_steps"],
+                                 (CONFIG.get("gear_ratio_x", 1.0) or 1.0, CONFIG.get("gear_ratio_y", 1.0) or 1.0))
+    if tilt_error:
+        return jsonify({"status": "error", "message": tilt_error}), 409
 
     def apply_accepted(result):
         if not result.ok:
@@ -2579,8 +2662,8 @@ def send_drive_command():
             pass
         CONFIG["drivemcu_command"] = cmd
         update_motor_state(cmd)
-        if cmd.startswith('b') or (cmd.startswith('mz') and not cmd.startswith(('mzh', 'mzc', 'mzm', 'mzt'))):
-            threading.Thread(target=tts_to_pcm_and_send, args=("분류구조 작동합니다.",), daemon=True).start()
+        if cmd.startswith('b') or (cmd.startswith('mz') and not cmd.startswith(('mzh', 'mzc', 'mzm', 'mzt', 'mzl'))):
+            speak_guidance("분류구조 작동합니다.")
 
     if cmd in ("x", "stop"):
         threading.Thread(target=play_emergency_stop_voice, daemon=True).start()
@@ -2651,8 +2734,17 @@ def trigger_image_capture():
     return "poll"
 
 
+def queue_camera_poll(command):
+    CONFIG["imagesendermcu"]["command"] = command
+
+
+from core.camera_control import CameraControl
+camera_control = CameraControl(lambda: CONFIG.get("imagesendermcu_ip") or device_stats["ImageSenderMCU"].get("ip"),
+                               queue_camera_poll)
+
+
 def request_sorting_capture():
-    trigger_image_capture()
+    return camera_control.capture()
 
 
 def analyze_sorting_frame(frame):
@@ -2681,14 +2773,79 @@ def analyze_sorting_frame(frame):
 
 sorting_pipeline = SortingPipeline(sorting_frames, request_sorting_capture,
                                    analyze_sorting_frame, publish_sorting_state,
-                                   update_motor_state)
+                                   update_motor_state, camera_reset=camera_control.reset)
 
 camera_stream = CameraStream(trigger_image_capture, sorting_frames, lambda: sorting_pipeline.active)
+
+def publish_drive_live(live, changed):
+    """Board ToF/rail state -> PC caches, browser (SSE) and JC1060 (/api/status, /api/hmi/updates)."""
+    if live.get("tof_mm") is not None:
+        device_stats["DriveMCU"]["tof_dist"] = live["tof_mm"]
+        motor_state["tof_dist"] = live["tof_mm"]
+    if live.get("tof_status") is not None:
+        device_stats["DriveMCU"]["tof_status"] = live["tof_status"]
+    settings_changed = False
+    position = [live.get(axis) for axis in ("x", "y", "z")]
+    moved = bool(changed & {"x", "y", "z", "boot_id"})
+    if moved and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in position):
+        apply_board_position(*position)  # whoever moved the axes: PC, JC1060, HMI, serial
+    if "pid" in changed and isinstance(live.get("pid"), bool):
+        drive_settings["pid_mode"] = live["pid"]
+        settings_changed = True
+    if "rail_target" in changed and isinstance(live.get("rail_target"), (int, float)):
+        drive_settings["pid_target_tof"] = int(round(live["rail_target"]))
+        settings_changed = True
+    broadcast_event({"type": "drive_live", "live": live})
+    if settings_changed and not moved:
+        broadcast_event({"type": "drive_update", "state": deepcopy(motor_state), "settings": deepcopy(drive_settings)})
+
+
+def drive_ip():
+    return CONFIG.get("drivemcu_ip") or device_stats["DriveMCU"].get("ip")
+
+
+def drive_live_enabled():
+    ip = drive_ip()
+    remote = globals().get("jc1060_drive_input")
+    # A JC1060 jog reads status itself every 0.5 s; those samples are recorded.
+    return (get_device_status("DriveMCU") == "Online" and bool(ip) and ip != "Unknown"
+            and board_settings.accepts("drivemcu", {}, ip, get_jc1060_ip())
+            and not (remote and remote.active))
+
+
+drive_live = DriveLive(lambda ip: request_line(ip, "status", timeout=0.25), drive_ip,
+                       drive_live_enabled, publish_drive_live)
+
+
+def drive_request_line(ip, command, timeout=3):
+    """request_line that also records every `status` answer in drive_live."""
+    response = request_line(ip, command, timeout=timeout)
+    if command == "status":
+        drive_live.record_text(response)
+    return response
+
 
 jc1060_drive_input = register_jc1060_drive_routes(
     app, board_settings, get_jc1060_ip,
     lambda: CONFIG.get("drivemcu_ip") or device_stats["DriveMCU"].get("ip"),
-    drive_commands, lambda: sorting_pipeline, update_motor_state)
+    drive_commands, lambda: sorting_pipeline, update_motor_state,
+    read_status=lambda ip: json.loads(drive_request_line(ip, "status", timeout=0.25)))
+
+
+# Z rail ToF PID calibration (mirrored mount since 2026-10-26) and its measuring tools.
+rail_tools = RailTools(os.path.join(os.path.dirname(__file__), "rail_calibration.json"), drive_request_line)
+def release_jc1060_manual_for_rail():
+    active = jc1060_drive_input.active
+    jc1060_drive_input.cancel()
+    return active
+
+register_rail_routes(app, rail_tools, lambda: CONFIG.get("drivemcu_ip") or device_stats["DriveMCU"].get("ip"),
+                     lambda: sorting_pipeline.active,
+                     allowed_terminal=lambda: board_settings.snapshot()["control_terminal"] == "jc1060"
+                     and bool(get_jc1060_ip()) and request.remote_addr == get_jc1060_ip()
+                     and board_settings.accepts("drivemcu", {}, drive_ip(), get_jc1060_ip()),
+                     cancel_manual=release_jc1060_manual_for_rail,
+                     get_ratios=lambda: (float(CONFIG.get("gear_ratio_x", 1)), float(CONFIG.get("gear_ratio_y", 1))))
 
 
 def execute_sorting_pipeline(config):
@@ -2713,12 +2870,15 @@ def start_sorting_sequence():
             config[f"gear_ratio_{axis}"] = ratio
     except (ValueError, TypeError):
         return jsonify({"status": "error", "message": "감속비는 유효한 양수여야 합니다."}), 400
+    if rail_tools.busy:
+        return jsonify({"status": "busy", "message": "레일 측정·레벨링 도구가 실행 중입니다."}), 409
+    config["rail"] = rail_tools.snapshot()  # mode pid: ToF targets, open_loop: steps
     if not sorting_pipeline.reserve():
         return jsonify({"status": "busy", "message": "선별 작업이 이미 진행 중입니다."}), 409
     camera_stream.stop()  # 선별 촬영이 우선
     for axis in "xy":
         CONFIG[f"gear_ratio_{axis}"] = config[f"gear_ratio_{axis}"]
-    publish_sorting_state(is_running=True, step="capturing", step_num=1, progress=0, phase="prepare",
+    publish_sorting_state(is_running=True, step="initializing", step_num=1, progress=0, phase="init",
                          step_desc="장치 준비 상태 확인 중", error=None)
     try:
         threading.Thread(target=execute_sorting_pipeline, args=(config,), daemon=True).start()
@@ -2731,13 +2891,39 @@ def start_sorting_sequence():
 
 @app.route('/api/sorting/cancel', methods=['POST'])
 def cancel_sorting_sequence():
-    if not sorting_pipeline.active:
+    if not sorting_pipeline.active and not sorting_pipeline.resetting:
         return jsonify({"status": "error", "message": "진행 중인 선별 작업이 없습니다."}), 409
     try:
         sorting_pipeline.cancel()
         return jsonify({"status": "stopping"})
     except Exception:
         return jsonify({"status": "error", "message": "중단 요청은 접수했지만 모터 정지 응답을 확인하지 못했습니다."}), 502
+
+
+@app.route('/api/sorting/reset', methods=['POST'])
+def reset_sorting_sequence():
+    if sorting_pipeline.active or sorting_pipeline.resetting:
+        return jsonify({'status': 'busy', 'message': '진행 중인 작업을 중단한 뒤 초기화하세요.'}), 409
+    if rail_tools.busy:
+        return jsonify({'status': 'busy', 'message': '레일 도구를 중단한 뒤 초기화하세요.'}), 409
+    ip = drive_ip()
+    if not ip or ip == 'Unknown' or not board_settings.accepts('drivemcu', {}, ip, get_jc1060_ip()):
+        return jsonify({'status': 'error', 'message': 'DriveMCU 주소를 확인하세요.'}), 503
+    camera_stream.stop()
+    CONFIG['imagesendermcu']['command'] = None
+    if not sorting_pipeline.reserve_reset():
+        return jsonify({'status': 'busy', 'message': '작업 중입니다.'}), 409
+    jc1060_drive_input.cancel()
+    publish_sorting_state(step='resetting', phase='reset', step_num=0, progress=0, is_running=True,
+                          step_desc='카메라 촬영 상태 초기화·트레이 수평 복귀 중', error=None)
+    try:
+        threading.Thread(target=sorting_pipeline.reset, args=(ip,), daemon=True).start()
+    except Exception:
+        sorting_pipeline.resetting = False
+        sorting_pipeline.active = False
+        publish_sorting_state(step='error', phase='error', is_running=False, error='초기화 작업 시작 실패')
+        raise
+    return jsonify({'status': 'resetting'})
 
 
 @app.route('/api/sorting/status', methods=['GET'])
@@ -2779,7 +2965,7 @@ def get_drivemcu_config():
         "command": cmd
     })
 
-def process_udp_frame(frame_data, source_type="UDP"):
+def process_udp_frame(frame_data, source_type="UDP", capture_id=None):
     global last_seen
     start_time = time.time()
     last_seen["imagesendermcu"] = start_time
@@ -2809,7 +2995,7 @@ def process_udp_frame(frame_data, source_type="UDP"):
         last_jc1060_image = jc_io.getvalue()
         hmi_image_seq += 1
         last_raw_image = frame_data
-        sorting_frames.publish(frame_data)
+        sorting_frames.publish(frame_data, capture_id=capture_id)
         
         if board_settings.snapshot()["control_terminal"] == "legacy" and CONFIG["hmi_mcu_ip"]:
             try:
@@ -2835,7 +3021,7 @@ def process_udp_frame(frame_data, source_type="UDP"):
 
         # The active sorter analyzes its captured frame once and publishes the result.
         # Live preview frames are not sent to the AI (cost and latency per frame).
-        if sorting_pipeline.active or camera_stream.active:
+        if capture_id is not None or sorting_pipeline.active or sorting_pipeline.resetting or camera_stream.active:
             return
 
         # [Step 2] Gemini 분석
@@ -3850,7 +4036,7 @@ def hmi_approve():
                 broadcast_system_log(f"실행 오류: {e}", "System")
         else:
             broadcast_system_log(f"HMI 거부됨: {target['desc']}", "System")
-            threading.Thread(target=tts_to_pcm_and_send, args=(f"명령이 취소되었습니다. ({target['desc']})",), daemon=True).start()
+            speak_guidance(f"명령이 취소되었습니다. ({target['desc']})")
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "Action not found"}), 404
 
@@ -3870,7 +4056,7 @@ def control_drivemcu_motor(command: str) -> str:
         if is_online and ip and ip != "Unknown":
             send_tcp_command_async(ip, 5002, command, "DriveMCU")
         else:
-            threading.Thread(target=tts_to_pcm_and_send, args=("드라이브 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            speak_guidance("드라이브 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.")
             broadcast_system_log("DriveMCU is Offline. Applying to simulation only.", "System")
             
         update_motor_state(command)
@@ -3897,9 +4083,9 @@ def control_pneumatic_gripper(action: str) -> str:
         robot3axis_state["grab_state"] = state_val
         if is_online:
             send_tcp_command_async(target_ip, 5002, cmd, "Robot3Axis")
-            threading.Thread(target=tts_to_pcm_and_send, args=(msg,), daemon=True).start()
+            speak_guidance(msg)
         else:
-            threading.Thread(target=tts_to_pcm_and_send, args=("로봇 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            speak_guidance("로봇 보드가 오프라인 상태입니다. 시뮬레이션에만 반영합니다.")
             broadcast_system_log("Robot3AxisMCU is Offline. Applying to simulation only.", "System")
         broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
     return queue_action(f"그리퍼 {action}", on_approve)
@@ -3908,7 +4094,7 @@ def trigger_image_sensor() -> str:
     """Triggers the ImageSenderMCU to capture and analyze an image."""
     def on_approve():
         CONFIG["imagesendermcu"]["command"] = "capture"
-        threading.Thread(target=tts_to_pcm_and_send, args=("이미지 캡쳐 및 분석을 시작합니다!",), daemon=True).start()
+        speak_guidance("이미지 캡쳐 및 분석을 시작합니다!")
         broadcast_system_log("ImageSender command updated: capture", "System")
         broadcast_event({"type": "status", "status": get_status()})
     return queue_action("이미지 센서 촬영", on_approve)
@@ -3921,7 +4107,7 @@ def update_camera_settings(resolution: str, jpeg_quality: int, transmission_mode
         CONFIG["imagesendermcu"]["transmission_mode"] = transmission_mode
         CONFIG["imagesendermcu"]["command"] = "UPDATE"
         save_config_to_env()
-        threading.Thread(target=tts_to_pcm_and_send, args=(f"카메라 설정을 해상도 {resolution}, 품질 {jpeg_quality}로 변경합니다.",), daemon=True).start()
+        speak_guidance(f"카메라 설정을 해상도 {resolution}, 품질 {jpeg_quality}로 변경합니다.")
         broadcast_system_log(f"Camera Settings Applied: Res={resolution}, Qual={jpeg_quality}, Mode={transmission_mode}", "System")
         broadcast_event({"type": "status", "status": get_status()})
     return queue_action(f"카메라 설정 변경 ({resolution})", on_approve)
@@ -3953,10 +4139,10 @@ def move_3axis_robot(x_deg: float, y_mm: float, z_mm: float) -> str:
         robot3axis_state["z_mm"] = z_mm
         
         if is_online:
-            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇 절대 좌표 이동을 시작합니다.",), daemon=True).start()
+            speak_guidance("3축로봇 절대 좌표 이동을 시작합니다.")
             send_tcp_command_async(target_ip, 5002, cmd, "Robot3Axis")
         else:
-            threading.Thread(target=tts_to_pcm_and_send, args=("3축로봇이 오프라인 상태입니다. 시뮬레이션에만 반영합니다.",), daemon=True).start()
+            speak_guidance("3축로봇이 오프라인 상태입니다. 시뮬레이션에만 반영합니다.")
             broadcast_system_log("Robot3AxisMCU is Offline. Applying to simulation only.", "System")
             
         broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
@@ -3990,9 +4176,9 @@ def homing_all_robots() -> str:
             broadcast_event({"type": "robot3axis_update", "state": robot3axis_state})
             
         if is_drive_online or is_robot_online:
-            threading.Thread(target=tts_to_pcm_and_send, args=("모든 로봇을 원점 위치로 복귀시킵니다.",), daemon=True).start()
+            speak_guidance("모든 로봇을 원점 위치로 복귀시킵니다.")
         else:
-            threading.Thread(target=tts_to_pcm_and_send, args=("로봇들이 오프라인 상태입니다. 시뮬레이션에만 원점 복귀를 반영합니다.",), daemon=True).start()
+            speak_guidance("로봇들이 오프라인 상태입니다. 시뮬레이션에만 원점 복귀를 반영합니다.")
             
         broadcast_event({"type": "status", "status": get_status()})
     return queue_action("전체 로봇 원점 복귀", on_approve)
@@ -4519,6 +4705,9 @@ def upload_image():
     # UDP로 전환하더라도 기존 HTTP 업로드 방식을 에러 핸들링과 함께 유지 (하이브리드)
     try:
         img_bytes = request.data
+        capture_id = request.headers.get('X-ARD-Capture-ID')
+        if capture_id is not None and (not capture_id.isdecimal() or not 0 < int(capture_id) < 0x80000000):
+            return jsonify({'error': 'Invalid capture ID'}), 400
         if not img_bytes: 
             return jsonify({"error": "No data"}), 400
             
@@ -4532,7 +4721,7 @@ def upload_image():
         CONFIG["imagesendermcu_ip"] = remote_ip # 송신기 IP 자동 저장
         
         # 분석을 별도 스레드에서 수행하여 전송기(Transmitter)의 대기 시간 단축
-        threading.Thread(target=process_udp_frame, args=(img_bytes, "TCP"), daemon=True).start()
+        threading.Thread(target=process_udp_frame, args=(img_bytes, "TCP", capture_id), daemon=True).start()
         
         return jsonify({"status": "received via http", "size": len(img_bytes)})
     except Exception as e:
@@ -4643,6 +4832,7 @@ if __name__ == '__main__':
             time.sleep(60)
             print(f"[{time.strftime('%H:%M:%S')}] Server is alive. Active clients: {len(clients)}")
     threading.Thread(target=server_heartbeat, daemon=True).start()
+    drive_live.start()  # DriveMCU ToF/rail state about every 300 ms
 
     # 브라우저 자동 실행 (localhost 주소를 사용해야 마이크 권한이 허용됨)
     if not os.environ.get("BROWSER_OPENED"):

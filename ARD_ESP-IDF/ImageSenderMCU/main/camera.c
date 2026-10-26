@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_psram.h"
+#include "esp_timer.h"
 #include "board_pins.h"
 
 static const char *TAG = "CAMERA";
@@ -104,24 +105,34 @@ esp_err_t camera_apply(const char *res, int q) {
         if (s && s->set_quality(s, q) == 0) {
             ESP_LOGI(TAG, "Quality %d -> %d", cur_quality, q);
             cur_quality = q;
-        }
+        } else return ESP_FAIL;
     }
     return ESP_OK;
 }
 
 camera_fb_t *camera_capture_fresh(void) {
     if (!running) return NULL;
-    // The single queued frame may predate the request (or sensor init).
-    // Return it, then wait for a newly exposed frame. The returned frame stays
-    // owned by the caller until transmission finishes and fb_return is called.
-    camera_fb_t *fb = esp_camera_fb_get();
-    if (fb) esp_camera_fb_return(fb);
+    // cam_hal timestamps frame start using esp_timer_get_time(). Keep a frame
+    // already started after this request, instead of unconditionally discarding it.
+    const int64_t requested = esp_timer_get_time();
     for (int attempt = 0; attempt < 2; ++attempt) {
-        fb = esp_camera_fb_get();
-        if (fb && fb->format == PIXFORMAT_JPEG && fb->len > 4) return fb;
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (!fb) return NULL; // driver has already waited its bounded 4 s timeout
+        const int64_t stamp = (int64_t)fb->timestamp.tv_sec * 1000000 + fb->timestamp.tv_usec;
+        if (stamp >= requested && fb->format == PIXFORMAT_JPEG && fb->len > 4 &&
+            fb->buf[0] == 0xff && fb->buf[1] == 0xd8) return fb;
         if (fb) esp_camera_fb_return(fb);
-        ESP_LOGW(TAG, "Frame grab failed (attempt %d)", attempt + 1);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_LOGW(TAG, "Discarded stale/invalid frame (attempt %d)", attempt + 1);
     }
     return NULL;
+}
+
+esp_err_t camera_reset(const char *resolution, int quality) {
+    if (running) {
+        esp_err_t err = esp_camera_deinit();
+        if (err != ESP_OK) return err;
+        running = false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+    return camera_start(resolution, quality);
 }

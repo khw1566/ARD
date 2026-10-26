@@ -31,7 +31,7 @@ typedef struct {
     int fb_location, grab_mode;
     size_t jpeg_buffer_size;
 } camera_config_t;
-typedef struct { unsigned char *buf; size_t len; int format; } camera_fb_t;
+typedef struct { unsigned char *buf; size_t len; int format; struct { long tv_sec, tv_usec; } timestamp; } camera_fb_t;
 typedef struct sensor_s {
     struct { unsigned PID; } id;
     int (*set_quality)(struct sensor_s *, int);
@@ -46,6 +46,7 @@ camera_sensor_info_t *esp_camera_sensor_get_info(const void *id);
 size_t esp_psram_get_size(void);
 void vTaskDelay(unsigned ticks);
 const char *esp_err_to_name(esp_err_t err);
+int64_t esp_timer_get_time(void);
 static inline size_t strlcpy(char *dst, const char *src, size_t size) {
     size_t n = strlen(src);
     if (size) { size_t copy = n < size - 1 ? n : size - 1; memcpy(dst, src, copy); dst[copy] = 0; }

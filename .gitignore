@@ -10,6 +10,18 @@
 /output/ard-cg/preview_*.png
 /output/ard-cg/video_[0-9]_*.png
 
+# Generated personal-voice audio, licensed source media and video renders.
+/output/ard-cg/narration/
+/output/ard-cg/source_audio/
+/output/ard-cg/render_jobs/
+/output/ard-cg/final/
+/output/ard-cg/live/
+/output/ard-cg/_review_tmp/
+/output/screensaver_backup/
+/output/jc1060-cloud-voice/sdcard/
+/output/jc1060-cloud-voice/previous_sd_voice.zip
+*.kicad_prl
+
 # Scratch work and build logs
 /tmp/
 *.log
@@ -34,6 +46,7 @@ dist/
 
 # Media downloads
 *.wav
+!ARD_ESP-IDF/JC1060P470C/sdcard/ard/voice/*/*.wav
 *.mp3
 /ARD_MAIN/backend/MusicData/
 

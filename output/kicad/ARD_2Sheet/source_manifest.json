@@ -1,0 +1,217 @@
+{
+  "source_sha256": {
+    "C:\\Users\\work\\Desktop\\ETC\\ARD_software\\results\\kicad_legacy_261017\\pinmap.csv": "878725084df081dcfcda1e7d736a8f8642ca1be67e435cf550c3661c7ad987a1",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\DriveMCU\\main\\board.h": "b4fba012f7f51c144ad620c35caeb220a7a94881c83352dbe18d65acad6765a5",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\ImageSenderMCU\\main\\board_pins.h": "401d885e7e25a000a6336bee3a71c30f0654acb09e4a9590ac0d89c44c763ee8",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\JC1060P470C\\main\\board.h": "7e8209505640f34f3a9cf705822b5cbe94022953e714438976b63f7ab14c4be6",
+    "C:\\Users\\work\\Desktop\\ARD_v1\\ARD_ESP-IDF\\JC1060P470C\\sdkconfig": "dee3f6b778882343c3018e05774eecdfe5abcda73afbf3524f1109b268cd7ce5"
+  },
+  "unresolved_ports": [
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U11",
+      "port": "VMOT",
+      "net": "X_VMOT_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U11",
+      "port": "VDD",
+      "net": "X_VDD_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U11",
+      "port": "GND",
+      "net": "X_GND_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U11",
+      "port": "COILS",
+      "net": "X_COILS_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U12",
+      "port": "VMOT",
+      "net": "Y_VMOT_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U12",
+      "port": "VDD",
+      "net": "Y_VDD_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U12",
+      "port": "GND",
+      "net": "Y_GND_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U12",
+      "port": "COILS",
+      "net": "Y_COILS_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U13",
+      "port": "VMOT",
+      "net": "Z_VMOT_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U13",
+      "port": "VDD",
+      "net": "Z_VDD_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U13",
+      "port": "GND",
+      "net": "Z_GND_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U13",
+      "port": "COILS",
+      "net": "Z_COILS_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "BZ1",
+      "port": "RETURN",
+      "net": "BUZZ_RET_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U31",
+      "port": "PWR",
+      "net": "CAM_PWR_TBD"
+    },
+    {
+      "sheet": "ARD_2Sheet",
+      "ref": "U31",
+      "port": "GND",
+      "net": "CAM_GND_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "J2",
+      "port": "+",
+      "net": "JC_EXT_P_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "J2",
+      "port": "-",
+      "net": "JC_EXT_N_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "BT1",
+      "port": "+",
+      "net": "JC_BAT_P_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "BT1",
+      "port": "-",
+      "net": "JC_BAT_N_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U40",
+      "port": "EXT+",
+      "net": "JC_EXT_P_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U40",
+      "port": "EXT-",
+      "net": "JC_EXT_N_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U40",
+      "port": "BAT+",
+      "net": "JC_BAT_P_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U40",
+      "port": "BAT-",
+      "net": "JC_BAT_N_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U51",
+      "port": "PWR",
+      "net": "R_X_PWR_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U51",
+      "port": "COILS",
+      "net": "R_X_COIL_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U52",
+      "port": "PWR",
+      "net": "R_Y_PWR_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U52",
+      "port": "COILS",
+      "net": "R_Y_COIL_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U53",
+      "port": "PWR",
+      "net": "R_Z_PWR_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U53",
+      "port": "COILS",
+      "net": "R_Z_COIL_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "K1",
+      "port": "PWR",
+      "net": "R_RELAY_PWR_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "K1",
+      "port": "CONTACTS",
+      "net": "R_CONTACT_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U55",
+      "port": "PWR",
+      "net": "R_DC_PWR_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U55",
+      "port": "EN",
+      "net": "R_DC_EN_TBD"
+    },
+    {
+      "sheet": "02_Terminals_Robot",
+      "ref": "U55",
+      "port": "OUT",
+      "net": "R_DC_OUT_TBD"
+    }
+  ],
+  "sheets": 2,
+  "scope": "Native KiCad module interconnect; user-described supplies; all module pins passive; no fabrication claim"
+}

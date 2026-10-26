@@ -42,6 +42,7 @@ public:
     bool anyMoving() const;
     float speed(int axis) const { return plan_[axis].speed; }
     float maxSpeed(int axis) const { return plan_[axis].maxSpeed; }
+    float acceleration(int axis) const { return plan_[axis].accel; }
 
     // Immediate halt that does not need the planner: safe from any task.
     void haltAll();

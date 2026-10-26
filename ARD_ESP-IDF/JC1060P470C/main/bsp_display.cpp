@@ -253,7 +253,8 @@ esp_err_t bsp_display_start(i2c_master_bus_handle_t bus) {
     lv_indev_set_display(indev, display);
 
     // UI work and the LVGL task share core 0 with networking; motion owns core 1.
-    if (xTaskCreatePinnedToCore(lvglTask, "lvgl", 8192, nullptr, 4, nullptr, 0) != pdPASS) return ESP_ERR_NO_MEM;
+    // HP1 isolates rendering from the SDIO/network/HTTP workers on HP0.
+    if (xTaskCreatePinnedToCore(lvglTask, "lvgl", 8192, nullptr, 4, nullptr, 1) != pdPASS) return ESP_ERR_NO_MEM;
     bsp_backlight_set(backlight);
     return ESP_OK;
 }

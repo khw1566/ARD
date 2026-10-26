@@ -10,7 +10,7 @@ CLANG = Path(os.environ.get("ARD_TEST_CLANG_BIN",
     "C:/Program Files/Unity/Hub/Editor/6000.5.6f1/Editor/Data/PlaybackEngines/WebGLSupport/BuildTools/Emscripten/llvm"))
 with tempfile.TemporaryDirectory(prefix="ard-camera-host-") as folder:
     build = Path(folder)
-    for name in ["esp_err.h", "esp_log.h", "esp_psram.h", "esp_camera.h",
+    for name in ["esp_err.h", "esp_log.h", "esp_psram.h", "esp_camera.h", "esp_timer.h",
                  "freertos/FreeRTOS.h", "freertos/task.h"]:
         header = build / name
         header.parent.mkdir(parents=True, exist_ok=True)

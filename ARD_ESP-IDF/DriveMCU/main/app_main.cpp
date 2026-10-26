@@ -64,6 +64,7 @@ extern "C" void app_main(void) {
         err = nvs_flash_init();
     }
     if (err != ESP_OK) fatal("nvs", err);
+    motion_load_rail_settings();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 

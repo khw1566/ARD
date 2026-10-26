@@ -1,0 +1,92 @@
+ERC report (2026-10-26T18:19:19, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 95.25 mm): Label 'X_VMOT_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 99.06 mm): Label 'X_VDD_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 102.87 mm): Label 'X_GND_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 106.68 mm): Label 'X_COILS_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 138.43 mm): Label 'Y_VMOT_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 142.24 mm): Label 'Y_VDD_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 146.05 mm): Label 'Y_GND_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 149.86 mm): Label 'Y_COILS_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 182.88 mm): Label 'Z_VMOT_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 186.69 mm): Label 'Z_VDD_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 190.50 mm): Label 'Z_GND_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 194.31 mm): Label 'Z_COILS_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(113.03 mm, 228.60 mm): Label 'BUZZ_RET_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(308.61 mm, 233.68 mm): Label 'CAM_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(308.61 mm, 237.49 mm): Label 'CAM_GND_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 53.34 mm): Label 'R_X_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 57.15 mm): Label 'R_X_COIL_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 87.63 mm): Label 'R_Y_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 91.44 mm): Label 'R_Y_COIL_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 123.19 mm): Label 'R_Z_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 127.00 mm): Label 'R_Z_COIL_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 171.45 mm): Label 'R_RELAY_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 175.26 mm): Label 'R_CONTACT_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 222.25 mm): Label 'R_DC_PWR_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 226.06 mm): Label 'R_DC_EN_TBD'
+[isolated_pin_label]: Label connected to only one pin
+    ; warning
+    @(344.17 mm, 229.87 mm): Label 'R_DC_OUT_TBD'
+
+***** Sheet /02 JC1060 / Robot / Legacy/
+
+ ** ERC messages: 26  Errors 0  Warnings 26
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

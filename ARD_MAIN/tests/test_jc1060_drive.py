@@ -274,6 +274,146 @@ class RemoteDriveTests(unittest.TestCase):
         self.assertEqual(self.post({"op": "joystick", "y": 1}).json["status"], "disarmed")
 
 
+class VelocityJogTests(RemoteDriveTests):
+    """DriveMCU firmware that reports `jogging` gets a velocity stream."""
+
+    def setUp(self):
+        super().setUp()
+        self.sample.update(jogging=False, x=0, y=0, z=0)
+        self.timers = []
+        self.state.later = lambda delay, fn: self.timers.append((delay, fn))
+
+    # The pulse-cadence tests above describe old firmware only.
+    test_finite_axes_and_single_pending_batch = None
+    test_joystick_radial_deadzone_has_no_second_per_axis_deadzone = None
+    test_joystick_quadratic_rate_paces_fixed_steps_from_ack = None
+    test_joystick_acceleration_does_not_keep_previous_slow_delay = None
+    test_joystick_deceleration_and_reversal_obey_current_rate = None
+    test_joystick_deadzone_change_and_invalid_settings = None
+    test_joystick_center_cancels_pending_motion_but_keeps_arm = None
+    test_joystick_pending_expiry_and_board_interlocks = None
+
+    def joy(self, **data):
+        data.setdefault("op", "joystick")
+        data.setdefault("interval_ms", 100)
+        return self.post(data)
+
+    def test_full_stick_streams_velocity_without_waiting_for_motion(self):
+        self.arm()
+        self.assertEqual(self.joy(y=1).json["status"], "queued")
+        self.assertEqual(self.jobs[0][1], "j1000,-1000,0")
+        self.complete(self.jobs[0])
+        # The board is moving (busy); the next update is still sent at once.
+        self.sample.update(busy=True, jogging=True)
+        self.now += 0.1
+        self.assertEqual(self.joy(y=1).json["status"], "queued")
+        self.assertEqual(self.jobs[1][1], "j1000,-1000,0")
+        self.assertEqual(self.estimates, [])
+
+    def test_curve_speed_slider_and_rail_scale_velocity(self):
+        self.arm()
+        self.joy(y=0.6, speed_pct=50)
+        self.assertEqual(self.jobs[0][1], "j125,-125,0")
+        self.complete(self.jobs[0])
+        self.joy(z=-1, interval_ms=200)  # old JC1060: interval 200 ms -> 50 %
+        self.assertEqual(self.jobs[1][1], "j0,0,-500")
+        for value in (True, "50", 9, 101, 50.5):
+            self.assertEqual(self.joy(y=1, speed_pct=value).status_code, 400)
+
+    def test_release_is_decelerating_stop_not_emergency_stop(self):
+        self.arm()
+        self.joy(x=1)
+        self.complete(self.jobs[0])
+        self.assertEqual(self.post({"op": "pulse", "x": 0, "y": 0, "z": 0}).json["status"], "neutral")
+        self.assertEqual(self.jobs[-1][1], "j0,0,0")
+        self.assertNotIn("x", [j[1] for j in self.jobs])
+        self.assertTrue(self.state.armed)
+        # The settled board position goes to the PC estimate.
+        self.sample.update(x=480, y=480)
+        delay, run = self.timers[-1]
+        run()
+        self.assertEqual(self.estimates, ["b480,480"])
+
+    def test_single_in_flight_jog_and_failed_ack_disarms(self):
+        self.arm()
+        self.joy(y=1)
+        self.assertEqual(self.joy(y=1).json["status"], "busy")
+        self.assertEqual(len(self.jobs), 1)
+        self.complete(self.jobs[0], ok=False)
+        self.assertFalse(self.state.armed)
+
+    def test_stale_jog_is_not_sent_after_delay(self):
+        self.arm()
+        self.joy(y=1)
+        self.now += 0.301
+        self.assertFalse(self.jobs[0][2]["allowed"]())
+
+    def test_periodic_status_keeps_reboot_pid_and_program_interlocks(self):
+        self.arm()
+        self.joy(y=1)
+        self.complete(self.jobs[0])
+        self.sample.update(busy=True, jogging=False)  # a queued program owns the axes
+        self.now += 0.2
+        self.assertEqual(self.joy(y=1).json["status"], "queued")  # status not due yet
+        self.complete(self.jobs[1])
+        self.now += 0.4
+        self.assertEqual(self.joy(y=1).json["status"], "busy")
+        self.sample.update(busy=False)
+        self.sample["boot_id"] += 1
+        self.assertEqual(self.joy(y=1).json["status"], "disarmed")
+        self.assertEqual([j[1] for j in self.jobs[2:]], ["x"])  # rebooted board: stop, no jog
+
+    def test_jog_runs_beside_rail_pid_when_board_reports_program(self):
+        # Rail PID on and Z moving: the board is busy but no program owns the axes.
+        self.sample.update(program=False, pid=True, busy=True)
+        self.arm()
+        self.assertEqual(self.joy(y=1).json["status"], "queued")
+        self.assertEqual(self.jobs[0][1], "j1000,-1000,0")
+        self.complete(self.jobs[0])
+        self.now += 0.6  # status due again, PID still on
+        self.assertEqual(self.joy(z=1).json["status"], "queued")
+        self.assertEqual(self.jobs[1][1], "j0,0,1000")  # the board turns its PID off
+        self.assertTrue(self.state.armed)
+
+    def test_program_blocks_arm_and_jog(self):
+        self.sample.update(program=True, busy=True)
+        self.assertEqual(self.post({"op": "arm"}).status_code, 409)
+        self.sample.update(program=False, busy=False)
+        self.arm()
+        self.joy(y=1)
+        self.complete(self.jobs[0])
+        self.sample.update(program=True)
+        self.now += 0.6
+        self.assertEqual(self.joy(y=1).json["status"], "busy")
+        self.assertEqual(len(self.jobs), 1)
+
+    def test_status_updates_estimate_with_real_steps_while_jogging(self):
+        self.arm()
+        self.joy(y=1)
+        self.complete(self.jobs[0])
+        self.sample.update(busy=True, jogging=True, x=250, y=-250, z=7)
+        self.now += 0.5
+        self.joy(y=1)
+        self.assertEqual(self.estimates, ["b250,-250", "mzr7"])
+
+    def test_rearm_does_not_count_moves_made_by_other_commands(self):
+        self.arm()
+        self.sample.update(x=1000)
+        self.arm()
+        self.joy(y=1)
+        self.assertEqual(self.estimates, [])
+
+    def test_late_settle_read_ignored_after_pc_takeover(self):
+        self.arm()
+        self.joy(x=1)
+        self.complete(self.jobs[0])
+        self.post({"op": "pulse", "x": 0})
+        self.client.post("/api/drivemcu/command", json={"command": "mxr50"})
+        self.sample.update(x=900)
+        self.timers[-1][1]()
+        self.assertEqual(self.estimates, [])
+
+
 class JoystickCurveTests(unittest.TestCase):
     def test_center_boundary_and_rail_are_independent(self):
         self.assertEqual(joystick_rates(0, 0, 1, 20), [0, 0, 1])

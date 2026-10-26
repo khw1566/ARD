@@ -873,7 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (stats.drivemcu) {
                         window.currentMotorState = window.currentMotorState || {};
                         window.currentMotorState.tof_dist = stats.drivemcu.tof_dist;
-                        window.currentMotorState.tof_status = stats.drivemcu.tof_status;
+                        if (stats.drivemcu.tof_status) window.currentMotorState.tof_status = stats.drivemcu.tof_status;
                         
                         // Update Environment Data if present (sent every 30s)
                         if (stats.drivemcu.env_temp !== undefined) {
@@ -1026,8 +1026,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateUI(data);
                 }
             } else if (data.type === 'sorting_update') {
+                // The backend sends the state as `sorting` (older builds used `status`).
                 if (typeof handleSortingUpdate === 'function') {
-                    handleSortingUpdate(data.status);
+                    handleSortingUpdate(data.sorting || data.status);
                 }
             } else if (data.type === 'log') {
                 addLog(data.source, data.message, data.timestamp);
@@ -1074,8 +1075,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (el) el.value = s.z_speed;
                     }
                 }
+            } else if (data.type === 'drive_live') {
+                // Board ToF/rail state (PC reads DriveMCU `status` about every 300 ms).
+                const live = data.live || {};
+                window.currentMotorState = window.currentMotorState || {};
+                if (typeof live.tof_mm === 'number') window.currentMotorState.tof_dist = live.tof_mm;
+                if (live.tof_status) window.currentMotorState.tof_status = live.tof_status;
+                // 3D rail carriage from the ToF (or board steps when the ToF is lost).
+                window.applyDriveLive?.(live);
+                window.dispatchEvent(new CustomEvent('ard-drive-live', { detail: live }));
             } else if (data.type === 'drive_update') {
+                // drive_update carries no ToF status; keep the last one from drive_live/status.
+                const tofStatus = window.currentMotorState?.tof_status;
                 window.currentMotorState = data.state;
+                if (tofStatus && !data.state.tof_status) window.currentMotorState.tof_status = tofStatus;
                 if (window.syncDriveSim) {
                     window.syncDriveSim();
                 }
@@ -1098,9 +1111,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // PID 토글 업데이트 (강제 이벤트 발생으로 UI 동기화)
                     const pidToggle = document.getElementById('rail-pid-toggle');
                     if (pidToggle && s.pid_mode !== undefined && pidToggle.checked !== s.pid_mode) {
+                        // Display only: a change event would send mzm back to the board.
                         pidToggle.checked = s.pid_mode;
-                        // change 이벤트를 수동으로 트리거하여 UI 요소들이 반응하도록 함
-                        pidToggle.dispatchEvent(new Event('change', { bubbles: true }));
                     }
 
                     // PID 목표 슬라이더 및 표시값 업데이트
@@ -1119,6 +1131,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     eventSource.onerror = (e) => {
         addLog('System', 'SSE Connection lost. Reconnecting...');
+    };
+    // Sorting can be started or stopped from the JC1060 while the stream is down; resync on (re)connect.
+    eventSource.onopen = () => {
+        fetch('/api/sorting/status').then(res => res.json())
+            .then(data => window.handleSortingUpdate?.(data.sorting)).catch(() => {});
     };
     function addChatMessage(role, text, timings = null, turnId = null) {
         const mainChat = document.getElementById('chat-display-main');
@@ -1220,7 +1237,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (res.status === 409) {
-                addLog('System', '선별 작업이 이미 실행 중입니다.');
+                if (startBtn) startBtn.disabled = false;
+                if (sideStartBtn) sideStartBtn.disabled = false;
+                addLog('System', data.message || '선별 작업이 이미 실행 중입니다.');
             } else if (res.ok) {
                 addLog('System', `수동 선별 시퀀스 가동 시작 (적용 감속비: X=${grX}, Y=${grY}; 레일은 MCU Steps/mm 적용)`);
             } else {
@@ -1238,15 +1257,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const triggerResetSorting = async () => {
         try {
-            const running = document.getElementById('sorting-start-btn')?.disabled;
-            const response = await fetch(running ? '/api/sorting/cancel' : '/api/drivemcu/command', {
+            // Use the server's last reported state; the start button is also disabled while a start request is pending.
+            const running = !!handleSortingUpdate.running;
+            const response = await fetch(running ? '/api/sorting/cancel' : '/api/sorting/reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'home' })
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || '명령 실패');
-            addLog('System', running ? '선별 중단을 요청했습니다.' : '트레이 X/Y 수평 복귀 명령을 전송했습니다. 레일 중앙은 개루프 시작 위치에 맞춰주세요.');
+            addLog('System', running ? '선별 중단을 요청했습니다.' : '카메라 촬영 상태 초기화·트레이 X/Y 수평 복귀를 요청했습니다. 완료 후 다시 시작하세요.');
         } catch (e) {
             addLog('System', `중단/복귀 요청 실패: ${e.message}`);
         }
@@ -1259,28 +1279,79 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleSortingUpdate(status) {
         if (!status) return;
+        const SORTING_STEP_TITLES = ['', '원점 복귀', '촬영 및 수신', 'AI 재질 분석', '레일 이송', '전도 배출', '원위치 복귀'];
+        const SORTING_STEP_COLORS = ['', '#f472b6', '#38bdf8', '#a78bfa', '#fbbf24', '#fb923c', '#2dd4bf'];
+        const SORTING_STEPS = SORTING_STEP_TITLES.length - 1;
+        const run = handleSortingUpdate; // run.startedAt / run.timer / run.running persist between updates
+        if (run.startedAt === undefined) run.startedAt = null;
+        run.running = !!status.is_running;
 
-        // 1. Process Step Highlights (STEP 1~5)
+        // 1. Process Step Highlights (STEP 1~6): pending / running / done / failed
         const stepNum = status.step_num || 0;
-        for (let i = 1; i <= 5; i++) {
+        const failed = status.step === 'error';
+        const complete = status.step === 'complete';
+        const idle = !status.is_running && !failed && !complete;
+        for (let i = 1; i <= SORTING_STEPS; i++) {
             const pEl = document.getElementById(`pstep-${i}`);
+            const stateEl = document.getElementById(`pstep-${i}-state`);
+            let state = '대기';
             if (pEl) {
-                pEl.classList.remove('active', 'completed');
-                if (status.step === 'complete' || i < stepNum) {
+                pEl.classList.remove('active', 'completed', 'failed');
+                if (idle) {
+                    // An idle dashboard shows every step pending, not a stale STEP 1.
+                } else if (complete || i < stepNum) {
                     pEl.classList.add('completed');
+                    state = '✓ 완료';
                 } else if (i === stepNum) {
-                    pEl.classList.add('active');
+                    pEl.classList.add(failed ? 'failed' : 'active');
+                    state = failed ? '✕ 중단' : '▶ 진행 중';
                 }
             }
+            if (stateEl) stateEl.textContent = state;
+        }
+
+        // Current task banner: what is running now, in the running step's color.
+        if (status.is_running && run.startedAt === null) run.startedAt = Date.now();
+        const nowBox = document.getElementById('sorting-now');
+        const nowStep = document.getElementById('sorting-now-step');
+        const nowDesc = document.getElementById('sorting-now-desc');
+        const nowTime = document.getElementById('sorting-now-time');
+        const nowBar = document.getElementById('sorting-now-bar');
+        const nowPct = document.getElementById('sorting-now-pct');
+        const elapsed = () => run.startedAt === null ? '' : `${((Date.now() - run.startedAt) / 1000).toFixed(0)}초 경과`;
+        if (nowBox) {
+            nowBox.className = `sorting-now state-${status.is_running ? 'running' : failed ? 'error' : complete ? 'complete' : 'idle'}`;
+            nowBox.style.setProperty?.('--now-color', status.is_running && SORTING_STEP_COLORS[stepNum] || '');
+        }
+        if (nowStep) {
+            nowStep.textContent = status.is_running ? `STEP ${stepNum}/${SORTING_STEPS} · ${SORTING_STEP_TITLES[stepNum] || '준비'} 진행 중`
+                : failed ? `STEP ${stepNum || '-'}/${SORTING_STEPS} 에서 중단됨` : complete ? '선별 완료' : '대기 중';
+        }
+        if (nowDesc) {
+            nowDesc.textContent = idle ? '물체를 회전 테이블에 올리고 [선별 작업 시작]을 누르세요.'
+                : failed ? `원인: ${status.error || status.step_desc || '알 수 없음'}. 축 위치를 확인한 뒤 다시 시작하세요.`
+                : (status.step_desc || '-');
+        }
+        if (nowBar) nowBar.style.width = `${complete ? 100 : status.progress || 0}%`;
+        if (nowPct) nowPct.textContent = `${complete ? 100 : status.progress || 0}%`;
+        if (nowTime) nowTime.textContent = elapsed();
+        if (status.is_running && !run.timer && typeof setInterval === 'function') {
+            run.timer = setInterval(() => { if (nowTime) nowTime.textContent = elapsed(); }, 1000);
+        } else if (!status.is_running) {
+            if (run.timer) clearInterval(run.timer);
+            run.timer = null;
+            if (nowTime && run.startedAt !== null) nowTime.textContent = `총 ${elapsed().replace(' 경과', '')}`;
+            run.startedAt = null;
         }
 
         // 2. Button states
         const startBtn = document.getElementById('sorting-start-btn');
         const sideStartBtn = document.getElementById('side-sorting-start-btn');
-        if (startBtn) startBtn.disabled = status.is_running;
-        if (sideStartBtn) sideStartBtn.disabled = status.is_running;
+        const needsReset = status.step === 'error' && status.retry_ready === false;
+        if (startBtn) startBtn.disabled = status.is_running || needsReset;
+        if (sideStartBtn) sideStartBtn.disabled = status.is_running || needsReset;
         const resetLabel = document.getElementById('sorting-reset-label');
-        if (resetLabel) resetLabel.textContent = status.is_running ? '선별 중단' : '트레이 수평 복귀';
+        if (resetLabel) resetLabel.textContent = status.is_running ? '선별 중단' : '초기화 / 재시도 준비';
 
         // 3. Status text updates
         const subtext = document.getElementById('sorting-status-subtext');
@@ -1288,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const indicator = document.getElementById('sorting-status-indicator');
         const miniStep = document.getElementById('sorting-current-step-mini');
 
-        if (subtext) subtext.textContent = status.step_desc || '-';
+        if (subtext) subtext.textContent = status.step_desc || '회전 테이블 위에 물건을 올린 후 [선별 시작] 버튼을 누르면 인공지능 분류 및 차동 순차 제어가 실행됩니다.';
         if (miniStep) miniStep.textContent = status.step_desc || '대기 중';
 
         if (badge) {
@@ -1311,14 +1382,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const objName = status.detected_object || status.object_name || '-';
         const matName = status.detected_material || status.material || '-';
-        const targetYaw = status.target_yaw !== undefined ? status.target_yaw : (status.target_angle || 0);
+        // Rail + forward/backward tilt only: dump_roll > 0 forward, < 0 backward (no disk turn).
         const dumpRoll = status.dump_roll !== undefined ? status.dump_roll : (status.dump_angle || 45);
+        const railNames = { plus: '+측', center: '중앙', minus: '-측' };
+        const destText = status.rail_slot && dumpRoll
+            ? `레일 ${railNames[status.rail_slot] || status.rail_slot} · ${dumpRoll > 0 ? '전진' : '후진'} 전도` : '-';
 
         if (sideStatus) sideStatus.textContent = status.is_running ? '동작 실행 중' : (status.step === 'error' ? '선별 중단/오류' : (status.step === 'complete' ? '선별 완료' : '대기 중 (IDLE)'));
-        if (sideStep) sideStep.textContent = `STEP ${status.step_num || 0} / 5 (${status.step_desc || '대기 중'})`;
+        if (sideStep) sideStep.textContent = `STEP ${status.step_num || 0} / ${SORTING_STEPS} (${status.step_desc || '대기 중'})`;
         if (sideObj) sideObj.textContent = objName;
         if (sideMat) sideMat.textContent = matName;
-        if (sideYaw) sideYaw.textContent = `${targetYaw}°`;
+        if (sideYaw) sideYaw.textContent = destText;
         if (sideRoll) sideRoll.textContent = `${dumpRoll}°`;
         if (sidePct) sidePct.textContent = `${status.progress || 0}%`;
         if (sideBar) sideBar.style.width = `${status.progress || 0}%`;
@@ -1334,18 +1408,20 @@ document.addEventListener('DOMContentLoaded', () => {
             hudMat.textContent = matNames[matName] || matName;
         }
         if (hudMat && matName === '-') { hudMat.className = 'mat-badge'; hudMat.textContent = '-'; }
-        if (hudAngle) hudAngle.textContent = targetYaw;
+        if (hudAngle) hudAngle.textContent = destText;
 
         // Progress events report MCU-confirmed positions, not planned target poses.
-        const confirmedYaw = Number(status.current_yaw || 0);
+        // The disk no longer turns during sorting; yaw stays 0.
+        const confirmedYaw = 0;
         const confirmedRoll = Number(status.current_roll || 0);
         const confirmedRail = Number(status.current_rail_z || 0);
         if (typeof window.setSortingAngles === 'function' && status.step !== 'error' &&
             (status.is_running || status.step === 'complete' || !window.currentMotorState)) {
             window.setSortingAngles(confirmedYaw, confirmedRoll, confirmedRail);
         }
+        const destEl = document.getElementById('sorting-3d-dest');
+        if (destEl) destEl.textContent = destText;
         for (const [id, value, unit] of [
-            ['sorting-3d-yaw', confirmedYaw, '°'],
             ['sorting-3d-roll', confirmedRoll, '°'],
             ['sorting-3d-mz', confirmedRail, ' mm']
         ]) {

@@ -16,6 +16,29 @@
 #define ARD_TOF_ENABLED 0
 #endif
 
+// Disc (X/Y differential pair) limits, menuconfig "ARD DriveMCU". Fallbacks for an
+// sdkconfig generated before these options existed.
+#ifdef CONFIG_ARD_DISK_MAX_SPEED
+#define ARD_DISK_MAX_SPEED CONFIG_ARD_DISK_MAX_SPEED
+#else
+#define ARD_DISK_MAX_SPEED 300
+#endif
+#ifdef CONFIG_ARD_DISK_ACCEL
+#define ARD_DISK_ACCEL CONFIG_ARD_DISK_ACCEL
+#else
+#define ARD_DISK_ACCEL 300
+#endif
+#ifdef CONFIG_ARD_DISK_TILT_LIMIT_DEG
+#define ARD_DISK_TILT_LIMIT_DEG CONFIG_ARD_DISK_TILT_LIMIT_DEG
+#else
+#define ARD_DISK_TILT_LIMIT_DEG 60
+#endif
+#ifdef CONFIG_ARD_DISK_GEAR_RATIO
+#define ARD_DISK_GEAR_RATIO CONFIG_ARD_DISK_GEAR_RATIO
+#else
+#define ARD_DISK_GEAR_RATIO 4
+#endif
+
 // A4988 drivers. EN is active LOW.
 #define PIN_STEP_X GPIO_NUM_18
 #define PIN_DIR_X  GPIO_NUM_19

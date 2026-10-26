@@ -6,7 +6,9 @@ void hmi_model_defaults(hmi_model_t *m) {
     m->wifi_rssi = -127;
     for (int i = 0; i < DEV_COUNT; ++i) strcpy(m->dev[i].last_seen, "--:--:--");
     // Same defaults as the PC server's drive_settings / robot3axis_state.
-    m->pid_target = 145;
+    m->pid_target = 120; /* sequence origin */
+    m->pid_min = 70;     /* Z safety limits until the PC reports the board's */
+    m->pid_max = 120;
     m->z_step = 50;
     m->hb_ms = 1000;
     m->i2c_hz = 100000;

@@ -239,6 +239,13 @@ static void parse_status(const cJSON *root, hmi_model_t *m, bool hold) {
         m->approval_id[0] = m->approval_desc[0] = 0;
     }
 
+    // Z safety limits the PC read from the DriveMCU (drivemcu.live rail_min / rail_max).
+    const cJSON *live = obj(obj(root, "drivemcu"), "live");
+    if (live) {
+        const int lo = (int)get_num(live, "rail_min", m->pid_min), hi = (int)get_num(live, "rail_max", m->pid_max);
+        if (lo >= 1 && hi <= 2000 && hi - lo >= 10) { m->pid_min = lo; m->pid_max = hi; }
+    }
+
     // Settings the operator can change from this screen keep the local value while
     // an optimistic edit is fresh, so an older poll cannot flip the button back.
     if (hold) return;

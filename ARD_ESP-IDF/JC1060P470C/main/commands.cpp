@@ -6,6 +6,8 @@
 #include "onboard_audio.h"
 #include "pc_link.h"
 #include "ard_network.h"
+#include "visitor_voice.h"
+#include "ui_text.h"
 
 bool command_execute(const char *line, bool) {
     if (!line) return false;
@@ -24,6 +26,8 @@ bool command_execute(const char *line, bool) {
     // applies the same manual/sorting interlocks as its own dashboard.
     if (!strcmp(cmd, "x") || !strcmp(cmd, "stop") || !strcmp(cmd, "d") || !strcmp(cmd, "disable"))
         pc_drive_stop();
+    if (!strcmp(cmd, "x") || !strcmp(cmd, "stop"))
+        visitor_voice_request(VisitorVoice::Stop, ui_language() == UI_LANG_KO);
     return pc_send_command(PC_DRIVE, cmd);
 }
 
@@ -34,5 +38,6 @@ void command_print_help() {
            "vol=<0..21> mute unmute audio_stop audio_status audio_test\n"
            "vad ptt audio_mic_on audio_mic_off; w Wi-Fi; h help\n"
            "server=<PC IP or host> (serial console only)\nJC1060> ");
+    printf("scheduler_status: HP CPU load, LP progress, stack, memory and SD voice diagnostics (serial only)\n");
     fflush(stdout);
 }

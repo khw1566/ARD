@@ -35,6 +35,8 @@ public:
 
     // Larger transfers (OLED pages) bypass the small Wire buffer.
     esp_err_t transmit(uint8_t address, const uint8_t *data, size_t size);
+    esp_err_t readRegister(uint8_t address, uint8_t reg, uint8_t *data, size_t size);
+    uint32_t errorCount() const { return errors_; } // sole bus owner only
 
 private:
     i2c_master_dev_handle_t device(uint8_t address);
@@ -45,6 +47,7 @@ private:
     Slot slots_[8] = {};
     uint32_t hz_ = 100000;
     uint16_t timeoutMs_ = 20;
+    uint32_t errors_ = 0;
     uint8_t txAddress_ = 0;
     uint8_t tx_[64] = {};
     size_t txLength_ = 0;

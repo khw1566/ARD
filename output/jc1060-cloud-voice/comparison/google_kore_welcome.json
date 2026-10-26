@@ -1,0 +1,11 @@
+{
+  "job": {
+    "provider": "google",
+    "voice": "ko-KR-Chirp3-HD-Kore",
+    "text": "직접 참여해 보세요. 화면을 터치하면 시작합니다.",
+    "rate": 1.08
+  },
+  "seconds": 3.181,
+  "pcm_bytes": 101792,
+  "sha256": "a79ae267423ce848bbe8f438c4ce5ff3990ceb1e9efe1807589ed7171157f220"
+}

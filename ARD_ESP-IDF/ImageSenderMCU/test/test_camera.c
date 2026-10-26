@@ -12,8 +12,9 @@ static size_t psram_bytes = 8 * 1024 * 1024;
 static camera_config_t received_config;
 static esp_err_t init_result;
 static unsigned inits, deinits, quality_calls, gets, returns, delays;
-static camera_fb_t stale = {.len=100, .format=PIXFORMAT_JPEG};
-static camera_fb_t fresh = {.len=200, .format=PIXFORMAT_JPEG};
+static unsigned char jpeg[200] = {0xff, 0xd8};
+static camera_fb_t stale = {.buf=jpeg, .len=100, .format=PIXFORMAT_JPEG, .timestamp={0, 0}};
+static camera_fb_t fresh = {.buf=jpeg, .len=200, .format=PIXFORMAT_JPEG, .timestamp={2, 0}};
 static camera_fb_t *queue[5], *returned[5];
 static int set_quality(sensor_t *s, int q) { ++quality_calls; return 0; }
 static sensor_t sensor = {.id={0x3660}, .set_quality=set_quality};
@@ -27,6 +28,7 @@ camera_sensor_info_t *esp_camera_sensor_get_info(const void *id) { return &info;
 size_t esp_psram_get_size(void) { return psram_bytes; }
 void vTaskDelay(unsigned ticks) { ++delays; }
 const char *esp_err_to_name(esp_err_t err) { return "fixture"; }
+int64_t esp_timer_get_time(void) { return 1000000; }
 
 int main(int argc, char **argv) {
     assert(argc == 2);
@@ -50,11 +52,13 @@ int main(int argc, char **argv) {
             assert(camera_capture_fresh() == &fresh && gets == 2);
             assert(returns == 1 && returned[0] == &stale); // New frame remains held for transfer.
         } else if (!strcmp(argv[1], "retry")) {
-            queue[0]=&stale; queue[1]=NULL; queue[2]=&fresh;
-            assert(camera_capture_fresh() == &fresh && gets == 3);
-            assert(returns == 1 && delays == 1);
+            queue[0]=NULL; queue[1]=&fresh;
+            assert(camera_capture_fresh() == NULL && gets == 1);
+            assert(camera_reset("SVGA", 12) == ESP_OK && deinits == 1 && inits == 2);
+            assert(camera_capture_fresh() == &fresh && gets == 2);
+            assert(returns == 0 && delays == 1);
         } else if (!strcmp(argv[1], "timeout")) {
-            assert(camera_capture_fresh() == NULL && gets == 3 && delays == 2);
+            assert(camera_capture_fresh() == NULL && gets == 1 && delays == 0);
         } else if (!strcmp(argv[1], "apply")) {
             assert(camera_apply("SVGA", 15) == ESP_OK && quality_calls == 1 && inits == 1);
             assert(camera_apply("VGA", 15) == ESP_OK && deinits == 1 && inits == 2);

@@ -1,4 +1,6 @@
 #include "ui_settings.h"
+#include "ui_screensaver.h"
+#include "visitor_voice.h"
 #include "ui_text.h"
 #include "ui_layout.h"
 #include <cstdio>
@@ -48,7 +50,8 @@ struct Widgets {
     lv_obj_t *tabs, *brightness, *brightnessValue, *brightnessStatus;
     lv_obj_t *scan, *list, *scanPrevious, *scanNext, *scanPage, *ssid, *password, *connect, *status, *connection, *keyboard;
     lv_obj_t *server, *serverSave, *serverStatus, *serverCurrent;
-    lv_obj_t *volume, *volumeValue, *mute, *soundStatus;
+    lv_obj_t *volume, *volumeValue, *mute, *soundStatus, *guidance;
+    lv_obj_t *saverChoices[5], *saverStatus;
     ard_network_ap_t aps[ARD_WIFI_SCAN_MAX];
     uint16_t count, firstNetwork;
     uint32_t generation = UINT32_MAX, brightnessGeneration = UINT32_MAX, serverGeneration = UINT32_MAX;
@@ -425,9 +428,26 @@ void muteToggle(lv_event_t *) {
     onboard_audio_command(onboard_audio_status().muted ? "unmute" : "mute");
 }
 
+void guidanceToggle(lv_event_t *) {
+    const bool enabled = !onboard_audio_status().guidance;
+    onboard_audio_set_guidance(enabled);
+    if (!enabled) visitor_voice_cancel();
+    lv_label_set_text(lv_obj_get_child(ui.guidance, 0), enabled ? "Guidance: ON" : "Guidance: OFF");
+    lv_label_set_text(ui.soundStatus, enabled ? "Guidance voice on. Saved on this board."
+                                              : "Guidance voice off. Saved on this board.");
+}
+
 void soundTest(lv_event_t *) {
     onboard_audio_test();
     lv_label_set_text(ui.soundStatus, "Playing test sound...");
+}
+
+void previewGuidance(lv_event_t *event) {
+    const VisitorVoice voices[] = {VisitorVoice::Welcome, VisitorVoice::Drive, VisitorVoice::Safety};
+    const unsigned index = static_cast<unsigned>(reinterpret_cast<uintptr_t>(lv_event_get_user_data(event)));
+    if (index >= 3) return;
+    visitor_voice_request(voices[index], ui_language() == UI_LANG_KO, true);
+    lv_label_set_text(ui.soundStatus, "SD voice preview requested. If silent, check the SD card and speaker volume.");
 }
 
 void buildSound(lv_obj_t *page) {
@@ -447,9 +467,16 @@ void buildSound(lv_obj_t *page) {
     button(page, "+", 174, 194, 130, volumeStep, reinterpret_cast<void *>(static_cast<intptr_t>(1)));
     ui.mute = button(page, "Mute", 324, 194, 170, muteToggle);
     button(page, "Test sound", 514, 194, 190, soundTest);
+    // PC announcements such as "sorting mechanism running"; the PC follows within one heartbeat.
+    ui.guidance = button(page, onboard_audio_status().guidance ? "Guidance: ON" : "Guidance: OFF",
+                         724, 194, 250, guidanceToggle);
     ui.soundStatus = text(page, "", 24, 274, 900);
     text(page, "Same setting as Voice tab VOL - / + and the PC voice volume. 0 is silent.", 24, 326, 900,
          &ard_font_16);
+    const char *previews[] = {"Preview welcome", "Preview controls", "Preview safety"};
+    for (unsigned i = 0; i < 3; ++i)
+        button(page, ui_tr(previews[i]), 24 + i * 320, 370, 300, previewGuidance,
+               reinterpret_cast<void *>(static_cast<uintptr_t>(i)));
 }
 
 void restartForLanguage(lv_timer_t *) { esp_restart(); }
@@ -464,6 +491,43 @@ void chooseLanguage(lv_event_t *event) {
     // Every screen is built once in one language, so restart to rebuild it.
     ui_notice("Restarting to change the language..."); // shown in the current language
     lv_timer_set_repeat_count(lv_timer_create(restartForLanguage, 800, nullptr), 1);
+}
+
+void saverTimeoutChanged(lv_event_t *event) {
+    const unsigned index = static_cast<unsigned>(reinterpret_cast<uintptr_t>(lv_event_get_user_data(event)));
+    const uint32_t seconds[] = {15, 30, 60, 300, 0};
+    if (index >= 5) return;
+    if (ui_screensaver_set_timeout(seconds[index]) != ESP_OK) {
+        lv_label_set_text(ui.saverStatus, "Could not save the screensaver timeout. Try again.");
+        return;
+    }
+    for (unsigned i = 0; i < 5; ++i) {
+        if (i == index) lv_obj_add_state(ui.saverChoices[i], LV_STATE_CHECKED);
+        else lv_obj_remove_state(ui.saverChoices[i], LV_STATE_CHECKED);
+    }
+    lv_label_set_text(ui.saverStatus, "Saved. The timeout is restored after restarting the board.");
+}
+
+void manualSaver(lv_event_t *event) {
+    hideKeyboard();
+    ui_screensaver_enter(event);
+}
+
+void buildScreensaver(lv_obj_t *page) {
+    text(page, "Visitor screensaver", 24, 20, 920, &ard_font_28);
+    text(page, "Enter after no touch activity. Default: 30 seconds.", 24, 76, 920);
+    const char *names[] = {"15 seconds", "30 seconds", "1 minute", "5 minutes", "No screensaver"};
+    const uint32_t seconds[] = {15, 30, 60, 300, 0};
+    for (unsigned i = 0; i < 5; ++i) {
+        ui.saverChoices[i] = button(page, ui_tr(names[i]), 24 + i * 195, 132, 180,
+                                   saverTimeoutChanged, reinterpret_cast<void *>(static_cast<uintptr_t>(i)));
+        lv_obj_set_style_bg_color(ui.saverChoices[i], lv_color_hex(0x1E9E50), LV_STATE_CHECKED);
+        if (ui_screensaver_timeout() == seconds[i]) lv_obj_add_state(ui.saverChoices[i], LV_STATE_CHECKED);
+    }
+    ui.saverStatus = text(page, "Your choice is saved on this board.", 24, 204, 940);
+    button(page, "Enter screensaver now", 24, 268, 380, manualSaver);
+    text(page, "Manual entry also works when the automatic screensaver is off.", 24, 330, 940, &ard_font_16);
+    text(page, "Touch and release the help screen to return to Main controls.", 24, 370, 940);
 }
 
 void buildDisplay(lv_obj_t *page) {
@@ -552,10 +616,11 @@ esp_err_t ui_settings_create(lv_obj_t *page) {
     ui_layout::tabview(ui.tabs);
     lv_obj_set_style_text_font(lv_tabview_get_tab_bar(ui.tabs), &ard_font_20, 0);
     lv_obj_t *display = lv_tabview_add_tab(ui.tabs, "Display");
+    lv_obj_t *saver = lv_tabview_add_tab(ui.tabs, "Screensaver");
     lv_obj_t *sound = lv_tabview_add_tab(ui.tabs, "Sound");
     lv_obj_t *network = lv_tabview_add_tab(ui.tabs, "Network");
     lv_obj_t *server = lv_tabview_add_tab(ui.tabs, "Server");
-    for (lv_obj_t *tab : {display, sound, network, server}) {
+    for (lv_obj_t *tab : {display, saver, sound, network, server}) {
         ui_layout::page(tab, 0);
         lv_obj_set_style_bg_color(tab, lv_color_white(), 0);
         lv_obj_set_style_bg_opa(tab, LV_OPA_COVER, 0);
@@ -563,6 +628,7 @@ esp_err_t ui_settings_create(lv_obj_t *page) {
     // Both levels use tab buttons, so control drags cannot switch pages.
     lv_obj_add_event_cb(ui.tabs, settingsTabChanged, LV_EVENT_VALUE_CHANGED, nullptr);
     buildDisplay(display);
+    buildScreensaver(saver);
     buildSound(sound);
     buildNetwork(network);
     buildServer(server);

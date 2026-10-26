@@ -114,10 +114,10 @@ class BoardRouteTests(unittest.TestCase):
             'board_settings': self.boards, 'DEVICE_NAMES': DEVICE_NAMES, 'device_key': device_key,
             'request': request, 'jsonify': jsonify, 'time': time, 'datetime': datetime,
             'stats_manager': StatsManager(), 'clients': [], 'threading': SimpleNamespace(Thread=lambda **kw: SimpleNamespace(start=lambda: None)),
-            'tts_to_pcm_and_send': lambda *args: None, 'get_local_ip': lambda: '127.0.0.1',
+            'tts_to_pcm_and_send': lambda *args: None, 'speak_guidance': lambda *args: None, 'get_local_ip': lambda: '127.0.0.1',
             'broadcast_event': self.events.append, 'STATUS_THRESHOLD': 10, 'EXCHANGE_RATE': 1500,
             'jc1060_seen_ip': '', 'jc1060_last_seen': 0.0, 'jc1060_voice_seen': 0.0,
-            'jc1060_audio_ready': False, 'jc1060_mic_ready': False, 'jc1060_voice_ingress': VoiceIngress(),
+            'jc1060_audio_ready': False, 'jc1060_mic_ready': False, 'jc1060_guidance_enabled': True, 'jc1060_voice_ingress': VoiceIngress(),
             'voice_selection_generation': 0, 'voice_job_context': threading.local(),
             'pending_hmi_actions': [], 'np': SimpleNamespace(array=lambda *args, **kw: [], int16=int),
         }

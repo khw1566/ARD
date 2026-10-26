@@ -4,6 +4,7 @@
 // VL53L0X datasheet.
 
 #include "VL53L0X.h"
+#include <string.h>
 
 // Defines /////////////////////////////////////////////////////////////////////
 
@@ -15,7 +16,7 @@
 #define startTimeout() (timeout_start_ms = millis())
 
 // Check if timeout is enabled (set to nonzero value) and has expired
-#define checkTimeoutExpired() (io_timeout > 0 && ((uint16_t)(millis() - timeout_start_ms) > io_timeout))
+#define checkTimeoutExpired() (io_error || (io_timeout > 0 && ((uint16_t)(millis() - timeout_start_ms) > io_timeout)))
 
 // Decode VCSEL (vertical cavity surface emitting laser) pulse period in PCLKs
 // from register value
@@ -284,25 +285,30 @@ bool VL53L0X::init(bool io_2v8)
 // Write an 8-bit register
 void VL53L0X::writeReg(uint8_t reg, uint8_t value)
 {
+  if (io_error) return;
   bus->beginTransmission(address);
   bus->write(reg);
   bus->write(value);
   last_status = bus->endTransmission();
+  io_error = last_status != 0;
 }
 
 // Write a 16-bit register
 void VL53L0X::writeReg16Bit(uint8_t reg, uint16_t value)
 {
+  if (io_error) return;
   bus->beginTransmission(address);
   bus->write(reg);
   bus->write((uint8_t)(value >> 8)); // value high byte
   bus->write((uint8_t)(value)); // value low byte
   last_status = bus->endTransmission();
+  io_error = last_status != 0;
 }
 
 // Write a 32-bit register
 void VL53L0X::writeReg32Bit(uint8_t reg, uint32_t value)
 {
+  if (io_error) return;
   bus->beginTransmission(address);
   bus->write(reg);
   bus->write((uint8_t)(value >> 24)); // value highest byte
@@ -310,61 +316,38 @@ void VL53L0X::writeReg32Bit(uint8_t reg, uint32_t value)
   bus->write((uint8_t)(value >>  8));
   bus->write((uint8_t)(value));       // value lowest byte
   last_status = bus->endTransmission();
+  io_error = last_status != 0;
 }
 
 // Read an 8-bit register
 uint8_t VL53L0X::readReg(uint8_t reg)
 {
-  uint8_t value;
-
-  bus->beginTransmission(address);
-  bus->write(reg);
-  last_status = bus->endTransmission();
-
-  bus->requestFrom(address, (uint8_t)1);
-  value = bus->read();
-
+  uint8_t value = 0;
+  readMulti(reg, &value, 1);
   return value;
 }
 
-// Read a 16-bit register
+// Read a 16-bit register (big endian).
 uint16_t VL53L0X::readReg16Bit(uint8_t reg)
 {
-  uint16_t value;
-
-  bus->beginTransmission(address);
-  bus->write(reg);
-  last_status = bus->endTransmission();
-
-  bus->requestFrom(address, (uint8_t)2);
-  value  = (uint16_t)bus->read() << 8; // value high byte
-  value |=           bus->read();      // value low byte
-
-  return value;
+  uint8_t data[2] = {};
+  readMulti(reg, data, sizeof(data));
+  return ((uint16_t)data[0] << 8) | data[1];
 }
 
-// Read a 32-bit register
 uint32_t VL53L0X::readReg32Bit(uint8_t reg)
 {
-  uint32_t value;
-
-  bus->beginTransmission(address);
-  bus->write(reg);
-  last_status = bus->endTransmission();
-
-  bus->requestFrom(address, (uint8_t)4);
-  value  = (uint32_t)bus->read() << 24; // value highest byte
-  value |= (uint32_t)bus->read() << 16;
-  value |= (uint16_t)bus->read() <<  8;
-  value |=           bus->read();       // value lowest byte
-
-  return value;
+  uint8_t data[4] = {};
+  readMulti(reg, data, sizeof(data));
+  return ((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
+         ((uint32_t)data[2] << 8) | data[3];
 }
 
 // Write an arbitrary number of bytes from the given array to the sensor,
 // starting at the given register
 void VL53L0X::writeMulti(uint8_t reg, uint8_t const * src, uint8_t count)
 {
+  if (io_error) return;
   bus->beginTransmission(address);
   bus->write(reg);
 
@@ -374,22 +357,18 @@ void VL53L0X::writeMulti(uint8_t reg, uint8_t const * src, uint8_t count)
   }
 
   last_status = bus->endTransmission();
+  io_error = last_status != 0;
 }
 
 // Read an arbitrary number of bytes from the sensor, starting at the given
 // register, into the given array
 void VL53L0X::readMulti(uint8_t reg, uint8_t * dst, uint8_t count)
 {
-  bus->beginTransmission(address);
-  bus->write(reg);
-  last_status = bus->endTransmission();
-
-  bus->requestFrom(address, count);
-
-  while (count-- > 0)
-  {
-    *(dst++) = bus->read();
-  }
+  if (io_error) { memset(dst, 0, count); return; }
+  // One transaction with repeated START; never turn Wire.read() == -1 into data.
+  const esp_err_t err = bus->readRegister(address, reg, dst, count);
+  last_status = err == ESP_OK ? 0 : (err == ESP_ERR_TIMEOUT ? 5 : 4);
+  io_error = err != ESP_OK;
 }
 
 // Set the return signal rate limit check value in units of MCPS (mega counts

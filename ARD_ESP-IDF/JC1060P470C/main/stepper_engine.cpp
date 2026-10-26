@@ -12,6 +12,14 @@ static void bankRegs(gpio_num_t pin, volatile uint32_t **set, volatile uint32_t 
 
 static const char *TAG = "stepper";
 
+// Targets are kept within +-2^30 so `target - position` can never overflow.
+// A wrapped int32 target would land behind the axis and reverse it.
+static constexpr int64_t kPositionLimit = 1 << 30;
+
+static int32_t clampTarget(int64_t target) {
+    return (int32_t)(target > kPositionLimit ? kPositionLimit : target < -kPositionLimit ? -kPositionLimit : target);
+}
+
 esp_err_t StepperEngine::begin(const Pins (&pins)[kAxes]) {
     for (int i = 0; i < kAxes; ++i) {
         ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(pins[i].step) && GPIO_IS_VALID_OUTPUT_GPIO(pins[i].dir),
@@ -111,13 +119,13 @@ bool StepperEngine::anyMoving() const {
 
 void StepperEngine::moveTo(int axis, int32_t absolute) {
     portENTER_CRITICAL(&lock_);
-    shared_[axis].target = absolute;
+    shared_[axis].target = clampTarget(absolute);
     portEXIT_CRITICAL(&lock_);
 }
 
 void StepperEngine::move(int axis, int32_t relative) {
     portENTER_CRITICAL(&lock_);
-    shared_[axis].target = shared_[axis].position + relative;
+    shared_[axis].target = clampTarget((int64_t)shared_[axis].position + relative);
     portEXIT_CRITICAL(&lock_);
 }
 
@@ -126,7 +134,7 @@ void StepperEngine::stop(int axis) {
     const float v = p.speed;
     const int32_t brake = (int32_t)ceilf(v * v / (2.0f * p.accel));
     portENTER_CRITICAL(&lock_);
-    shared_[axis].target = shared_[axis].position + (v > 0 ? brake : v < 0 ? -brake : 0);
+    shared_[axis].target = clampTarget((int64_t)shared_[axis].position + (v > 0 ? brake : v < 0 ? -brake : 0));
     portEXIT_CRITICAL(&lock_);
 }
 

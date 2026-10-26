@@ -1,0 +1,45 @@
+{
+  "mode": "open_loop",
+  "center_mm": 95.0,
+  "plus_mm": 70.0,
+  "minus_mm": 120.0,
+  "home_mm": 120.0,
+  "capture_mm": 120.0,
+  "rail_min_mm": 70.0,
+  "rail_max_mm": 120.0,
+  "taught": {
+    "center": true,
+    "plus": true,
+    "minus": true
+  },
+  "rail_dir": -1,
+  "steps_per_mm": 23.683,
+  "pid_p": 0.12,
+  "pid_i": 0.0,
+  "pid_d": 0.0,
+  "settle_s": 0.3,
+  "timeout_s": 15.0,
+  "destinations": {
+    "Metal": {
+      "rail": "plus",
+      "tilt": "forward"
+    },
+    "Glass": {
+      "rail": "minus",
+      "tilt": "forward"
+    },
+    "Others": {
+      "rail": "minus",
+      "tilt": "forward"
+    },
+    "Paper": {
+      "rail": "plus",
+      "tilt": "backward"
+    },
+    "Plastic": {
+      "rail": "minus",
+      "tilt": "backward"
+    }
+  },
+  "tilt_deg": 45.0
+}

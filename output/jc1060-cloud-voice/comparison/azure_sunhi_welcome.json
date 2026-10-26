@@ -1,0 +1,11 @@
+{
+  "job": {
+    "provider": "azure",
+    "voice": "ko-KR-SunHiNeural",
+    "text": "직접 참여해 보세요. 화면을 터치하면 시작합니다.",
+    "rate": 1.05
+  },
+  "seconds": 4.926,
+  "pcm_bytes": 157616,
+  "sha256": "b159f72a3a265a9c4f3f10cd454712942a02b2f969b8325de1e00067ebe9b2a4"
+}

@@ -50,11 +50,37 @@ void respond(int sock, const char *request) {
         cJSON_AddBoolToObject(doc, "busy", s.busy);
         cJSON_AddBoolToObject(doc, "stopped", s.stopped);
         cJSON_AddBoolToObject(doc, "pid", s.pid);
+        cJSON_AddNumberToObject(doc, "pid_p", s.pidP);
+        cJSON_AddNumberToObject(doc, "pid_i", s.pidI);
+        cJSON_AddNumberToObject(doc, "pid_d", s.pidD);
+        cJSON_AddBoolToObject(doc, "jogging", s.jogging); // also tells the PC that `j` is supported
+        cJSON_AddBoolToObject(doc, "program", s.program); // queued move/homing: jog rejected
         cJSON_AddNumberToObject(doc, "x", s.x);
         cJSON_AddNumberToObject(doc, "y", s.y);
         cJSON_AddNumberToObject(doc, "z", s.z);
         cJSON_AddNumberToObject(doc, "steps_per_mm", s.stepsPerMmZ);
-        cJSON_AddNumberToObject(doc, "tof_mm", sensors_tof_last());
+        // Rail PID state for the PC sorting sequence and rail tools.
+        float tof;
+        uint32_t tofAge;
+        const bool tofOk = sensors_tof(&tof, &tofAge);
+        cJSON_AddNumberToObject(doc, "tof_mm", tofOk ? tof : 0);
+        cJSON_AddBoolToObject(doc, "tof_ok", tofOk);
+        cJSON_AddNumberToObject(doc, "tof_age_ms", tofAge);
+        cJSON_AddStringToObject(doc, "tof_status", sensors_tof_status());
+        cJSON_AddNumberToObject(doc, "rail_target", s.targetRailDist);
+        cJSON_AddNumberToObject(doc, "rail_dir", s.railDir);
+        cJSON_AddBoolToObject(doc, "rail_settled", s.railSettled && tofOk);
+        // Z safety limits (ToF mm) and the last safety stop/refusal.
+        cJSON_AddBoolToObject(doc, "rail_limit_on", s.railLimitOn);
+        cJSON_AddNumberToObject(doc, "rail_min", s.railMinMm);
+        cJSON_AddNumberToObject(doc, "rail_max", s.railMaxMm);
+        cJSON_AddNumberToObject(doc, "rail_limit_count", s.railLimitCount);
+        cJSON_AddStringToObject(doc, "rail_limit", s.railLimitReason);
+        // Disc tilt safety limit (rotation is not limited) and the last refusal/halt.
+        cJSON_AddNumberToObject(doc, "tilt_deg", s.tiltDeg);
+        cJSON_AddNumberToObject(doc, "tilt_limit_deg", s.tiltLimitDeg);
+        cJSON_AddNumberToObject(doc, "tilt_limit_count", s.tiltLimitCount);
+        cJSON_AddStringToObject(doc, "tilt_limit", s.tiltLimitReason);
         char *json = cJSON_PrintUnformatted(doc);
         cJSON_Delete(doc);
         if (json) { sendText(sock, json); sendText(sock, "\r\n"); cJSON_free(json); }

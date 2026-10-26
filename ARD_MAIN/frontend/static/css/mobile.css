@@ -57,7 +57,7 @@
     .dashboard-page .sorting-actions > a { grid-column: 1 / -1; }
     .dashboard-page .sorting-actions > * { justify-content: center; padding: 10px !important; height: auto !important; min-height: 48px; }
     .dashboard-page .sorting-actions .btn-primary { white-space: normal !important; font-size: 14px !important; }
-    .dashboard-page .sorting-pipeline { grid-template-columns: repeat(5, 140px) !important; overflow-x: auto; }
+    .dashboard-page .sorting-pipeline { grid-template-columns: repeat(6, 140px) !important; overflow-x: auto; }
     .dashboard-page .sorting-monitor-grid { flex-direction: column !important; min-height: 0 !important; }
     .dashboard-page .sorting-monitor-grid > div { flex: none !important; min-height: 310px; }
     .dashboard-page #sorting-main-view { min-height: 0 !important; padding: 12px !important; }

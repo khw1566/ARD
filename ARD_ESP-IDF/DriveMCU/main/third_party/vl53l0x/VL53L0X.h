@@ -134,6 +134,7 @@ class VL53L0X
     inline void setTimeout(uint16_t timeout) { io_timeout = timeout; }
     inline uint16_t getTimeout() { return io_timeout; }
     bool timeoutOccurred();
+    void clearIoError() { io_error = false; last_status = 0; }
 
   private:
     // TCC: Target CentreCheck
@@ -157,6 +158,7 @@ class VL53L0X
     uint8_t address;
     uint16_t io_timeout;
     bool did_timeout;
+    bool io_error = false; // latch until the sensor owner starts a recovery attempt
     uint16_t timeout_start_ms;
 
     uint8_t stop_variable; // read by init and used when starting measurement; is StopVariable field of VL53L0X_DevData_t structure in API

@@ -250,6 +250,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <button id="disk-home-btn" class="btn-primary" style="background: #10b981;" data-i18n="home_btn">Return Origin</button>
                             <button id="motor-global-stop" class="btn-primary" style="background: var(--danger);" data-i18n="emergency_btn">EMERGENCY STOP</button>
+                            <button id="disk-set-origin-btn" class="btn-primary" style="grid-column: 1 / -1; background: #0f766e;" data-i18n="set_origin_btn">현재 위치를 원점으로 설정</button>
                         </div>
                     </div>
 
@@ -334,49 +335,145 @@
                             </label>
                         </div>
                         <div class="input-group">
-                            <label><span data-i18n="z_target_dist">Target Distance (ToF):</span> <span id="pid-target-val" style="color: var(--success); font-weight: bold;">140</span> mm</label>
-                            <input type="range" id="pid-target-slider" min="140" max="180" value="140" style="accent-color: var(--success);">
+                            <label><span data-i18n="z_target_dist">Target Distance (ToF):</span> <span id="pid-target-val" style="color: var(--success); font-weight: bold;">120</span> mm</label>
+                            <input type="range" id="pid-target-slider" min="70" max="120" value="120" style="accent-color: var(--success);">
+                            <div id="pid-target-range-note" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">레일 위치를 저장하면 슬라이더 범위가 저장 위치 ±10mm로 바뀝니다.</div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                             <div class="input-group">
                                 <label data-i18n="pid_p">P (Proportional)</label>
-                                <input type="number" id="pid-p-input" value="20.0" step="0.5">
+                                <input type="number" id="pid-p-input" value="0.12" step="0.01" min="0" max="10000">
                             </div>
                             <div class="input-group">
                                 <label data-i18n="pid_i">I (Integral)</label>
-                                <input type="number" id="pid-i-input" value="0.05" step="0.01">
+                                <input type="number" id="pid-i-input" value="0" step="0.001" min="0" max="10000">
                             </div>
                             <div class="input-group">
                                 <label data-i18n="pid_d">D (Derivative)</label>
-                                <input type="number" id="pid-d-input" value="5.0" step="0.5">
+                                <input type="number" id="pid-d-input" value="0" step="0.1" min="0" max="10000">
                             </div>
                         </div>
+                        <p id="pid-gains-live" style="font-size: 0.8rem; color: var(--text-dim);">보드 현재값: 연결 대기</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button id="pid-gains-apply" class="btn-primary" type="button">P·I·D 적용 및 PC 저장</button>
+                            <button id="pid-gains-preset" class="btn-primary" type="button">초기값 0.12 / 0 / 0 입력</button>
+                        </div>
+                        <p id="pid-gains-feedback" style="font-size: 0.75rem; color: var(--text-dim);">PID를 끄고 모터가 멈춘 뒤 적용하세요. 입력값은 보드 확인 후 PC에 저장됩니다.</p>
                     </div>
 
-                    <!-- Rail Calibration Card -->
-                    <div class="card drive-control-card" style="grid-column: span 2; border-left-color: #6366f1;">
-                        <h2 style="margin-bottom: 15px; color: #6366f1;" data-i18n="z_cal_header">Z-Axis Rail Calibration</h2>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: flex-end;">
-                            <div class="input-group">
-                                <label data-i18n="z_steps_mm">Steps per mm (Z-Axis)</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="number" id="rail-steps-mm-input" value="43.48" step="0.01" style="flex: 1;">
-                                    <button id="rail-steps-mm-apply-btn" class="btn-primary" style="width: auto; background: #6366f1; padding: 0 15px;" data-i18n="btn_set">SET</button>
-                                </div>
+                    <!-- Rail Measurement & Leveling Tools (ToF PID rail, mirrored mount 2026-10-26) -->
+                    <div id="rail-tools-card" class="card drive-control-card rail-tools" style="grid-column: span 2; border-left-color: #6366f1;">
+                        <div class="rail-tools-head">
+                            <h2 style="margin: 0; color: #6366f1;">Z축 레일 측정·레벨링 도구</h2>
+                            <span id="rail-tool-busy" class="rail-badge" hidden>측정 중</span>
+                        </div>
+                        <p class="rail-tools-note">레일이 반대쪽에 반전 장착되어 방향과 거리값을 실측으로 다시 맞춥니다. 순서: ① ToF 안정도 → ② 방향·Steps/mm 자동 측정 → ③ 중앙·+측·-측 위치 저장 → ④ 반복 정밀도 테스트. 측정 중에는 비상정지 또는 [도구 중단]으로 멈출 수 있습니다.</p>
+
+                        <div class="rail-live" aria-live="polite">
+                            <div><span>ToF 실측</span><strong id="rail-live-tof">-</strong></div>
+                            <div><span>PID 목표</span><strong id="rail-live-target">-</strong></div>
+                            <div><span>오차</span><strong id="rail-live-error">-</strong></div>
+                            <div><span>PID</span><strong id="rail-live-pid">-</strong></div>
+                            <div><span>방향 (mzv)</span><strong id="rail-live-dir">-</strong></div>
+                            <div><span>Steps/mm</span><strong id="rail-live-spm">-</strong></div>
+                        </div>
+
+                        <div class="rail-step">
+                            <h3>① ToF 안정도 측정</h3>
+                            <div class="rail-row">
+                                <label>측정 시간 (s) <input type="number" id="rail-sample-seconds" value="3" min="1" max="30" step="1"></label>
+                                <button id="rail-sample-btn" class="btn-primary rail-btn" type="button">정지 상태 ToF 측정</button>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <button id="rail-auto-cal-btn" class="btn-primary" style="background: #10b981; margin: 0; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                    <span data-i18n="btn_auto_cal">AUTO CALIBRATE (MZA)</span>
-                                </button>
-                                <button id="system-home-btn" class="btn-primary" style="background: #3b82f6; margin: 0; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                                    <span data-i18n="btn_system_home">SYSTEM HOME</span>
-                                </button>
+                            <div id="rail-sample-result" class="rail-result">레일을 멈춘 상태에서 측정합니다. 표준편차가 1mm를 넘으면 센서 고정과 반사면을 확인하세요.</div>
+                        </div>
+
+                        <div class="rail-step">
+                            <h3>② 방향·Steps/mm 자동 측정</h3>
+                            <div class="rail-row">
+                                <label>측정 스텝 <input type="number" id="rail-measure-steps" value="400" min="20" max="4000" step="20"></label>
+                                <label class="rail-check"><input type="checkbox" id="rail-measure-apply" checked> 측정값 바로 적용</label>
+                                <button id="rail-measure-btn" class="btn-primary rail-btn" type="button" style="background: #10b981;">+스텝 이동 후 되돌아오며 측정</button>
+                            </div>
+                            <div id="rail-measure-result" class="rail-result">PID를 끈 상태에서 Z축을 +스텝 이동했다가 되돌립니다. 레일 양 끝에서 측정 스텝 이상 떨어진 곳에서 실행하세요.</div>
+                            <div class="rail-row">
+                                <label>방향
+                                    <select id="rail-dir-select">
+                                        <option value="1">+1 (+스텝 → 거리 증가, 원 설계)</option>
+                                        <option value="-1">-1 (+스텝 → 거리 감소, 반전 장착)</option>
+                                    </select>
+                                </label>
+                                <label>Steps per mm <input type="number" id="rail-steps-mm-input" value="43.48" step="0.01" min="0.01"></label>
+                                <button id="rail-steps-mm-apply-btn" class="btn-primary rail-btn" type="button" style="background: #6366f1;">수동 값 저장·적용</button>
                             </div>
                         </div>
-                        <div style="margin-top: 15px; font-size: 0.75rem; color: var(--text-dim); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;" data-i18n="z_cal_note">
-                            <strong>Note:</strong> Auto Calibration moves the motor 1000 steps and measures actual displacement using the ToF sensor.
+
+                        <div class="rail-step">
+                            <h3>③ 위치 저장 (레벨링)</h3>
+                            <p class="rail-tools-note" style="margin-top: 0;">PID를 끄고 Z축 +FW/-BW 버튼이나 JC1060 조그로 레일을 맞춘 뒤 [현재 위치 저장]을 누릅니다. 저장값은 ToF 거리(mm)입니다.</p>
+                            <table class="rail-teach">
+                                <thead><tr><th>위치</th><th>ToF 목표 (mm)</th><th>상태</th><th></th></tr></thead>
+                                <tbody>
+                                    <tr data-slot="home"><td>원점(홈) · 촬영 위치<br><small>시퀀스 시작·복귀 위치, 티칭 불필요</small></td><td><input type="number" id="rail-home-mm" step="0.5" min="70" max="120"></td><td class="rail-taught yes" id="rail-home-state">사용자 지정</td>
+                                        <td><button class="btn-primary rail-btn rail-teach-btn" type="button" data-slot="home">현재 위치를 원점으로 저장</button> <button class="btn-primary rail-btn rail-goto-btn" type="button" data-slot="home">PID로 원점 이동</button></td></tr>
+                                    <tr data-slot="center"><td>중앙 (기준 위치)</td><td><input type="number" id="rail-center-mm" step="0.5"></td><td class="rail-taught" id="rail-center-state">미저장</td>
+                                        <td><button class="btn-primary rail-btn rail-teach-btn" type="button" data-slot="center">현재 위치 저장</button> <button class="btn-primary rail-btn rail-goto-btn" type="button" data-slot="center">PID 이동</button></td></tr>
+                                    <tr data-slot="plus"><td>+측 (금속·종이)</td><td><input type="number" id="rail-plus-mm" step="0.5"></td><td class="rail-taught" id="rail-plus-state">미저장</td>
+                                        <td><button class="btn-primary rail-btn rail-teach-btn" type="button" data-slot="plus">현재 위치 저장</button> <button class="btn-primary rail-btn rail-goto-btn" type="button" data-slot="plus">PID 이동</button></td></tr>
+                                    <tr data-slot="minus"><td>-측 (플라스틱·유리)</td><td><input type="number" id="rail-minus-mm" step="0.5"></td><td class="rail-taught" id="rail-minus-state">미저장</td>
+                                        <td><button class="btn-primary rail-btn rail-teach-btn" type="button" data-slot="minus">현재 위치 저장</button> <button class="btn-primary rail-btn rail-goto-btn" type="button" data-slot="minus">PID 이동</button></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="rail-row">
+                                <label>임의 목표 (mm) <input type="number" id="rail-goto-mm" step="0.5" min="70" max="120"></label>
+                                <button id="rail-goto-mm-btn" class="btn-primary rail-btn" type="button">PID로 이동</button>
+                                <button id="rail-save-points-btn" class="btn-primary rail-btn" type="button" style="background: #334155;">입력값으로 저장</button>
+                            </div>
+                            <div id="rail-goto-result" class="rail-result">PID 이동은 목표 ±2mm에 멈출 때까지 기다리고 정착 시간과 남은 오차를 보여줍니다. 이동 후에도 PID는 켜진 채로 위치를 유지합니다.</div>
+                        </div>
+
+                        <div class="rail-step">
+                            <h3>④ 반복 정밀도 테스트</h3>
+                            <div class="rail-row">
+                                <label>반복 횟수 <input type="number" id="rail-sweep-cycles" value="2" min="1" max="10" step="1"></label>
+                                <button id="rail-sweep-btn" class="btn-primary rail-btn" type="button" style="background: #0f766e;">중앙 → +측 → 중앙 → -측 → 중앙 반복</button>
+                            </div>
+                            <div id="rail-sweep-result" class="rail-result">세 위치를 모두 저장한 뒤 실행합니다. 위치별 최대 오차, ToF 편차, 스텝 편차(미끄러짐·백래시 확인), 평균 정착 시간을 표로 보여줍니다.</div>
+                        </div>
+
+                        <div class="rail-step">
+                            <h3>⑤ 배출 위치 표 (재질 → 레일 위치 · 전도 방향)</h3>
+                            <p class="rail-tools-note" style="margin-top: 0;">선별은 디스크 선회 없이 레일 이송과 전진/후진 전도만 씁니다. 기본값은 이전 선회 배치(90° → 전진, 270° → 후진)에서 추정한 값이므로 [배출 위치 시험]으로 실제 낙하 위치를 확인하고 고친 뒤 저장하세요. 시험 순서: 레일 이동 → 전도 → 2초 대기 → 전도 복귀 → 레일 원점(ToF, PID 끔). 카메라·AI는 쓰지 않으며 트레이 X/Y가 원점일 때만 실행됩니다.</p>
+                            <table class="rail-teach rail-dest">
+                                <thead><tr><th>재질</th><th>레일 위치</th><th>전도 방향</th><th></th></tr></thead>
+                                <tbody id="rail-dest-body"></tbody>
+                            </table>
+                            <div class="rail-row">
+                                <label>전도 각도 (°) <input type="number" id="rail-tilt-deg" value="45" min="5" max="90" step="1"></label>
+                                <button id="rail-dest-save-btn" class="btn-primary rail-btn" type="button" style="background: #6366f1;">배출 위치 표 저장</button>
+                            </div>
+                            <div id="rail-dest-result" class="rail-result">표를 바꾸면 저장한 뒤 시험하세요. 시험은 저장된 표를 사용합니다.</div>
+                        </div>
+
+                        <div class="rail-step">
+                            <h3>선별 시퀀스 레일 설정</h3>
+                            <div class="rail-row">
+                                <label>구동 방식
+                                    <select id="rail-mode-select">
+                                        <option value="pid">ToF PID (저장 위치로 이동)</option>
+                                        <option value="open_loop">개루프 (시작 위치에서 ±15mm 스텝)</option>
+                                    </select>
+                                </label>
+                                <label>정착 유지 (s) <input type="number" id="rail-settle-s" min="0" max="5" step="0.1"></label>
+                                <label>제한 시간 (s) <input type="number" id="rail-timeout-s" min="1" max="120" step="1"></label>
+                                <label>Z축 안전 한계 (ToF mm) <input type="number" id="rail-limit-min" value="70" min="1" max="2000" step="1" style="width: 70px;"> ~ <input type="number" id="rail-limit-max" value="120" min="1" max="2000" step="1" style="width: 70px;"></label>
+                                <button id="rail-config-save-btn" class="btn-primary rail-btn" type="button" style="background: #6366f1;">설정 저장</button>
+                            </div>
+                            <p class="rail-tools-note">Z축 안전 한계(기본 ToF 70~120mm)는 DriveMCU에 mzl로 보내져, 보드가 모든 Z 이동(PID·조그·스텝)을 한계 전에 멈춥니다. 모든 위치·목표는 이 범위 안이어야 합니다. 원점 = 디스크 수평(X/Y 0) + 레일 ToF 원점(③ 표의 '원점(홈)', 기본 120mm). 원점 이동은 두 구동 방식 모두 ToF PID를 씁니다(개루프는 배출 이동만 스텝). 선별 시작 → ① 원점 복귀 → ② 촬영 → ③ AI 분석 → ④ 배출 위치 표의 레일 위치로 이송 → ⑤ 전진/후진 전도 배출 → ⑥ 전도 복귀 후 레일 원점 복귀.</p>
+                        </div>
+
+                        <div class="rail-row" style="margin-top: 12px;">
+                            <button id="rail-cancel-btn" class="btn-primary rail-btn" type="button" style="background: var(--danger);">도구 중단 (PID 끔)</button>
+                            <button id="system-home-btn" class="btn-primary rail-btn" type="button" style="background: #3b82f6;" data-i18n="btn_system_home">SYSTEM HOME</button>
                         </div>
                     </div>
                 </div>
@@ -924,7 +1021,7 @@
                         </div>
                         <div class="result-item" style="margin-bottom: 8px;">
                             <label>진행 단계:</label>
-                            <span id="side-sorting-step">STEP 0 / 5</span>
+                            <span id="side-sorting-step">STEP 0 / 6</span>
                         </div>
                         <div class="result-item" style="margin-bottom: 8px;">
                             <label>식별 객체:</label>
@@ -935,11 +1032,11 @@
                             <span id="side-sorting-material">-</span>
                         </div>
                         <div class="result-item" style="margin-bottom: 8px;">
-                            <label>목표 배출 방위각:</label>
-                            <span id="side-sorting-target-yaw" style="color: var(--primary); font-weight: bold;">0°</span>
+                            <label>배출 위치:</label>
+                            <span id="side-sorting-target-yaw" style="color: var(--primary); font-weight: bold;">-</span>
                         </div>
                         <div class="result-item" style="margin-bottom: 12px;">
-                            <label>목표 덤핑 경사각:</label>
+                            <label>전도 각도 (+전진 / -후진):</label>
                             <span id="side-sorting-dump-roll" style="color: var(--secondary); font-weight: bold;">45°</span>
                         </div>
 
@@ -960,31 +1057,19 @@
                                 선별 시퀀스 시작 (Start)
                             </button>
                             <button id="side-sorting-home-btn" class="btn-primary" style="height: 38px; background: #334155 !important; border: 1px solid #64748b !important; color: #f8fafc !important; font-weight: 600; border-radius: 6px;">
-                                디스크 원점 복귀 (Homing)
+                                초기화 / 재시도 준비
+                            </button>
+                            <button id="side-set-origin-btn" class="btn-primary" style="height: 38px; background: #134e4a !important; border: 1px solid #14b8a6 !important; color: #f8fafc !important; font-weight: 600; border-radius: 6px;">
+                                현재 위치를 원점으로 설정
                             </button>
                         </div>
                     </div>
 
-                    <!-- Bin Allocation Guide Card -->
+                    <!-- Bin Allocation Guide Card: rail-tools.js fills it from the stored destination table -->
                     <div class="card status-card" style="margin-top: 15px;">
-                        <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;">레일 중심 4분할 배출함 가이드</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem;">
-                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
-                                <strong style="color: #fbbf24;">1. 금속/캔 (Metal)</strong>
-                                <div style="color: #94a3b8; margin-top: 2px;">우측 전방 (+15mm / 90°)</div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
-                                <strong style="color: #4ade80;">2. 종이/팩 (Paper)</strong>
-                                <div style="color: #94a3b8; margin-top: 2px;">좌측 전방 (+15mm / 270°)</div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                                <strong style="color: #60a5fa;">3. 플라스틱 (Plastic)</strong>
-                                <div style="color: #94a3b8; margin-top: 2px;">좌측 후방 (-15mm / 270°)</div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.3);">
-                                <strong style="color: #cbd5e1;">4. 유리/기타 (Others)</strong>
-                                <div style="color: #94a3b8; margin-top: 2px;">우측 후방 (-15mm / 90°)</div>
-                            </div>
+                        <h3 style="color: var(--secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 10px;">배출 위치 (레일 위치 · 전도 방향)</h3>
+                        <div id="bin-guide" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem;">
+                            <div style="color: #94a3b8;">배출 위치 표를 불러오는 중… (구동 보드 탭 ⑤에서 수정)</div>
                         </div>
                     </div>
                 </div>

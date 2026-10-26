@@ -1,0 +1,13 @@
+{
+  "firmware_bytes": 3362736,
+  "firmware_sha256": "2d17b898e5cbfe5db20aa8d662cc7724c2fa828c78127e769220e035cc04557c",
+  "target": "esp32p4",
+  "port": "COM16",
+  "mac": "80:f1:b2:d3:6e:ae",
+  "build_complete": true,
+  "flash_verified": true,
+  "voice_upload_verified_count": 28,
+  "device_http": "http://192.168.0.30",
+  "nvs_erased": false,
+  "sd_formatted": false
+}

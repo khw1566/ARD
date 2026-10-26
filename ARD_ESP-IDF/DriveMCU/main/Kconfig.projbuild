@@ -2,18 +2,44 @@ menu "ARD DriveMCU"
 
     config ARD_ENABLE_TOF
         bool "Enable VL53L0X ToF sensor"
-        default n
+        default y
         help
-            Same default as the PlatformIO build (ARD_ENABLE_TOF=0): no ToF reads, the rail
-            runs open loop. Enabling only reads and reports the distance.
+            The Z rail is ToF PID controlled again (2026-10-26). Without the sensor the rail
+            runs open loop and mzm1 is rejected.
 
     config ARD_ENABLE_RAIL_PID
         bool "Allow ToF rail PID (mzm1)"
         depends on ARD_ENABLE_TOF
-        default n
+        default y
         help
-            Rail PID is blocked for now (2026-10-16 decision): mzm1 is rejected even with the
-            ToF enabled. PID parameters (mzt/mzp/mzi/mzd) are still stored.
+            The rail was open loop from 2026-10-16 and returns to the ToF PID on 2026-10-26.
+            When off, mzm1 is rejected and only the PID parameters are stored.
+
+    config ARD_DISK_MAX_SPEED
+        int "Disc (X/Y) max speed, steps/s"
+        range 50 1000
+        default 300
+        help
+            Default and upper cap for mxs/mys and the X/Y jog (2026-10-27: lowered from 500
+            against disc overshoot and missed steps).
+
+    config ARD_DISK_ACCEL
+        int "Disc (X/Y) acceleration, steps/s^2"
+        range 50 2000
+        default 300
+
+    config ARD_DISK_TILT_LIMIT_DEG
+        int "Disc tilt safety limit, degrees"
+        range 5 90
+        default 60
+        help
+            Tilt = (X - Y) / 2 motor steps through the reducer. Every X/Y move, jog and
+            homing keeps the tilt within +-this. Disc rotation (X + Y) is not limited.
+
+    config ARD_DISK_GEAR_RATIO
+        int "Disc reducer ratio (motor turns per bevel input turn)"
+        range 1 100
+        default 4
 
     config ARD_DEFAULT_SERVER
         string "Default PC server host"

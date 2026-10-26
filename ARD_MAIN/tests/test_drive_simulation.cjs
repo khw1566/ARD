@@ -96,3 +96,37 @@ element('gear_ratio_y').value='2';
 w.test.action('dr'); assert.equal(commands.at(-1),'b200,100');
 w.test.action('dl'); assert.equal(commands.at(-1),'b-200,-100');
 console.log('Drive simulation regression checks passed');
+
+// Sorting tilts forward (+roll, df) or backward (-roll) without turning the disk.
+w.resetSortingAngles(); w.test.tick();
+w.setSortingAngles(0,-45,15); w.test.tick();
+near(w.test.state().yaw,0); near(w.test.state().roll,-45);
+near(w.test.transforms().roll,Math.PI/4);
+
+// ToF -> 3D rail: taught piecewise map, untaught rail_dir fallback, lost ToF -> board steps.
+const taughtCfg = { center_mm: 95, plus_mm: 70, minus_mm: 120, rail_dir: -1,
+    taught: { center: true, plus: true, minus: true } };
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 95 }, taughtCfg).mm, 0);
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 70 }, taughtCfg).mm, 15);
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 120 }, taughtCfg).mm, -15);
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 82.5 }, taughtCfg).mm, 7.5);
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 130 }, taughtCfg).mm, -21);   // extrapolated
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 400 }, taughtCfg).mm, -25);   // clamped
+assert.equal(w.tofToRailMm({ tof_ok: true, tof_mm: 95 }, taughtCfg).source, 'ToF');
+const untaught = { ...taughtCfg, taught: { center: false, plus: false, minus: false } };
+near(w.tofToRailMm({ tof_ok: true, tof_mm: 85 }, untaught).mm, 10);      // mirrored: shorter = +side
+assert.match(w.tofToRailMm({ tof_ok: true, tof_mm: 85 }, untaught).source, /미티칭/);
+const lost = w.tofToRailMm({ tof_ok: false, tof_mm: 0, z: 435, steps_per_mm: 43.5 }, taughtCfg);
+near(lost.mm, 10); assert.equal(lost.source, '스텝 추정');
+// A drive_live sample moves the 3D rail without any PC command, and wins over step estimates.
+const sentBefore = commands.length;
+w.resetSortingAngles(); w.test.tick();
+w.ardRailConfig = taughtCfg;
+w.applyDriveLive({ live: true, tof_ok: true, tof_mm: 70, z: 0, steps_per_mm: 43.5 });
+w.test.delta(1); w.test.tick();
+near(w.test.state().rail_mm, 15);
+w.currentMotorState = { mx_deg: 0, my_deg: 0, mz_steps: 0 };
+w.syncDriveSim(); w.test.tick();
+near(w.test.state().rail_mm, 15);
+assert.equal(commands.length, sentBefore, 'live state never sends a command');
+console.log('ToF rail mapping checks passed');
