@@ -1,0 +1,123 @@
+{
+  "duration": 180.0,
+  "fps": 30,
+  "frames": 5400,
+  "intro_duration": 13.0,
+  "intro_frames": 390,
+  "cg_source_start": 8.0,
+  "cg_source_end": 129.0,
+  "cg_duration": 121.0,
+  "live_start": 134.0,
+  "live_duration": 42.266666666666666,
+  "live_frames": 1268,
+  "outro_start": 176.26666666666665,
+  "outro_duration": 3.7333333333333334,
+  "outro_frames": 112,
+  "stabilized_source": "live_stabilized_clean.mp4",
+  "introduction_display": "안녕하세요. 울산과학대학교 캡스톤디자인 NEXUS 팀장 김형우입니다. 지금부터 기계공학의 원리를 중심으로 프로젝트를 설명드리겠습니다.",
+  "editorial_effects": [
+    [
+      0.18,
+      "open_001",
+      0.045
+    ],
+    [
+      13.0,
+      "switch_002",
+      0.055
+    ],
+    [
+      32.0,
+      "open_001",
+      0.05
+    ],
+    [
+      62.0,
+      "tick_001",
+      0.045
+    ],
+    [
+      134.0,
+      "open_002",
+      0.05
+    ],
+    [
+      176.26666666666665,
+      "confirmation_001",
+      0.045
+    ]
+  ],
+  "mastering": {
+    "input_i": "-18.75",
+    "input_tp": "-1.26",
+    "input_lra": "6.30",
+    "input_thresh": "-29.33",
+    "output_i": "-16.65",
+    "output_tp": "-1.70",
+    "output_lra": "5.20",
+    "output_thresh": "-27.05",
+    "normalization_type": "dynamic",
+    "target_offset": "0.65"
+  },
+  "additional_narration": [
+    {
+      "id": "intro",
+      "title": "발표자 소개",
+      "text": "안녕하세요. 울산 과학 대학교, 캡스톤 디자인 넥서스 팀장, 김 형우입니다. 지금부터 기계 공학의 원리를 중심으로 프로젝트를 설명드리겠습니다.",
+      "display": "안녕하세요. 울산과학대학교 캡스톤디자인 NEXUS 팀장 김형우입니다. 지금부터 기계공학의 원리를 중심으로 프로젝트를 설명드리겠습니다.",
+      "file": "intro.wav",
+      "seconds": 12.298666666666668,
+      "sample_rate": 24000,
+      "selected_candidate": "intro_2",
+      "seed": 1842,
+      "temperature": 0.5,
+      "asr_school_exact": true,
+      "asr_name_exact": true
+    },
+    {
+      "id": "live_1",
+      "start": 0.8,
+      "end": 11.8,
+      "title": "버튼 입력과 플레이트 동작",
+      "text": "이제 실제 장치의 움직임을 보겠습니다. 터치 화면에서 명령을 입력하고, 플레이트의 기울임과 복귀 동작을 확인합니다.",
+      "seconds": 9.472,
+      "sample_rate": 24000,
+      "checkpoint": "runs\\myvoice_xtts-October-17-2026_12+37PM-0000000\\best_model.pth",
+      "file": "live_1.wav",
+      "fitted_duration": 9.335375,
+      "speed_factor": 1.0
+    },
+    {
+      "id": "live_2",
+      "start": 13.2,
+      "end": 25.8,
+      "title": "실물 기어와 자세 전환",
+      "text": "두 모터의 입력은 베벨 기어를 거쳐 플레이트의 자세로 전달됩니다. 앞에서 설명한 기어 구조가 실제 움직임으로 이어지는 모습입니다.",
+      "seconds": 10.954666666666666,
+      "sample_rate": 24000,
+      "checkpoint": "runs\\myvoice_xtts-October-17-2026_12+37PM-0000000\\best_model.pth",
+      "file": "live_2.wav",
+      "fitted_duration": 10.8303125,
+      "speed_factor": 1.0
+    },
+    {
+      "id": "live_3",
+      "start": 28.2,
+      "end": 41.7,
+      "title": "터치 조이스틱 조작",
+      "text": "이어서 터치 조이스틱으로 입력을 연속적으로 바꿉니다. 화면 조작에 따라 플레이트가 움직이는 모습을 확인할 수 있습니다.",
+      "seconds": 9.557333333333334,
+      "sample_rate": 24000,
+      "checkpoint": "runs\\myvoice_xtts-October-17-2026_12+37PM-0000000\\best_model.pth",
+      "file": "live_3.wav",
+      "fitted_duration": 9.448854166666667,
+      "speed_factor": 1.0
+    }
+  ],
+  "revision": "v2",
+  "caption_track_embedded": false,
+  "captions_external": true,
+  "privacy_mask": "live\\v2\\privacy_mask.json",
+  "render_job": "C:\\Users\\work\\Desktop\\ARD_v1\\output\\ard-cg\\render_jobs\\20261026-213804",
+  "rendered_cg_intro_frames": 4020
+}

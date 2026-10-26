@@ -1,0 +1,86 @@
+{
+  "outputs": [
+    {
+      "file": "ARD_FullPresentation_1080p_v2.mp4",
+      "bytes": 161543997,
+      "sha256": "7ca263bdb13a6606388315f06b4afb3db988046adca41aa664c5421854eb04f8",
+      "duration": 180.0,
+      "decoded_frames": 5400,
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": "30/1",
+      "audio_sample_rate": "48000",
+      "lufs": -16.21,
+      "true_peak_dbtp": -1.46,
+      "subtitle_streams": 0,
+      "black_segments": [],
+      "full_decode_passed": true,
+      "sample_times": [
+        4,
+        10,
+        17,
+        26,
+        36,
+        43,
+        50,
+        59,
+        70,
+        80,
+        91,
+        103,
+        112,
+        120,
+        124,
+        127,
+        129,
+        132,
+        135,
+        149,
+        165,
+        175,
+        178
+      ]
+    },
+    {
+      "file": "ARD_LiveDemo_Stabilized_1080p_v2.mp4",
+      "bytes": 95249248,
+      "sha256": "764cfbc13490c0a6afbf3610a18b3d67e183c7dee08aa84676f7ce5e02630c3f",
+      "duration": 42.3,
+      "decoded_frames": 1268,
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": "30/1",
+      "audio_sample_rate": "48000",
+      "lufs": -16.32,
+      "true_peak_dbtp": -1.64,
+      "subtitle_streams": 0,
+      "black_segments": [],
+      "full_decode_passed": true,
+      "sample_times": [
+        0,
+        3,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        42
+      ]
+    }
+  ],
+  "source_sha256": "b880d787654870746a72fbce5154761309add23927a181bdccf6cae49238fec9",
+  "v1_sha256": "e38085c48341399b1d69ba2b0e70b985c3ab2830438870329fb7cdadd7f029ea",
+  "originals_unchanged": true,
+  "external_srt_timestamps_passed": true,
+  "privacy_review": "12 sampled times, foreground-aware screen mask; not an exhaustive manual frame-by-frame inspection.",
+  "credits_occurrences": "outro only; none in live overlays",
+  "private_voice_uploaded": false
+}

@@ -2,3 +2,6 @@
 output/ard-cg/vendor/three.min.js -text
 # Retain the upstream font license byte-for-byte, including its intentional spaces.
 output/ard-cg/fonts/OFL.txt -text -whitespace
+# Published final presentation media; keep large payloads in Git LFS.
+output/ard-cg/final/*.mp4 filter=lfs diff=lfs merge=lfs -text
+output/ard-cg/final/*.wav filter=lfs diff=lfs merge=lfs -text

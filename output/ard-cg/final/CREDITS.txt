@@ -1,0 +1,23 @@
+ARD CG — audio credits
+
+Narration: user's own locally fine-tuned myTTS XTTS-v2 voice.
+No voice/model upload. Local inference, noise filtering, loudness matching,
+light pitch-preserving time fitting to each cut.
+
+"Cylinder Five" by Chris Zabriskie
+From the album Cylinders (2014)
+Licensed under Creative Commons Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+https://chriszabriskie.com/cylinders/
+https://chriszabriskie.com/use/
+Source copy: https://commons.wikimedia.org/wiki/File:Chris_Zabriskie_-_05_-_Cylinder_Five.ogg
+Changes: trimmed to 135 seconds, fades, narration ducking, mixed with voice/SFX.
+
+Interface Sounds by Kenney (CC0 1.0)
+https://kenney.nl/assets/interface-sounds
+https://creativecommons.org/publicdomain/zero/1.0/
+Changes: selected clips, level adjustment and timing.
+Effects are editorial cues, not recordings of the physical machine.
+
+Three.js: MIT. Nanum Gothic: SIL Open Font License (where used).
+XTTS-v2 model: Coqui Public Model License; see myTTS README for its use terms.

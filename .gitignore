@@ -14,7 +14,6 @@
 /output/ard-cg/narration/
 /output/ard-cg/source_audio/
 /output/ard-cg/render_jobs/
-/output/ard-cg/final/
 /output/ard-cg/live/
 /output/ard-cg/_review_tmp/
 /output/screensaver_backup/
@@ -47,6 +46,7 @@ dist/
 # Media downloads
 *.wav
 !ARD_ESP-IDF/JC1060P470C/sdcard/ard/voice/*/*.wav
+!/output/ard-cg/final/*.wav
 *.mp3
 /ARD_MAIN/backend/MusicData/
 

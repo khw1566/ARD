@@ -1,0 +1,30 @@
+NEXUS — AI기반 자동화 분류장치 / 김형우 발표
+
+Narration: user's own locally fine-tuned myTTS XTTS-v2 voice.
+Local inference only. No upload of source voice, trained model or footage.
+Additional introduction and real-demo speech; filtering and loudness matching.
+
+"Cylinder Five" by Chris Zabriskie, from Cylinders (2014).
+Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+https://chriszabriskie.com/cylinders/
+https://chriszabriskie.com/use/
+Source copy: https://commons.wikimedia.org/wiki/File:Chris_Zabriskie_-_05_-_Cylinder_Five.ogg
+Changes: trimmed/crossfaded to 180 seconds, fades, voice ducking and mixing.
+Standalone demo uses the corresponding excerpt with loudness mastering.
+
+Interface Sounds by Kenney — CC0 1.0
+https://kenney.nl/assets/interface-sounds
+https://creativecommons.org/publicdomain/zero/1.0/
+Changes: selected quiet transition cues, level adjustment and timing.
+Effects are editorial cues, not recordings of the physical machine.
+
+Footage: 20261026_195051.mp4, supplied by the user.
+Changes: stabilization, small fixed crop, 30fps conversion, subtitles,
+narration and mix. Original source file retained unchanged.
+
+Three.js: MIT. Nanum Gothic: SIL Open Font License where used.
+XTTS-v2 model: Coqui Public Model License; see local myTTS README.
+
+Final presentation: 180 seconds, 1920x1080, 30fps.
+Standalone real demonstration: approximately 42.3 seconds, 1920x1080, 30fps.

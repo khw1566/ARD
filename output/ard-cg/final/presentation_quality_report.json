@@ -1,0 +1,98 @@
+{
+  "outputs": [
+    {
+      "file": "ARD_FullPresentation_1080p.mp4",
+      "bytes": 168258982,
+      "sha256": "e38085c48341399b1d69ba2b0e70b985c3ab2830438870329fb7cdadd7f029ea",
+      "duration_seconds": 180.0,
+      "width": 1920,
+      "height": 1080,
+      "fps": "30/1",
+      "decoded_frames": 5400,
+      "video_codec": "h264",
+      "audio_codec": "aac",
+      "channels": 2,
+      "sample_rate": "48000",
+      "integrated_lufs": -16.21,
+      "true_peak_dbtp": -1.46,
+      "detected_black_segments": [],
+      "full_decode_passed": true,
+      "sample_times": [
+        4,
+        10,
+        17,
+        35,
+        49,
+        59,
+        73,
+        92,
+        112,
+        128,
+        136,
+        149,
+        165,
+        174,
+        178
+      ]
+    },
+    {
+      "file": "ARD_LiveDemo_Stabilized_1080p.mp4",
+      "bytes": 93387659,
+      "sha256": "d1b30eae9f817e0dec260f66e2639804eef8f2be1778dbde1afb97df12a3fe85",
+      "duration_seconds": 42.3,
+      "width": 1920,
+      "height": 1080,
+      "fps": "30/1",
+      "decoded_frames": 1268,
+      "video_codec": "h264",
+      "audio_codec": "aac",
+      "channels": 2,
+      "sample_rate": "48000",
+      "integrated_lufs": -16.32,
+      "true_peak_dbtp": -1.64,
+      "detected_black_segments": [],
+      "full_decode_passed": true,
+      "sample_times": [
+        2,
+        8,
+        16,
+        24,
+        31,
+        38,
+        41
+      ]
+    }
+  ],
+  "source_file": "20261026_195051.mp4",
+  "source_sha256": "b880d787654870746a72fbce5154761309add23927a181bdccf6cae49238fec9",
+  "source_unchanged": true,
+  "subtitle_timestamps_passed": true,
+  "private_voice_uploaded": false,
+  "stabilization": {
+    "file": "live_stabilized_clean.mp4",
+    "reason": "Most natural of three measured variants; approximately 50 percent reduction in background translation path jitter; small residual rotation remains.",
+    "metrics": {
+      "before": {
+        "valid_frame_pairs": 1268,
+        "translation_jitter_rms_px": 0.3415125623795979,
+        "angular_jitter_rms_degrees": 0.007284757831675381,
+        "camera_path_jitter_rms_px": 1.8589930350556148,
+        "camera_path_jitter_rms_degrees": 0.03282735545903375
+      },
+      "after": {
+        "valid_frame_pairs": 1267,
+        "translation_jitter_rms_px": 0.20988810323909812,
+        "angular_jitter_rms_degrees": 0.012213039455257481,
+        "camera_path_jitter_rms_px": 0.9311584821379294,
+        "camera_path_jitter_rms_degrees": 0.03493055755632831
+      },
+      "method": "LK + RANSAC on top background; 15-frame high-pass on frame-to-frame affine camera motion; 640x360 tracking rescaled to 1080p pixels",
+      "translation_reduction_percent": 38.54161563585371,
+      "rotation_reduction_percent": -67.65196232266067,
+      "path_translation_reduction_percent": 49.91059866396582,
+      "path_rotation_reduction_percent": -6.40685814585098,
+      "candidate": "live_stabilized_clean.mp4"
+    }
+  },
+  "scope": "Presentation edit of supplied manual-operation footage, not proof of automatic sorting or encoder feedback."
+}
